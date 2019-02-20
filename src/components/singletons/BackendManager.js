@@ -1,7 +1,7 @@
 class BackendManager {
   constructor() {
-    // this.domain = "https://api.mypokadot.com/pp/"
-    this.domain = "http://localhost:8080/pp/"
+    this.domain = "https://api.mypokadot.com/pp/"
+    // this.domain = "http://localhost:8080/pp/"
     this.refreshToken = "";
     this.token = "";
   }

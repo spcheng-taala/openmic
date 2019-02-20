@@ -185,7 +185,7 @@ class EditProfilePage extends Component {
       var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
       const formData = new FormData();
       formData.append('file', this.state.selectedFile);
-      axios.post(`http://localhost:8080/pp/upload`, formData, {
+      axios.post(`https://api.mypokadot.com/pp/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

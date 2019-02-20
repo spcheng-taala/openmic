@@ -1137,7 +1137,7 @@ class MainPage extends React.Component {
                 <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"} backgroundColor={'transparent'}/></NavLink>
                 <NavLink exact to="/" className={classes.titleText}>OpenMic</NavLink>
                 <NavLink to="/about" className={classes.flex}>About</NavLink>
-                
+
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.id}>
