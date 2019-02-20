@@ -64,6 +64,7 @@ class PaymentsPage extends Component {
     this.handleLastNameChange = this.handleLastNameChange.bind(this);
     this.handleEmailChange = this.handleEmailChange.bind(this);
     this.handleDOBChange = this.handleDOBChange.bind(this);
+    this.handlePaymentSetup = this.handlePaymentSetup.bind(this);
   }
 
   renderMainView() {
@@ -119,7 +120,7 @@ class PaymentsPage extends Component {
             }}
             onChange={this.handleDOBChange}
           />
-          <button className='button-rounded'>
+          <button className='button-rounded' onClick={this.handlePaymentSetup}>
             {"Done"}
           </button>
           <p style={descStyle}>{'We use Stripe, Inc. to handle payment transactions. By clicking "Done", you agree to both our Terms as well as the terms of Stripe.'}</p>
@@ -156,6 +157,14 @@ class PaymentsPage extends Component {
     this.setState({
       dob: e.target.value
     })
+  }
+
+  handlePaymentSetup() {
+    var fields = this.state.dob.split('-');
+    var year = fields[0];
+    var month = parseInt(fields[1], 10);
+    var day = parseInt(fields[2], 10);
+    this.props.handlePaymentSetup(this.state.email, this.state.firstName, this.lastName, day, month, year);
   }
 
   render() {

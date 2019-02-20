@@ -33,14 +33,7 @@
   "description": "This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).",
   "main": "index.js",
   "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/spcheng-taala/armchairgms.git"
-  },
   "author": "Sean Cheng",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/spcheng-taala/armchairgms/issues"
-  },
-  "homepage": "https://github.com/spcheng-taala/armchairgms#readme"
+  "homepage": ".",
+  "license": "ISC"
 }

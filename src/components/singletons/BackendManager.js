@@ -1,6 +1,7 @@
 class BackendManager {
   constructor() {
-    this.domain = "https://api.mypokadot.com/pp/"
+    // this.domain = "https://api.mypokadot.com/pp/"
+    this.domain = "http://localhost:8080/pp/"
     this.refreshToken = "";
     this.token = "";
   }
@@ -13,7 +14,6 @@ class BackendManager {
       return true;
     } else {
       this.token = cachedData.token;
-      console.log(cachedData.token);
       return false;
     }
   }
@@ -52,7 +52,6 @@ class BackendManager {
     })
     .then((resp) => resp.json())
     .then(data => {
-      console.log(data);
       return data;
     })
   }

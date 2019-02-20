@@ -366,6 +366,7 @@ class MainPage extends React.Component {
     this.fetchStory = this.fetchStory.bind(this);
 		this.fetchUser = this.fetchUser.bind(this);
     this.fetchStripeAccount = this.fetchStripeAccount.bind(this);
+    this.handlePaymentSetup = this.handlePaymentSetup.bind(this);
 		// this.fetchPaymentSetup = this.fetchPaymentSetup.bind(this);
 		this.fetchTotalListenedTo = this.fetchTotalListenedTo.bind(this);
 		this.fetchFollowing = this.fetchFollowing.bind(this);
@@ -375,7 +376,6 @@ class MainPage extends React.Component {
     this.fetchDonations = this.fetchDonations.bind(this);
 		this.fetchMessages = this.fetchMessages.bind(this);
     this.fetchComments = this.fetchComments.bind(this);
-		this.createStripeAccount = this.createStripeAccount.bind(this);
 		this.checkNewNotifications = this.checkNewNotifications.bind(this);
 		this.uploadFile = this.uploadFile.bind(this);
 		this.setDonation = this.setDonation.bind(this);
@@ -537,17 +537,7 @@ class MainPage extends React.Component {
   handleAuth() {
     this.setState({
       isLoggedIn: true,
-    })
-		BackendManager.makeQuery('stories/following', JSON.stringify({
-			user_id: UserManager.id,
-		}))
-		.then(data => {
-			UserManager.follwingStories = data.stories;
-			this.setState({
-				followingStories: data.stories
-			});
-		});
-		this.fetchNotifications();
+    });
   }
 
   toggleSignUp() {
@@ -805,6 +795,26 @@ class MainPage extends React.Component {
     });
   }
 
+  handlePaymentSetup(email, firstName, lastName, day, month, year) {
+    BackendManager.makeQuery('payments/account/create', JSON.stringify({
+      user_id: UserManager.id,
+      email: email,
+      first_name: firstName,
+      last_name: lastName,
+      day: day,
+      month: month,
+      year: year,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+          hasPaymentSetup: true,
+        });
+        this.showToast("Done!");
+      }
+    });
+  }
+
 	fetchTotalDonations() {
 		BackendManager.makeQuery('donations/total', JSON.stringify({
       user_id: UserManager.id,
@@ -872,30 +882,6 @@ class MainPage extends React.Component {
 	      }
 	    });
 		}
-	}
-
-	createStripeAccount(firstName, lastName, email, day, month, year) {
-		BackendManager.makeQuery('payments/account/create', JSON.stringify({
-      user_id: UserManager.id,
-			first_name: firstName,
-			last_name: lastName,
-			email: email,
-			day: day,
-			month: month,
-			year: year,
-    }))
-    .then(data => {
-      if (data.success) {
-				BackendManager.makeQuery('payments/account/terms', JSON.stringify({
-		      stripe_account: data.account,
-		    }))
-		    .then(data => {
-		      if (data.success) {
-            this.showToast("Account created!");
-		      }
-		    });
-      }
-    });
 	}
 
 	checkNewNotifications(id) {
@@ -1151,7 +1137,7 @@ class MainPage extends React.Component {
                 <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"} backgroundColor={'transparent'}/></NavLink>
                 <NavLink exact to="/" className={classes.titleText}>OpenMic</NavLink>
                 <NavLink to="/about" className={classes.flex}>About</NavLink>
-                <NavLink to="/payment/setup" className={classes.menuText}>Download</NavLink>
+                
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.id}>
@@ -1196,7 +1182,13 @@ class MainPage extends React.Component {
                   />
                   <Route path="/about" component={AboutPage}/>
                   <Route path="/download" component={DownloadPage}/>
-									<Route path="/payment/setup" component={PaymentsPage}/>
+                  <Route
+                    exact path='/payment/setup'
+                    render={(props) =>
+                      <PaymentsPage {...props}
+                        handlePaymentSetup={this.handlePaymentSetup}
+                      />}
+                  />
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route path="/checkout" component={CheckoutPage}/>
@@ -1218,6 +1210,7 @@ class MainPage extends React.Component {
 												username={this.state.username}
                         profilePicture={this.state.profilePicture}
 												bio={this.state.bio}
+                        showToast={this.showToast}
                       />}
                   />
                   <Route

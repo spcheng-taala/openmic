@@ -41,7 +41,7 @@ const tileData = [
    color: 'rgba(255, 255, 255, 0.54)'
  }
 
-class AboutPage extends Component {
+class HowItWorksPage extends Component {
 
   render() {
     const { classes } = this.props;
@@ -49,7 +49,7 @@ class AboutPage extends Component {
       <div className="landing-page">
         <div className="about-bg">
           <Header
-            title={"About Us"} subtitle={""}
+            title={"How It Works"} subtitle={""}
           />
           <MidTitle midtitle={"Our app and website are a blend of produced content and off-the-cuff clips recorded directly into our app. We have everything from podcasts to comedy bits to individual stories."}/>
           <MidTitle midtitle={"Most importantly, we make it easy to give creators cash tips their work, discover new content through our short-form audio discover page, and get social through comments and sharing."}/>
@@ -76,4 +76,4 @@ class AboutPage extends Component {
   }
 }
 
-export default AboutPage;
+export default HowItWorksPage;

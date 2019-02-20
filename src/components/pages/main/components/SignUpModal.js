@@ -78,17 +78,16 @@ class SignUpModal extends Component {
       BackendManager.token = data.token;
       var date = new Date();
       date.setSeconds(date.getSeconds() + data.expires_in);
-      var cachedData = {
-        id: data.id,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        profile_picture: data.profile_picture,
-        email: data.email,
-        token: data.token,
-        refresh_token: data.refresh_token,
-        expiration: date,
-      }
-      localStorage.setItem('user', cachedData);
+      localStorage.setItem('id', data.id);
+      localStorage.setItem('first_name', data.first_name);
+      localStorage.setItem('last_name', data.last_name);
+      localStorage.setItem('email', data.email);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('profile_picture', data.profile_picture);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      localStorage.setItem('expiration', date);
+      localStorage.setItem('bio', "Nothing here yet!");
       if (UserManager.id > 0) {
         this.props.closeModal();
         this.props.handleAuth();

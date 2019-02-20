@@ -63,7 +63,7 @@ class CheckoutModal extends React.Component {
       BackendManager.makeQuery('charges/charge', JSON.stringify({
         amount: this.props.amount * 100,
         token: token,
-        description: this.props.userId,
+        description: this.props.currentStory.user_id,
       }))
       .then(data => {
         if (data.success) {
@@ -96,11 +96,12 @@ class CheckoutModal extends React.Component {
         }))
         .then(data => {
           if (data.success) {
+            this.props.showToast("Thanks!");
             this.props.finishCheckoutModal();
           }
         });
       } else {
-        BackendManager.makeQuery('donations/create/noacount', JSON.stringify({
+        BackendManager.makeQuery('donations/create/noaccount', JSON.stringify({
           amount: this.props.amount * 100,
           user_id: this.props.currentStory.user_id,
           supporter_name: this.props.name,
@@ -108,6 +109,7 @@ class CheckoutModal extends React.Component {
         }))
         .then(data => {
           if (data.success) {
+            this.props.showToast("Thanks!");
             this.props.finishCheckoutModal();
           }
         });
@@ -141,7 +143,7 @@ class CheckoutModal extends React.Component {
         .then(data => {
           if (data.success) {
             this.props.showToast("Sent!");
-            this.props.fetchComments(this.props.currentStory.id); 
+            this.props.fetchComments(this.props.currentStory.id);
             this.props.finishCheckoutModal();
           }
         });

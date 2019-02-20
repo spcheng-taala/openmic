@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
 import classNames from 'classnames';
+import axios from 'axios';
 import { withStyles } from '@material-ui/core/styles';
 import MidTitle from '../../ui/MidTitle.js';
 import Button from '../../ui/Button.js';
@@ -174,39 +175,63 @@ class EditProfilePage extends Component {
       var d = new Date();
       var seconds = d.getTime() / 1000;
       var fileName = UserManager.id + "_" + seconds;
-      var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/" + fileName;
+      var ext = ".jpg";
       if (this.state.selectedFile.type == "image/png") {
         url += ".png";
       } else {
         url += ".jpg";
       }
-      BackendManager.makeQuery('users/users/profile/update', JSON.stringify({
+
+      var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
+      const formData = new FormData();
+      formData.append('file', this.state.selectedFile);
+      axios.post(`http://localhost:8080/pp/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(data => {
+  			console.log(data.data);
+  			if (data.data.success) {
+  				var imageUrl = url + data.data.title + ext;
+          BackendManager.makeQuery('users/profile/update', JSON.stringify({
+            first_name: this.state.firstName,
+            last_name: this.state.lastName,
+            username: this.state.username,
+            bio: this.state.bio,
+            profile_picture: imageUrl,
+            id: UserManager.id,
+          }))
+          .then(data => {
+            localStorage.setItem('first_name', this.state.firstName);
+            localStorage.setItem('last_name', this.state.lastName);
+            localStorage.setItem('username', this.state.username);
+            localStorage.setItem('bio', this.state.bio);
+            localStorage.setItem('profile_picture', imageUrl);
+            this.props.showToast("Done!");
+            this.setState({validUsername: data.success});
+          });
+  			}
+      }).catch(error => {
+        // handle your error
+      });
+    } else {
+      BackendManager.makeQuery('users/profile/update', JSON.stringify({
         first_name: this.state.firstName,
         last_name: this.state.lastName,
         username: this.state.username,
         bio: this.state.bio,
+        profile_picture: this.props.profilePicture,
+        id: UserManager.id,
       }))
       .then(data => {
         localStorage.setItem('first_name', this.state.firstName);
         localStorage.setItem('last_name', this.state.lastName);
         localStorage.setItem('username', this.state.username);
         localStorage.setItem('bio', this.state.bio);
+        this.props.showToast("Done!");
         this.setState({validUsername: data.success});
       });
     }
-    BackendManager.makeQuery('users/users/profile/update', JSON.stringify({
-      first_name: this.state.firstName,
-      last_name: this.state.lastName,
-      username: this.state.username,
-      bio: this.state.bio,
-    }))
-    .then(data => {
-      localStorage.setItem('first_name', this.state.firstName);
-      localStorage.setItem('last_name', this.state.lastName);
-      localStorage.setItem('username', this.state.username);
-      localStorage.setItem('bio', this.state.bio);
-      this.setState({validUsername: data.success});
-    });
   }
 
   render() {
@@ -232,7 +257,7 @@ class EditProfilePage extends Component {
           Upload a profile picture
         </label>
         {this.renderProfilePicture()}
-        <button className='button-rounded'>Done!</button>
+        <button className='button-rounded' onClick={() => this.updateProfile()}>Done!</button>
       </div>
     )
   }
