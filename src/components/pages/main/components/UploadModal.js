@@ -145,7 +145,7 @@ class UploadModal extends Component {
       <div>
         <h2 style={titleStyle}>Upload a story!</h2>
         <label class="custom-file-upload">
-          <input type="file" onChange={this.fileSelectedHandler} accept=".mp4,.mp3,.m4a"/>
+          <input type="file" onChange={this.fileSelectedHandler} accept=".mp4,.mp3,.m4a,.wav"/>
           Select a file
         </label>
         {this.renderFileView()}

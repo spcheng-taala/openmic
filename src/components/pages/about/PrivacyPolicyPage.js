@@ -154,7 +154,7 @@ const tileData = [
     type: "text",
   },
   {
-    text: "Marketing. We may contact you to tell you about services or products we believe will be of interest to you. If we do, where required by law, for example if you are a User in the European Union (“EU”), we will only send you marketing information if you consent to us doing so at the time you provide us with your Personal Data. You may opt-out of receiving such emails by following the instructions contained in each promotional email we send you or by updating your user settings. In addition, if at any time you do not wish to receive future marketing communications, please contact us at help@openmic.fm. We will continue to contact you via email regarding the provision of our Services and to respond to your requests.",
+    text: "Marketing. We may contact you to tell you about services or products we believe will be of interest to you. If we do, where required by law, for example if you are a User in the European Union (“EU”), we will only send you marketing information if you consent to us doing so at the time you provide us with your Personal Data. You may opt-out of receiving such emails by following the instructions contained in each promotional email we send you or by updating your user settings. In addition, if at any time you do not wish to receive future marketing communications, please contact us at help@theopenmic.fm. We will continue to contact you via email regarding the provision of our Services and to respond to your requests.",
     type: "text",
   },
   {
@@ -386,7 +386,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "Your access to and use of the Services is subject to any additional terms applicable to such Services that may be posted on the Services from time to time, including without limitation, OpenMic’s Terms of Use available at https://openmic.fm/terms.",
+    text: "Your access to and use of the Services is subject to any additional terms applicable to such Services that may be posted on the Services from time to time, including without limitation, OpenMic’s Terms of Use available at https://theopenmic.fm/terms.",
     type: "text",
   },
   {
@@ -470,7 +470,7 @@ class PrivacyPolicyPage extends Component {
         <p style={textStyle}>{"Date of Last Revision: Feb 08, 2019"}</p>
         <h1 style={titleStyle}>Privacy Policy</h1>
         <p style={textStyle}>{"Welcome to Pokadot, Inc. (OpenMic”, “we”, “us” and/or “our”) Privacy Policy. Our services are designed to offer users (collectively, “Users,” “you,” or “your”) the opportunity to easily create and share audio recordings with other Users (“Services”). The Services are provided to you through our website (“Site”) and mobile application (“App”)."}</p>
-        <p style={textStyle}>{"This Privacy Policy explains what personal data we collect through the Services, how we use and share that data, and your choices concerning our data practices. This Privacy Policy forms part of our Terms of Use, which are available at: https://openmic.fm/#/terms."}</p>
+        <p style={textStyle}>{"This Privacy Policy explains what personal data we collect through the Services, how we use and share that data, and your choices concerning our data practices. This Privacy Policy forms part of our Terms of Use, which are available at: https://theopenmic.fm/#/terms."}</p>
         <p style={textStyle}>{"By providing us with your personal data when using the Services, you agree to the practices described in this Privacy Policy. If you do not agree to this Privacy Policy, please do not access or use the Services."}</p>
         {this.renderPrivacyPolicy()}
       </div>

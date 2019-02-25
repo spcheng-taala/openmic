@@ -121,7 +121,7 @@ class FeedPage extends Component {
     super(props);
 
     this.state = {
-      type: 1,
+      type: 0,
       stories: this.props.seriousStories,
     };
 

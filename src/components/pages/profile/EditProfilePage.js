@@ -189,10 +189,9 @@ class EditProfilePage extends Component {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      }).then(data => {
-  			console.log(data.data);
+      }).then(data => {  			
   			if (data.data.success) {
-  				var imageUrl = url + data.data.title + ext;
+          var imageUrl = url + data.data.title.split(' ').join('+');
           BackendManager.makeQuery('users/profile/update', JSON.stringify({
             first_name: this.state.firstName,
             last_name: this.state.lastName,

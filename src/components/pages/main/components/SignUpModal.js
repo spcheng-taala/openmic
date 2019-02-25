@@ -69,29 +69,32 @@ class SignUpModal extends Component {
       profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/default_profile_picture.png",
     }))
     .then(data => {
-      UserManager.id = data.id;
-      UserManager.firstName = data.first_name;
-      UserManager.lastName = data.last_name;
-      UserManager.email = data.email;
-      UserManager.username = data.username;
-      UserManager.profilePicture = data.profile_picture;
-      BackendManager.token = data.token;
-      var date = new Date();
-      date.setSeconds(date.getSeconds() + data.expires_in);
-      localStorage.setItem('id', data.id);
-      localStorage.setItem('first_name', data.first_name);
-      localStorage.setItem('last_name', data.last_name);
-      localStorage.setItem('email', data.email);
-      localStorage.setItem('username', data.username);
-      localStorage.setItem('profile_picture', data.profile_picture);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      localStorage.setItem('expiration', date);
-      localStorage.setItem('bio', "Nothing here yet!");
-      if (UserManager.id > 0) {
-        this.props.closeModal();
-        this.props.handleAuth();
-        this.props.history.push('/edit');
+      if (data.success) {
+        UserManager.id = data.id;
+        UserManager.firstName = data.first_name;
+        UserManager.lastName = data.last_name;
+        UserManager.email = data.email;
+        UserManager.username = data.username;
+        UserManager.profilePicture = data.profile_picture;
+        BackendManager.token = data.token;
+        BackendManager.refreshToken = data.refresh_token;
+        var date = new Date();
+        date.setSeconds(date.getSeconds() + data.expires_in);
+        localStorage.setItem('id', data.id);
+        localStorage.setItem('first_name', data.first_name);
+        localStorage.setItem('last_name', data.last_name);
+        localStorage.setItem('email', data.email);
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('profile_picture', data.profile_picture);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        localStorage.setItem('expiration', date);
+        localStorage.setItem('bio', "Nothing here yet!");
+        if (UserManager.id > 0) {
+          this.props.closeModal();
+          this.props.handleAuth();
+          this.props.history.push('/edit');
+        }
       }
     });
   }
@@ -133,7 +136,7 @@ class SignUpModal extends Component {
   }
 
   renderSignUpButton() {
-    if (this.state.validUsername) {
+    if (this.state.validUsername && this.state.firstName != "" && this.state.lastName != "" && this.state.email != "" && this.state.password != "") {
       return (
         <button className='button-rounded' onClick={() => this.signUpHandler()}>Sign Up</button>
       )

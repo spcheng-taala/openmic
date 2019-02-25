@@ -189,12 +189,12 @@ class GoldCommentModal extends Component {
 
 		return (
       <div>
-        <h2 style={titleStyle}>{"Go Gold and award a donation to the Creator!"}</h2>
+        <h2 style={titleStyle}>{"Go Gold and award a tip to the Creator!"}</h2>
         <Row>
           <img style={smallSvgStyle} src={"./images/coin2.svg"}/>
           <img style={smallSvgStyle} src={"./images/coin1.svg"}/>
           <img style={smallSvgStyle} src={"./images/coin3.svg"}/>
-          <img style={smallSvgStyle} src={"./images/ruby.svg"}/>        
+          <img style={smallSvgStyle} src={"./images/ruby.svg"}/>
         </Row>
         <p style={textStyle}>{"Benefits of Going Gold:"}</p>
         <p style={smallTextStyle}>{"Helps give the Creator resources to produce more awesome content."}</p>

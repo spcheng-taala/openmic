@@ -165,15 +165,43 @@ const textFieldStyle = {
   marginRight: 20,
 }
 
+const mobileTextFieldStyle = {
+  color: "#222225",
+  font: "Lato",
+  marginLeft: 10,
+  marginRight: 10,
+}
+
 const commentStyle = {
   margin: 50,
+}
+
+const playPauseButtonStyle = {
+  width: 70,
+  height: 70,
+  paddingLeft: 60,
+  marginTop: -20,
 }
 
 class StoryPage extends Component {
 
   componentDidMount() {
     window.scrollTo(0, 0);
+    window.addEventListener("resize", this.resize.bind(this));
+    this.resize();
     this.props.fetchStory(this.props.match.params.id);
+  }
+
+  resize() {
+    if (window.innerWidth <= 760) {
+      this.setState({
+        isMobile: true,
+      });
+    } else {
+      this.setState({
+        isMobile: false,
+      })
+    }
   }
 
   constructor(props) {
@@ -189,6 +217,7 @@ class StoryPage extends Component {
       isMuted: false,
       currentStory: this.props.currentStory,
       comment: "",
+      isMobile: false,
     };
 
     this.handleStoryClick = this.handleStoryClick.bind(this);
@@ -199,11 +228,15 @@ class StoryPage extends Component {
     this.renderComments = this.renderComments.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
     this.sendReply = this.sendReply.bind(this);
+    this.renderComments = this.renderComments.bind(this);
+    this.renderComment = this.renderComment.bind(this);
+    this.renderPlayPause = this.renderPlayPause.bind(this);
   }
 
   handleStoryClick(story) {
     this.props.history.push('/story/' + story.id);
     this.props.handleStoryClick(story.id);
+    this.props.playPauseSound();
   }
 
   handleUserClick(id, firstName, lastName, username, profilePicture) {
@@ -314,6 +347,67 @@ class StoryPage extends Component {
     }
   }
 
+  renderComment() {
+    const classes = useStyles();
+    if (this.state.isMobile) {
+      return (
+        <div>
+          <TextField
+            label="Write a comment"
+            className={classNames(classes.margin, classes.textField)}
+            id="outlined-adornment-amount"
+            placeholder="Comment"
+            fullWidth
+            style={mobileTextFieldStyle}
+            value={this.state.name}
+            onChange={this.handleCommentChange} />
+          <Row>
+            <button className='button-gold' onClick={() => this.openGoldCommentModal()}>
+              {"Go Gold"}
+            </button>
+            <button className='button-green' onClick={() => this.handleSendClick()}>
+              {"Send"}
+            </button>
+          </Row>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <Row style={commentStyle}>
+            <TextField
+              label="Write a comment"
+              className={classNames(classes.margin, classes.textField)}
+              id="outlined-adornment-amount"
+              placeholder="Comment"
+              fullWidth
+              style={textFieldStyle}
+              value={this.state.name}
+              onChange={this.handleCommentChange} />
+            <button className='button-gold' onClick={() => this.openGoldCommentModal()}>
+              {"Go Gold"}
+            </button>
+            <button className='button-green' onClick={() => this.handleSendClick()}>
+              {"Send"}
+            </button>
+          </Row>
+        </div>
+      );
+    }
+  }
+
+  renderPlayPause() {
+    if (this.props.isPlaying) {
+      return (
+        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
+      );
+    } else {
+      return (
+        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
+      );
+    }
+  }
+
   render() {
     const classes = useStyles();
 		return (
@@ -336,29 +430,14 @@ class StoryPage extends Component {
               </Container>
             </div>
           </Paper>
+          {this.renderPlayPause()}
         </CardActionArea>
         <button className='button-rounded-gold' onClick={() => this.openDonateModal()}>
           {"Donate to send a direct message"}
         </button>
         <p style={dividerStyle}>{"or"}</p>
         {this.renderDonateTextField()}
-        <Row style={commentStyle}>
-          <TextField
-            label="Write a comment"
-            className={classNames(classes.margin, classes.textField)}
-            id="outlined-adornment-amount"
-            placeholder="Comment"
-            fullWidth
-            style={textFieldStyle}
-            value={this.state.name}
-            onChange={this.handleCommentChange} />
-          <button className='button-gold' onClick={() => this.openGoldCommentModal()}>
-            {"Go Gold"}
-          </button>
-          <button className='button-green' onClick={() => this.handleSendClick()}>
-            {"Send"}
-          </button>
-        </Row>
+        {this.renderComment()}
         <div style={commentStyle}>
           {this.renderComments()}
         </div>

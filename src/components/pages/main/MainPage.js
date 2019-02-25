@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, NavLink, BrowserRouter,
+import { Route, NavLink, BrowserRouter, Link,
   HashRouter } from 'react-router-dom'
 import { withRouter } from "react-router-dom";
 import { Container, Row } from 'react-grid-system';
@@ -53,6 +53,7 @@ import UploadSuccessModal from './components/UploadSuccessModal.js';
 import MessageModal from './components/MessageModal.js';
 import GoldCommentModal from './components/GoldCommentModal.js';
 import ConfirmEmailModal from './components/ConfirmEmailModal.js';
+import LoadingModal from './components/LoadingModal.js';
 
 const drawerWidth = 240;
 
@@ -84,6 +85,7 @@ const drawerText = {
 	fontFamily: 'Lato',
 	fontSize: 20,
 	fontWeight: 'bold',
+  cursor: 'pointer',
 }
 
 const modalContainerStyle = {
@@ -296,6 +298,7 @@ class MainPage extends React.Component {
 			uploadSuccessModalIsOpen: false,
       messageModalIsOpen: false,
       confirmEmailModalIsOpen: false,
+      loadingModalIsOpen: false,
       donateType: "dm",
 			uploadedStoryId: 0,
 			uploadedStoryTitle: "",
@@ -329,6 +332,7 @@ class MainPage extends React.Component {
       currentParentCommentId: null,
       currentParentEmail: "",
       commentType: "comment",
+      isPlaying: false,
     };
 
     this.openModal = this.openModal.bind(this);
@@ -353,6 +357,8 @@ class MainPage extends React.Component {
     this.openConfirmEmailModal = this.openConfirmEmailModal.bind(this);
     this.closeConfirmEmailModal = this.closeConfirmEmailModal.bind(this);
     this.finishConfirmEmailModal = this.finishConfirmEmailModal.bind(this);
+    this.openLoadingModal = this.openLoadingModal.bind(this);
+    this.closeLoadingModal = this.closeLoadingModal.bind(this);
 		this.renderShareModal = this.renderShareModal.bind(this);
     this.handleAuth = this.handleAuth.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
@@ -361,6 +367,7 @@ class MainPage extends React.Component {
 		this.renderEditProfileDrawerPanel = this.renderEditProfileDrawerPanel.bind(this);
     this.renderDonationsDrawerPanel = this.renderDonationsDrawerPanel.bind(this);
 		this.renderMessagesDrawerPanel = this.renderMessagesDrawerPanel.bind(this);
+    this.renderLogoutDrawerPanel = this.renderLogoutDrawerPanel.bind(this);
     this.handleStoryClick = this.handleStoryClick.bind(this);
 		this.handleUserClick = this.handleUserClick.bind(this);
     this.fetchStory = this.fetchStory.bind(this);
@@ -386,6 +393,8 @@ class MainPage extends React.Component {
     this.showToast = this.showToast.bind(this);
     this.setParentComment = this.setParentComment.bind(this);
     this.setCommentType = this.setCommentType.bind(this);
+    this.playPauseSound = this.playPauseSound.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
   openModal() {
@@ -401,9 +410,13 @@ class MainPage extends React.Component {
   }
 
 	openUploadModal() {
-    this.setState({
-      uploadModalIsOpen: true,
-    });
+    if (this.state.isLoggedIn) {
+      this.setState({
+        uploadModalIsOpen: true,
+      });
+    } else {
+      this.openModal();
+    }
   }
 
 	closeUploadModal() {
@@ -526,6 +539,18 @@ class MainPage extends React.Component {
     });
   }
 
+  openLoadingModal() {
+    this.setState({
+      loadingModalIsOpen: true
+    });
+  }
+
+  closeLoadingModal() {
+    this.setState({
+      loadingModalIsOpen: false
+    });
+  }
+
   finishConfirmEmailModal() {
     this.setState({
       confirmEmailModalIsOpen: false,
@@ -552,7 +577,7 @@ class MainPage extends React.Component {
 	renderShareModal() {
 		if (this.state.currentStory != null) {
 			return (
-				<ShareModal shareUrl={"http://localhost:3000/#/story/"+this.state.currentStory.id}
+				<ShareModal shareUrl={"https://theopenmic.fm/#/story/"+this.state.currentStory.id}
 				title={"Share this"}/>
 			);
 		}
@@ -570,9 +595,6 @@ class MainPage extends React.Component {
 		if (this.state.currentStory != null && this.state.currentStory.id > 0) {
 			return (
 	      <div className="p1 mt1 flex flex-center bg-darken-1 orange rounded">
-	        <PlayButton
-	          className="flex-none h4 button button-transparent button-grow rounded mr2"
-	          {...this.props} />
 	        <div className="flex-auto m0">
 	          <h2 className="h3 text nowrap">{this.state.currentStory.title}</h2>
 	          <h2 className="h5 text">{this.state.currentStory.first_name + " " + this.state.currentStory.last_name}</h2>
@@ -629,6 +651,18 @@ class MainPage extends React.Component {
 		}
 	}
 
+  renderLogoutDrawerPanel() {
+    if (this.state.isLoggedIn) {
+      return (
+        <div>
+          <ListItem>
+            <h3 style={drawerText} onClick={() => this.logout()}>{"Log Out"}</h3>
+          </ListItem>
+        </div>
+      )
+    }
+  }
+
 	updateIndex() {
 		this.setState({
 			index: this.state.index + 1,
@@ -649,17 +683,34 @@ class MainPage extends React.Component {
         this.setState({
           currentStory: UserManager.currentStory
         });
-        const { soundCloudAudio } = this.props;
+
         UserManager.currentStory = data.story;
         this.setState({currentStory: data.story, playing: true});
-        var streamUrl = data.story.url
-        soundCloudAudio.play({ streamUrl });
+
 				BackendManager.makeQuery('public/stories/feed/story/listen', JSON.stringify({
 		      story_id: id,
 		    })).then(data => {});
 				this.fetchUser(data.story.user_id);
         this.fetchComments(data.story.id);
+        if (this.state.isPlaying) {
+          const { soundCloudAudio } = this.props;
+          var streamUrl = data.story.url
+          soundCloudAudio.play({ streamUrl });
+        }
       }
+    });
+  }
+
+  playPauseSound() {
+    const { soundCloudAudio } = this.props;
+    if (this.state.isPlaying) {
+      soundCloudAudio.pause();
+    } else {
+      var streamUrl = this.state.currentStory.url
+      soundCloudAudio.play({ streamUrl });
+    }
+    this.setState({
+      isPlaying: !this.state.isPlaying
     });
   }
 
@@ -905,44 +956,54 @@ class MainPage extends React.Component {
   }
 
 	uploadFile(file, title, minutes, seconds) {
-		console.log(file);
-		var ext = file.name.substr(file.name.lastIndexOf('.') + 1);
-		if (ext == "m4a") {
-			ext = "mp4";
-		}
-		var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
-    const formData = new FormData();
-    formData.append('file', file);
-    axios.post(`https://api.mypokadot.com/pp/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    if (this.state.isLoggedIn) {
+      if (file != null) {
+        this.openLoadingModal();
+    		var ext = file.name.substr(file.name.lastIndexOf('.') + 1);
+    		if (ext == "m4a") {
+    			ext = "mp4";
+    		}
+    		var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
+        const formData = new FormData();
+        formData.append('file', file);
+        axios.post(`https://api.mypokadot.com/pp/upload/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(data => {
+    			this.closeLoadingModal();
+    			if (data.data.success) {
+    				var duration = (minutes*60) + seconds;
+    				var storyUrl = url + data.data.title.split(' ').join('+');
+            console.log(storyUrl);
+    				BackendManager.makeQuery('stories/create', JSON.stringify({
+    					title: title,
+    					url: storyUrl,
+    					public: 1,
+    					user_id: UserManager.id,
+    					duration: duration,
+    				}))
+    				.then(data => {
+    					if (data.success) {
+    						this.setState({
+    							uploadedStoryId: data.id,
+    							uploadedStoryTitle: title,
+    						});
+    						this.closeUploadModal();
+    						this.openUploadSuccessModal();
+    					}
+    				});
+    			}
+        }).catch(error => {
+          // handle your error
+        });
+      } else {
+        alert("Oops! Looks like a file isn't attached! Make sure you select a file before uploading.");
       }
-    }).then(data => {
-			console.log(data.data);
-			if (data.data.success) {
-				var duration = (minutes*60) + seconds;
-				var storyUrl = url + data.data.title + "." + ext;
-				BackendManager.makeQuery('stories/create', JSON.stringify({
-					title: title,
-					url: storyUrl,
-					public: 1,
-					user_id: UserManager.id,
-					duration: duration,
-				}))
-				.then(data => {
-					if (data.success) {
-						this.setState({
-							uploadedStoryId: data.id,
-							uploadedStoryTitle: title,
-						});
-						this.closeUploadModal();
-						this.openUploadSuccessModal();
-					}
-				});
-			}
-    }).catch(error => {
-      // handle your error
-    });
+    } else {
+      this.openModal();
+    }
+
 	}
 
 	setDonation(donation) {
@@ -983,6 +1044,13 @@ class MainPage extends React.Component {
   setCommentType(type) {
     this.setState({
       commentType: type
+    });
+  }
+
+  logout() {
+    localStorage.clear();
+    this.setState({
+      isLoggedIn: false,
     });
   }
 
@@ -1131,6 +1199,13 @@ class MainPage extends React.Component {
               commentType={this.state.commentType}
             />
           </Modal>
+          <Modal
+            isOpen={this.state.loadingModalIsOpen}
+            style={customStyles}
+            contentLabel="Uploading..."
+          >
+            <LoadingModal/>
+          </Modal>
           <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
@@ -1165,6 +1240,7 @@ class MainPage extends React.Component {
 								<ListItem>
 									<NavLink to="/privacy" style={drawerText}>Privacy Policy</NavLink>
 								</ListItem>
+                {this.renderLogoutDrawerPanel()}
 		          </List>
 		        </Drawer>
             <main className={classes.content}>
@@ -1245,6 +1321,8 @@ class MainPage extends React.Component {
                         showToast={this.showToast}
                         setParentComment={this.setParentComment}
                         setCommentType={this.setCommentType}
+                        playPauseSound={this.playPauseSound}
+                        isPlaying={this.state.isPlaying}
                       />}
                   />
                   <Route
