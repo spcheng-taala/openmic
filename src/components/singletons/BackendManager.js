@@ -1,7 +1,7 @@
 class BackendManager {
   constructor() {
-    this.domain = "https://api.mypokadot.com/pp/"
-    // this.domain = "http://localhost:8080/pp/"
+    // this.domain = "https://api.mypokadot.com/pp/"
+    this.domain = "http://localhost:8080/pp/"
     this.refreshToken = "";
     this.token = "";
   }
@@ -19,7 +19,7 @@ class BackendManager {
   }
 
   updateToken() {
-    return fetch('https://api.mypokadot.com/pp/users/refresh', {
+    return fetch(this.domain + 'users/refresh', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

@@ -85,6 +85,7 @@ class CheckoutModal extends React.Component {
   }
 
   createDonation() {
+    this.props.showToast("Processing Payment");
     if (this.props.donateType == "dm") {
       if (this.props.isLoggedIn) {
         BackendManager.makeQuery('donations/create', JSON.stringify({
@@ -97,7 +98,6 @@ class CheckoutModal extends React.Component {
         .then(data => {
           if (data.success) {
             this.props.showToast("Thanks!");
-            this.props.finishCheckoutModal();
           }
         });
       } else {
@@ -110,7 +110,6 @@ class CheckoutModal extends React.Component {
         .then(data => {
           if (data.success) {
             this.props.showToast("Thanks!");
-            this.props.finishCheckoutModal();
           }
         });
       }
@@ -126,9 +125,8 @@ class CheckoutModal extends React.Component {
         }))
         .then(data => {
           if (data.success) {
-            this.props.showToast("Sent!");
+            this.props.showToast("Thanks!");
             this.props.fetchComments(this.props.currentStory.id);
-            this.props.finishCheckoutModal();
           }
         });
       } else {
@@ -142,13 +140,13 @@ class CheckoutModal extends React.Component {
         }))
         .then(data => {
           if (data.success) {
-            this.props.showToast("Sent!");
+            this.props.showToast("Thanks!");
             this.props.fetchComments(this.props.currentStory.id);
-            this.props.finishCheckoutModal();
           }
         });
       }
     }
+    this.props.finishCheckoutModal();
   }
 
   handleCardNumberChange(e) {

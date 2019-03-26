@@ -130,19 +130,19 @@ class Comment extends React.Component {
   renderSvg(donation) {
     if (donation < 100) {
       return (
-        <img style={smallSvgStyle} src={"./images/coin2.svg"}/>
+        <img style={smallSvgStyle} src={"../../../../../../images/coin2.svg"}/>
       )
     } else if (donation < 1000) {
       return (
-        <img style={mediumSvgStyle} src={"./images/coin1.svg"}/>
+        <img style={mediumSvgStyle} src={"../../../../../../images/coin1.svg"}/>
       );
     } else if (donation < 5000) {
       return (
-        <img style={bigSvgStyle} src={"./images/coin3.svg"}/>
+        <img style={bigSvgStyle} src={"../../../../../../images/coin3.svg"}/>
       );
     } else {
       return (
-        <img style={superBigSvgStyle} src={"./images/ruby.svg"}/>
+        <img style={superBigSvgStyle} src={"../../../../../../images/ruby.svg"}/>
       );
     }
   }

@@ -89,9 +89,7 @@ class DonateModal extends Component {
   }
 
   handleDoneClick() {
-    var newMessage = "(Donated $" + this.state.amount + ") " + this.state.note;
-    this.props.sendNote(newMessage, this.state.email);
-    this.props.setDonation(this.state.amount);
+    this.props.sendNote(this.state.note, this.state.email, this.state.amount);    
     if (!this.props.isLoggedIn) {
       this.props.setDonationName(this.state.name);
     }

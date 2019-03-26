@@ -11,7 +11,7 @@ class LoadingModal extends Component {
   render() {
 		return (
       <div>
-        <h2 style={titleStyle}>{"Loading... Give us one sec!"}</h2>
+        <h2 style={titleStyle}>{"Uploading... Give us one sec!"}</h2>
       </div>
     )
   }

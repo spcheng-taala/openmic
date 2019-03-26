@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, NavLink, BrowserRouter, Link,
-  HashRouter } from 'react-router-dom'
+  HashRouter, Switch, Redirect } from 'react-router-dom';
 import { withRouter } from "react-router-dom";
 import { Container, Row } from 'react-grid-system';
 import PropTypes from 'prop-types';
@@ -41,6 +41,7 @@ import PaymentsPage from '../payment/PaymentsPage.js';
 import CheckoutPage from '../payment/CheckoutPage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
+import ClipAudioPage from '../story/ClipAudioPage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
@@ -143,6 +144,20 @@ const fabIconStyle = {
   height: 30,
 }
 
+const heartFabStyle = {
+  backgroundColor: "#D14D85",
+  float: "right",
+  marginRight: 20,
+	width: 50,
+	height: 50,
+}
+
+
+const heartIconStyle = {
+	width: 50,
+	height: 50,
+}
+
 const styles = theme => ({
 	main: {
 		overflowY: 'hidden',
@@ -229,26 +244,6 @@ const styles = theme => ({
 class MainPage extends React.Component {
 
   componentDidMount() {
-    BackendManager.makeQuery('public/stories/feed/type', JSON.stringify({
-      type: 0,
-    }))
-    .then(data => {
-      UserManager.funnyStories = data.stories;
-      this.setState({
-        funnyStories: data.stories
-      });
-    });
-
-    BackendManager.makeQuery('public/stories/feed/type', JSON.stringify({
-      type: 1,
-    }))
-    .then(data => {
-      UserManager.seriousStories = data.stories;
-      this.setState({
-        seriousStories: data.stories
-      });
-    });
-
 		var id = localStorage.getItem('id');
 		if (id != null) {
 			this.setState({
@@ -274,8 +269,47 @@ class MainPage extends React.Component {
         this.fetchDonations();
 				this.fetchMessages();
         this.fetchStripeAccount();
+				this.fetchFollowing(UserManager.id);
+				BackendManager.makeQuery('stories/following/count', JSON.stringify({
+					user_id: UserManager.id,
+				}))
+		    .then(data => {
+					if (data.success) {
+						this.setState({
+			        followingStoriesCount: data.count.count,
+			      });
+					}
+		    });
+
+		    BackendManager.makeQuery('stories/following', JSON.stringify({
+					user_id: UserManager.id,
+				}))
+		    .then(data => {
+					console.log(data);
+					if (data.success) {
+						this.setState({
+			        followingStories: data.stories
+			      });
+					}
+		    });
 			});
 		}
+
+		BackendManager.makeQuery('public/stories/feed/count', JSON.stringify({}))
+    .then(data => {
+      UserManager.allStories = data.stories;
+      this.setState({
+        allStoriesCount: data.count.count,
+      });
+    });
+
+    BackendManager.makeQuery('public/stories/feed', JSON.stringify({}))
+    .then(data => {
+      UserManager.allStories = data.stories;
+      this.setState({
+        allStories: data.stories
+      });
+    });
   }
 
   constructor(props) {
@@ -307,8 +341,11 @@ class MainPage extends React.Component {
       signUpText: "Have an account? Login",
       playing: false,
       currentStory: UserManager.currentStory,
-      seriousStories: UserManager.seriousStories,
-      funnyStories: UserManager.funnyStories,
+			emotes: {},
+			allStoriesCount: 0,
+      allStories: UserManager.allStories,
+			followingStoriesCount: 0,
+      followingStories: UserManager.followingStories,
 			userStories: [],
 			notifications: [],
 			hasNewNotifications: false,
@@ -318,6 +355,7 @@ class MainPage extends React.Component {
 			followers: [],
 			totalDonations: 0,
 			donations: [],
+			commentDonations: [],
 			messages: [],
       comments: [],
       currentMessageName: "",
@@ -370,8 +408,12 @@ class MainPage extends React.Component {
     this.renderLogoutDrawerPanel = this.renderLogoutDrawerPanel.bind(this);
     this.handleStoryClick = this.handleStoryClick.bind(this);
 		this.handleUserClick = this.handleUserClick.bind(this);
+		this.handleEmoteClick = this.handleEmoteClick.bind(this);
+		this.fetchMoreAllStories = this.fetchMoreAllStories.bind(this);
+		this.fetchMoreFollowingStories = this.fetchMoreFollowingStories.bind(this);
     this.fetchStory = this.fetchStory.bind(this);
 		this.fetchUser = this.fetchUser.bind(this);
+		this.playPreview = this.playPreview.bind(this);
     this.fetchStripeAccount = this.fetchStripeAccount.bind(this);
     this.handlePaymentSetup = this.handlePaymentSetup.bind(this);
 		// this.fetchPaymentSetup = this.fetchPaymentSetup.bind(this);
@@ -383,6 +425,7 @@ class MainPage extends React.Component {
     this.fetchDonations = this.fetchDonations.bind(this);
 		this.fetchMessages = this.fetchMessages.bind(this);
     this.fetchComments = this.fetchComments.bind(this);
+		this.handleFollowClick = this.handleFollowClick.bind(this);
 		this.checkNewNotifications = this.checkNewNotifications.bind(this);
 		this.uploadFile = this.uploadFile.bind(this);
 		this.setDonation = this.setDonation.bind(this);
@@ -673,7 +716,42 @@ class MainPage extends React.Component {
 		this.fetchStory(storyId);
   }
 
+	fetchMoreAllStories(score) {
+		BackendManager.makeQuery('public/stories/feed/cont', JSON.stringify({
+      score: score,
+    }))
+    .then(data => {
+      if (data.success) {
+        var allStories = this.state.allStories;
+				allStories = allStories.concat(data.stories);
+				this.setState({
+					allStories: allStories,
+				});
+      }
+    });
+	}
+
+	fetchMoreFollowingStories(storyId) {
+		BackendManager.makeQuery('stories/following/cont', JSON.stringify({
+			user_id: UserManager.id,
+      story_id: storyId,
+    }))
+    .then(data => {
+      if (data.success) {
+        var followingStories = this.state.followingStories;
+				followingStories = followingStories.concat(data.stories);
+				this.setState({
+					followingStories: followingStories,
+				});
+      }
+    });
+	}
+
   fetchStory(id) {
+		var needToStartOver = true;
+		if (this.state.currentStory != null && this.state.currentStory.id == id) {
+			needToStartOver = false;
+		}
     BackendManager.makeQuery('public/stories/feed/story', JSON.stringify({
       story_id: id,
     }))
@@ -686,20 +764,47 @@ class MainPage extends React.Component {
 
         UserManager.currentStory = data.story;
         this.setState({currentStory: data.story, playing: true});
-
-				BackendManager.makeQuery('public/stories/feed/story/listen', JSON.stringify({
-		      story_id: id,
-		    })).then(data => {});
 				this.fetchUser(data.story.user_id);
         this.fetchComments(data.story.id);
+				this.fetchEmotes(data.story.id);
         if (this.state.isPlaying) {
           const { soundCloudAudio } = this.props;
+					if (needToStartOver) {
+						soundCloudAudio.stop();
+					}
           var streamUrl = data.story.url
           soundCloudAudio.play({ streamUrl });
         }
       }
     });
   }
+
+	fetchEmotes(storyId) {
+		BackendManager.makeQuery('public/stories/emotes', JSON.stringify({
+      story_id: storyId,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+					emotes: data.emotes,
+				});
+			}
+    });
+	}
+
+	playPreview(story) {
+		const { soundCloudAudio } = this.props;
+		soundCloudAudio.stop();
+		var streamUrl = story.url
+		soundCloudAudio.play({ streamUrl })
+		if (story.duration > 120) {
+			soundCloudAudio.on('timeupdate', function() {
+	      if (soundCloudAudio.audio.currentTime >= 120) {
+	        soundCloudAudio.stop();
+	      }
+			})
+		}
+	}
 
   playPauseSound() {
     const { soundCloudAudio } = this.props;
@@ -748,8 +853,23 @@ class MainPage extends React.Component {
       }
 
 			this.fetchTotalListenedTo(id);
-			this.fetchFollowing(id);
-			this.fetchFollowers(id);
+    });
+	}
+
+	handleEmoteClick(storyId, time) {
+		var userId = null;
+		if (this.state.isLoggedIn) {
+			userId = UserManager.id;
+		}
+		BackendManager.makeQuery('public/stories/emote/create', JSON.stringify({
+      story_id: storyId,
+			user_id: UserManager.id,
+			time: time,
+    }))
+    .then(data => {
+      if (data.success) {
+
+      }
     });
 	}
 
@@ -763,12 +883,12 @@ class MainPage extends React.Component {
 					user: data.info,
         });
 				this.handleUserClick(
-					this.state.user.id,
-					this.state.user.first_name,
-					this.state.user.last_name,
-					this.state.user.username,
-					this.state.user.profile_picture,
-					this.state.user.bio,
+					data.info.id,
+					data.info.first_name,
+					data.info.last_name,
+					data.info.username,
+					data.info.profile_picture,
+					data.info.bio,
 				);
       }
     });
@@ -792,6 +912,7 @@ class MainPage extends React.Component {
       user_id: id,
     }))
     .then(data => {
+			console.log(data);
       if (data.success) {
         this.setState({
 					following: data.friends,
@@ -873,7 +994,18 @@ class MainPage extends React.Component {
     .then(data => {
       if (data.success) {
         this.setState({
-					totalDonations: data.total_donations,
+					totalDonations: this.state.totalDonations + data.total_donations,
+        });
+      }
+    });
+
+		BackendManager.makeQuery('comments/donations/total', JSON.stringify({
+      user_id: UserManager.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+					totalDonations: this.state.totalDonations + data.total_donations,
         });
       }
     });
@@ -890,6 +1022,16 @@ class MainPage extends React.Component {
         });
       }
     });
+		BackendManager.makeQuery('comments/donations', JSON.stringify({
+      user_id: UserManager.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+					commentDonations: data.comments,
+        });
+      }
+    });
   }
 
 	fetchMessages() {
@@ -897,7 +1039,6 @@ class MainPage extends React.Component {
       user_id: UserManager.id,
     }))
     .then(data => {
-      console.log(data);
       if (data.success) {
         this.setState({
 					messages: data.messages,
@@ -906,14 +1047,50 @@ class MainPage extends React.Component {
     });
 	}
 
-	sendNote(message, email, name) {
+	handleFollowClick(userId, profilePicture, firstName, lastName, bio, status) {
+		BackendManager.makeQuery('friends/update/status', JSON.stringify({
+      user_id: userId,
+			friend_id: UserManager.id,
+			status: status,
+			first_name: UserManager.firstName,
+			last_name: UserManager.lastName,
+    }))
+    .then(data => {
+      if (data.success) {
+				var following = this.state.following;
+				if (status == 1) {
+					following.push(
+						{
+							id: userId,
+							first_name: firstName,
+							last_name: lastName,
+							bio: bio,
+							profile_picture: profilePicture,
+						}
+					);
+				} else {
+					for (var i = 0; i < following.length; i++) {
+						if (following[i].id == userId) {
+							following.splice(i, 1);
+						}
+					}
+				}
+        this.setState({
+					following: following,
+        });
+      }
+    });
+	}
+
+	sendNote(message, email, name, donation) {
 		if (this.state.isLoggedIn) {
 			BackendManager.makeQuery('messages/new/ids', JSON.stringify({
 	      sender_id: UserManager.id,
         sender_name: UserManager.firstName + " " + UserManager.lastName,
         sender_email: email,
 				receiver_id: this.state.currentStory.user_id,
-				message: message
+				message: message,
+				donation: donation,
 	    }))
 	    .then(data => {
 	      if (data.success) {
@@ -925,7 +1102,8 @@ class MainPage extends React.Component {
 	      sender_email: email,
         sender_name: name,
 				receiver_id: this.state.currentStory.user_id,
-				message: message
+				message: message,
+				donation: donation
 	    }))
 	    .then(data => {
 	      if (data.success) {
@@ -967,15 +1145,11 @@ class MainPage extends React.Component {
         const formData = new FormData();
         formData.append('file', file);
         axios.post(`https://api.mypokadot.com/pp/upload/`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
         }).then(data => {
     			this.closeLoadingModal();
     			if (data.data.success) {
     				var duration = (minutes*60) + seconds;
     				var storyUrl = url + data.data.title.split(' ').join('+');
-            console.log(storyUrl);
     				BackendManager.makeQuery('stories/create', JSON.stringify({
     					title: title,
     					url: storyUrl,
@@ -1056,10 +1230,11 @@ class MainPage extends React.Component {
 
   render() {
     const { classes } = this.props;
+		const { soundCloudAudio } = this.props;
     const content = this.props.content;
 
     return (
-      <HashRouter className={classes.main}>
+      <BrowserRouter className={classes.main}>
         <div className={classes.main}>
 					{this.renderAudio()}
           <Modal
@@ -1212,11 +1387,11 @@ class MainPage extends React.Component {
                 <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"} backgroundColor={'transparent'}/></NavLink>
                 <NavLink exact to="/" className={classes.titleText}>OpenMic</NavLink>
                 <NavLink to="/about" className={classes.flex}>About</NavLink>
-
+								<a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a>
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.id}>
-											<img style={logoStyle} src={"./images/profile.png"} backgroundColor={'transparent'}/>
+											<img style={logoStyle} src={"../../../../../../images/profile.png"} backgroundColor={'transparent'}/>
 										</NavLink>
 									</div> :
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
@@ -1246,14 +1421,21 @@ class MainPage extends React.Component {
             <main className={classes.content}>
               <div className={classes.toolbar} />
                 <div className="content">
+								<Switch>
                   <Route
                     exact path='/'
                     render={(props) =>
                       <FeedPage {...props}
-                        seriousStories={this.state.seriousStories}
-                        funnyStories={this.state.funnyStories}
+												isLoggedIn={this.state.isLoggedIn}
+												allStoriesCount={this.state.allStoriesCount}
+                        allStories={this.state.allStories}
+												followingStoriesCount={this.state.followingStoriesCount}
+                        followingStories={this.state.followingStories}
 												openLoginModal={this.openModal}
                         handleStoryClick={this.handleStoryClick}
+												playPreview={this.playPreview}
+												fetchMoreAllStories={this.fetchMoreAllStories}
+												fetchMoreFollowingStories={this.fetchMoreFollowingStories}
                       />}
                   />
                   <Route path="/about" component={AboutPage}/>
@@ -1268,6 +1450,7 @@ class MainPage extends React.Component {
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route path="/checkout" component={CheckoutPage}/>
+									<Route path="/clip" component={ClipAudioPage}/>
 									<Route
                     exact path='/donations'
                     render={(props) =>
@@ -1303,6 +1486,7 @@ class MainPage extends React.Component {
                     render={(props) =>
                       <StoryPage
                         {...props} handleStoryClick={this.handleStoryClick}
+												soundCloudAudio={soundCloudAudio}
                         isLoggedIn={this.state.isLoggedIn}
                         currentStory={this.state.currentStory}
                         fetchStory={this.fetchStory}
@@ -1312,6 +1496,7 @@ class MainPage extends React.Component {
   											handleUserClick={this.handleUserClick}
   											handleDonateClick={this.openDonateModal}
                         openCheckoutModal={this.openCheckoutModal}
+												handleFollowClick={this.handleFollowClick}
   											stories={this.state.userStories}
                         user={this.state.user}
   											fetchUser={this.fetchUser}
@@ -1322,7 +1507,11 @@ class MainPage extends React.Component {
                         setParentComment={this.setParentComment}
                         setCommentType={this.setCommentType}
                         playPauseSound={this.playPauseSound}
+												totalListenedTo={this.state.totalListenedTo}
                         isPlaying={this.state.isPlaying}
+												following={this.state.following}
+												emotes={this.state.emotes}
+												handleEmoteClick={this.handleEmoteClick}
                       />}
                   />
                   <Route
@@ -1337,6 +1526,8 @@ class MainPage extends React.Component {
 											followers={this.state.followers}
                     />}
                   />
+									<Redirect from='*' to='/' />
+									</Switch>
                 </div>
             </main>
           </div>
@@ -1346,13 +1537,10 @@ class MainPage extends React.Component {
 								<img style={fabIconStyle} src='../../../../../images/plus.png'/>
               </Fab>
             </div>
-            <div className="footer-sound">
-              {this.renderSoundPlayer()}
-            </div>
           </div>
 					<Notifications />
         </div>
-      </HashRouter>
+      </BrowserRouter>
     );
   }
 }

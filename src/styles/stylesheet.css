@@ -251,6 +251,21 @@ h1, h2, h3, h4, p, span {
   border: none;
 }
 
+.button-preview {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-left: 70px;
+  padding: 10px 30px;
+  background: #3ABCBC; /* For browsers that do not support gradients */
+  border-radius: 40px;
+  color: white;
+  font-weight: 400;
+  font-size: 20px;
+  font-family: "Lato";
+  border: none;
+}
+
 .button-rounded-purple {
   position: relative;
   margin: auto;
@@ -264,6 +279,82 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+}
+
+.button-rounded-purple-empty {
+  position: relative;
+  margin: auto;
+  display: block;
+  margin-top: 30px;
+  padding: 10px 30px;
+  background-color: white;
+  color: #6175E0;
+  border: 2px solid #6175E0;
+  border-radius: 40px;
+  font-weight: 400;
+  font-size: 20px;
+  font-family: "Lato";
+
+}
+
+.center-cropped {
+  margin-left: 20px;
+  object-fit: cover; /* Do not scale the image */
+  object-position: center; /* Center the image within the element */
+  height: 150px;
+  width: 150px;
+}
+
+.instagram-box {
+  object-fit: cover; /* Do not scale the image */
+  object-position: center; /* Center the image within the element */
+  height: 300px;
+  width: 300px;
+}
+
+.preview-text {
+  position: absolute;
+  text-align: center;
+  color: white;
+  font-size: 20px;
+  font-family: "Lato";
+  top: 0;
+  left: 0;
+  width: 150px;
+  height: 90px;
+  padding-top: 60px;
+  display: none;
+}
+
+.preview-box {
+  position: relative;
+  height: 150px;
+  width: 150px;
+}
+
+.preview-box:hover .preview-text {
+  display: block;
+  margin-left: 20px;
+  background-color: #000000;
+  opacity: 0.5;
+}
+/* Set the image to fill its parent and make transparent */
+.center-cropped img {
+  min-height: 100%;
+  min-width: 100%;
+  /* IE 8 */
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  /* IE 5-7 */
+  filter: alpha(opacity=0);
+  /* modern browsers */
+  opacity: 0;
+}
+
+.filler {
+  transition: width .2s ease-in;
+  height: 70px;
+  padding-top: 10px;
+  background: #3ABCBC;
 }
 
 .button-rounded-light {
@@ -458,6 +549,132 @@ hr {
   width: 13.5%;
 }
 
+svg#fish {
+  top: 5em;
+}
+/* Fish Animation */
+svg.fish{
+  overflow:visible;
+}
+
+@-webkit-keyframes swim
+{
+	0% {margin-left: -235px}
+	90% {margin-left: 100%;}
+	100% {margin-left: 100%;}
+}
+
+@keyframes swim
+{
+	0% {margin-left: -235px}
+	70% {margin-left: 100%;}
+	100% {margin-left: 100%;}
+}
+
+.fish{
+	width: 100px;
+	height: 100px;
+	margin-left: -235px;
+	position: absolute;
+	animation: swim 20s;
+	-webkit-animation: swim 20s;
+	animation-iteration-count: 1;
+	-webkit-animation-iteration-count: 1;
+	animation-timing-function: linear;
+	-webkit-animation-timing-function: linear;
+}
+
+#fish1,
+#fish2,
+#fish3,
+#fish4,
+#fish5,
+#fish6 {
+  fill:#528484;
+
+}
+
+/*#fish2{
+	animation-delay: 0.5s;
+	-webkit-animation-delay: 0.5s;
+}
+
+img #n {
+  animation-delay: 0.5s;
+	-webkit-animation-delay: 0.5s;
+}
+
+#fish3{
+	animation-delay: 0.2s;
+	-webkit-animation-delay: 0.2s;
+}
+
+#fish4{
+	animation-delay: 0.4s;
+	-webkit-animation-delay: 0.4s;
+}
+
+#fish5{
+	animation-delay: 0.1s;
+	-webkit-animation-delay: 0.1s;
+}
+
+#fish6{
+	animation-delay: 0.3s;
+	-webkit-animation-delay: 0.3s;
+}*/
+
+
+@-moz-keyframes bounce {
+  0%, 50%, 100% {
+    -moz-transform: translateY(0);
+    transform: translateY(0);
+  }
+  25% {
+    -moz-transform: translateY(-5px);
+    transform: translateY(-5px);
+  }
+  75% {
+    -moz-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+}
+@-webkit-keyframes bounce {
+  0%, 50%, 100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+  25% {
+    -webkit-transform: translateY(-5px);
+    transform: translateY(-5px);
+  }
+  75% {
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+}
+@keyframes bounce {
+  0%, 50%, 100% {
+    -moz-transform: translateY(0);
+    -ms-transform: translateY(0);
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+  25% {
+    -moz-transform: translateY(-5px);
+    -ms-transform: translateY(-5px);
+    -webkit-transform: translateY(-5px);
+    transform: translateY(-5px);
+  }
+  75% {
+    -moz-transform: translateY(-3px);
+    -ms-transform: translateY(-3px);
+    -webkit-transform: translateY(-3px);
+    transform: translateY(-3px);
+  }
+}
+
+
 .username {
   font-weight: 700;
   opacity: 1;
@@ -466,46 +683,6 @@ hr {
 .message {
   font-weight: 400;
   opacity: 0.8;
-}
-
-.nfl-positions {
-  display: flex;
-  flex-direction: row;
-  left: -50%;
-  position: relative;
-  float:right;
-}
-
-.nfl-positions ul {
-  position:relative;
-  left: 50%;
-  width: 100%;
-}
-
-.nfl-position-selected {
-  float: left;
-  font-family: "Lato";
-  font-weight: 600;
-  font-size: 20px;
-  text-align: center;
-  cursor: pointer;
-  color: #6068C1;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin-top: 10px;
-}
-
-.nfl-position {
-  float: left;
-  font-family: "Lato";
-  font-weight: 300;
-  font-size: 20px;
-  text-align: center;
-  cursor: pointer;
-  color: #999999;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin-top: 10px;
 }
 
 .about-bg {
@@ -520,12 +697,12 @@ hr {
 }
 
 .circular-image {
-    position: relative;
-    top: 50%;
-    transform: translateY(+50%);
-    height: 100px;
-    width: 100px;
-    border-radius: 50%;
+  position: relative;
+  top: 50%;
+  transform: translateY(+50%);
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
 }
 
 .profile {

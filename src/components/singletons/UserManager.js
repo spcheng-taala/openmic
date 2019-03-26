@@ -18,8 +18,9 @@ class UserManager {
         profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/dylanbrody.jpg",
       },
     };
-    this.funnyStories = []
-    this.seriousStories = []
+    this.allStories = []
+    this.followingStories = []
+    this.following = [];
   }
 }
 
