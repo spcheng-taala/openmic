@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
+import WaveSurfer from 'wavesurfer.js';
 import { Link } from 'react-router-dom'
 import Modal from 'react-modal';
 import classNames from 'classnames';
@@ -25,6 +26,7 @@ import { withCustomAudio } from 'react-soundplayer/addons';
 import { TwitterShareButton, TwitterIcon, FacebookShareButton, FacebookIcon } from 'react-share';
 // some track meta information
 const trackTitle = 'Immigration and the wall';
+var wavesurfer = null;
 
 const logoContainerStyle = {
   marginTop: -20,
@@ -96,7 +98,6 @@ var containerStyle = {
 }
 
 var storyImgStyle = {
-  marginTop: 100,
   height: 200,
 }
 
@@ -217,50 +218,46 @@ class StoryPage extends Component {
     window.scrollTo(0, 0);
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
+    wavesurfer = WaveSurfer.create({
+      container: '#waveform',
+      waveColor: 'violet',
+      progressColor: 'purple',
+      scrollParent: false,
+      cursorWidth: 0,
+      barHeight: 8,
+      barWidth: 3,
+    });
     this.props.fetchStory(this.props.match.params.id);
     this.setState({
       duration: this.props.soundCloudAudio.duration,
     });
-    var self = this;
-    var hasListened = false;
-    this.props.soundCloudAudio.on('timeupdate', function() {
-      if (self.state.duration == 0) {
-        self.setState({
-          duration: self.props.currentStory.duration,
-        })
-      }
-      if (!hasListened) {
-        BackendManager.makeQuery('public/stories/feed/story/listen', JSON.stringify({
-          story_id: self.props.currentStory.id,
-        })).then(data => {
-          console.log(data);
-        });
-        hasListened = true;
-      }
-      self.setState({
-        currentTime: self.props.soundCloudAudio.audio.currentTime,
-      });
-      if (Math.floor(self.props.soundCloudAudio.audio.currentTime) in self.props.emotes && Math.floor(self.props.soundCloudAudio.audio.currentTime) > self.state.nextSecond) {
+    wavesurfer.load(this.props.currentStory.url);
+    wavesurfer.on('seek', function (progress) {
+      var currentTime = Math.floor(progress * self.props.currentStory.duration);
+      if (currentTime in self.props.emotes && currentTime > self.state.nextSecond) {
         var emojis = [];
-        for (var i = 0; i < self.props.emotes[Math.floor(self.props.soundCloudAudio.audio.currentTime)].length; i++) {
-          if (self.props.emotes[Math.floor(self.props.soundCloudAudio.audio.currentTime)][i].profile_picture == null) {
+        for (var i = 0; i < self.props.emotes[currentTime].length; i++) {
+          if (self.props.emotes[currentTime][i].profile_picture == null) {
             emojis.push({profilePicture: '../../../../../images/heart_emoji.png',
               xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-              time: self.props.soundCloudAudio.audio.currentTime});
+              time: currentTime});
           } else {
-            emojis.push({profilePicture: self.props.emotes[Math.floor(self.props.soundCloudAudio.audio.currentTime)][i].profile_picture,
+            emojis.push({profilePicture: self.props.emotes[currentTime][i].profile_picture,
               xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-              time: self.props.soundCloudAudio.audio.currentTime});
+              time: currentTime});
           }
         }
         var currentEmojis = self.state.currentEmojis;
         currentEmojis.push({emojis: emojis});
         self.setState({
           currentEmojis: currentEmojis,
-          nextSecond: Math.floor(self.props.soundCloudAudio.audio.currentTime) + 1,
+          nextSecond: currentTime + 1,
+          progress: progress,
         });
       }
     });
+    var self = this;
+    var hasListened = false;
   }
 
   resize() {
@@ -284,6 +281,7 @@ class StoryPage extends Component {
       currentStory: this.props.currentStory,
       comment: "",
       isMobile: false,
+      progress: 0,
       nextSecond: 0,
       emojis: {
         "1": [
@@ -339,7 +337,14 @@ class StoryPage extends Component {
   handleStoryClick(story) {
     this.props.history.push('/story/' + story.id);
     this.props.handleStoryClick(story.id);
-    this.props.playPauseSound();
+    if (wavesurfer != null) {
+      if (!wavesurfer.isPlaying()) {
+        wavesurfer.seekTo(this.state.progress);
+        wavesurfer.play();
+      } else {
+        wavesurfer.pause();
+      }
+    }
   }
 
   handleUserClick(id) {
@@ -542,7 +547,7 @@ class StoryPage extends Component {
     if (this.state.isMobile) {
       return (
         <div>
-          <div style={{width: '100%', textAlign: 'center', marginTop: 100}}>
+          <div style={{width: '100%', textAlign: 'center'}}>
             <img style={{display: 'inline-block', height: 200, marginBottom: 20}} src={this.props.currentStory.profile_picture} backgroundColor={'transparent'}/>
           </div>
           <Container>
@@ -563,7 +568,7 @@ class StoryPage extends Component {
           <Row>
             <img style={storyImgStyle} src={this.props.currentStory.profile_picture} backgroundColor={'transparent'}/>
             <Col>
-              <div style={{marginTop: 100}}>
+              <div>
                 <a style={storyTextStyle} onClick={() => this.handleUserClick(this.props.currentStory.user_id)} activeClassName="active">
                   {this.props.currentStory.first_name + " " + this.props.currentStory.last_name}
                 </a>
@@ -636,13 +641,19 @@ class StoryPage extends Component {
   }
 
   renderPlayPause() {
-    if (this.props.isPlaying) {
-      return (
-        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
-      );
+    if (wavesurfer != null) {
+      if (wavesurfer.isPlaying()) {
+        return (
+          <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
+        );
+      } else {
+        return (
+          <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
+        );
+      }
     } else {
       return (
-        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
+        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
       );
     }
   }
@@ -694,10 +705,9 @@ class StoryPage extends Component {
   render() {
     const classes = useStyles();
 		return (
-      <div>        
+      <div>
         <CardActionArea style={storyContainerStyle} onClick={() => this.handleStoryClick(this.props.currentStory)}>
           <Paper style={storyPaperStyle}>
-            <div className='filler' style={{ width: this.getPercentage(), position: "absolute" }}></div>
             <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
               <Row>
                 {this.renderPlayPause()}
@@ -710,6 +720,7 @@ class StoryPage extends Component {
             </Container>
           </Paper>
         </CardActionArea>
+        <div id="waveform" style={{ margin: 50 }}></div>
         {this.renderEmojis()}
         {this.renderProfile()}
         <Divider style={{margin: 10}}/>

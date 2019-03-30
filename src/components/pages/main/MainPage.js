@@ -766,15 +766,7 @@ class MainPage extends React.Component {
         this.setState({currentStory: data.story, playing: true});
 				this.fetchUser(data.story.user_id);
         this.fetchComments(data.story.id);
-				this.fetchEmotes(data.story.id);
-        if (this.state.isPlaying) {
-          const { soundCloudAudio } = this.props;
-					if (needToStartOver) {
-						soundCloudAudio.stop();
-					}
-          var streamUrl = data.story.url
-          soundCloudAudio.play({ streamUrl });
-        }
+				this.fetchEmotes(data.story.id);        
       }
     });
   }
@@ -1450,7 +1442,13 @@ class MainPage extends React.Component {
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route path="/checkout" component={CheckoutPage}/>
-									<Route path="/clip" component={ClipAudioPage}/>
+									<Route
+										exact path='/clip'
+										render={(props) =>
+											<ClipAudioPage {...props}
+												currentStory={this.state.currentStory}
+											/>}
+									/>
 									<Route
                     exact path='/donations'
                     render={(props) =>
