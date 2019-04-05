@@ -489,6 +489,16 @@ hr {
   z-index: 5;
 }
 
+.footer-clip {
+  position:absolute;
+  width:300px;
+  height:300px;
+  bottom:50px;
+  right:25%;
+  left:50%;
+  margin-left:-150px;
+}
+
 .fab {
   position:fixed;
   bottom:0;

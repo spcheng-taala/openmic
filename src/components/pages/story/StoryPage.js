@@ -24,6 +24,7 @@ import Comments from './components/Comments.js';
 import { PlayButton, PrevButton, NextButton, Progress, Timer, VolumeControl } from 'react-soundplayer/components';
 import { withCustomAudio } from 'react-soundplayer/addons';
 import { TwitterShareButton, TwitterIcon, FacebookShareButton, FacebookIcon } from 'react-share';
+import ClipItem from './components/ClipItem.js';
 // some track meta information
 const trackTitle = 'Immigration and the wall';
 var wavesurfer = null;
@@ -207,9 +208,18 @@ const heartIconStyle = {
   width: 40,
   height: 40,
 }
+
 const iconStyle = {
 	width: 30,
 	height: 30,
+}
+
+const clipStyle = {
+  width: 70,
+  height: 70,
+  display: 'inline-block',
+  marginBottom: 50,
+  left: '50%',
 }
 
 class StoryPage extends Component {
@@ -218,22 +228,43 @@ class StoryPage extends Component {
     window.scrollTo(0, 0);
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
+    var ctx = document.createElement('canvas').getContext('2d');
+    var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+    linGrad.addColorStop(0.5, 'rgba(168, 180, 236, 1.000)');
+    linGrad.addColorStop(0.5, 'rgba(224, 228, 248, 1.000)');
+    var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+    progressGrad.addColorStop(0.5, 'rgba(39, 64, 178, 1.000)');
+    progressGrad.addColorStop(0.5, 'rgba(98, 120, 221, 1.000)');
     wavesurfer = WaveSurfer.create({
       container: '#waveform',
-      waveColor: 'violet',
-      progressColor: 'purple',
+      waveColor: linGrad,
+      progressColor: progressGrad,
       scrollParent: false,
       cursorWidth: 0,
-      barHeight: 8,
-      barWidth: 3,
+      barHeight: 1,
+      barWidth: 2,
+      barGap: 2,
     });
-    this.props.fetchStory(this.props.match.params.id);
-    this.setState({
-      duration: this.props.soundCloudAudio.duration,
+    BackendManager.makeQuery('public/stories/feed/story', JSON.stringify({
+      story_id: this.props.match.params.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        UserManager.currentStory = data.story;
+        this.setState({
+          currentStory: UserManager.currentStory
+        });
+        wavesurfer.load(data.story.url);
+      }
     });
-    wavesurfer.load(this.props.currentStory.url);
-    wavesurfer.on('seek', function (progress) {
-      var currentTime = Math.floor(progress * self.props.currentStory.duration);
+    var self = this;
+    wavesurfer.on('finish', function() {
+      self.setState({
+        isPlaying: false,
+      });
+    });
+    wavesurfer.on('audioprocess', function(progress) {
+      var currentTime = Math.floor(progress);
       if (currentTime in self.props.emotes && currentTime > self.state.nextSecond) {
         var emojis = [];
         for (var i = 0; i < self.props.emotes[currentTime].length; i++) {
@@ -249,15 +280,62 @@ class StoryPage extends Component {
         }
         var currentEmojis = self.state.currentEmojis;
         currentEmojis.push({emojis: emojis});
+        console.log(progress);
         self.setState({
           currentEmojis: currentEmojis,
           nextSecond: currentTime + 1,
-          progress: progress,
         });
       }
     });
-    var self = this;
     var hasListened = false;
+    BackendManager.makeQuery('clips/story', JSON.stringify({
+      story_id: this.props.match.params.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+					clips: data.clips,
+        });
+
+        var wavesurfers = [];
+        for (var i = 0; i < data.clips.length; i++) {
+          var ctx = document.createElement('canvas').getContext('2d');
+          var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+          linGrad.addColorStop(0.5, 'rgba(200, 194, 210, 1.000)');
+          linGrad.addColorStop(0.5, 'rgba(164, 156, 180, 1.000)');
+          var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+          progressGrad.addColorStop(0.5, 'rgba(255, 255, 255, 1.000)');
+          progressGrad.addColorStop(0.5, 'rgba(226, 224, 231, 1.000)');
+          var wavesurfer = WaveSurfer.create({
+            container: '#waveform-clip' + data.clips[i].id,
+            waveColor: linGrad,
+            progressColor: progressGrad,
+            scrollParent: false,
+            cursorWidth: 0,
+            barHeight: 1,
+            barWidth: 2,
+            barGap: 2,
+          });
+          wavesurfer.load(data.clips[i].url);
+          wavesurfer.on('error', function(error) {
+            console.log(error);
+          });
+          wavesurfer.on('finish', function() {
+            self.setState({
+              currentClip: -1
+            });
+          });
+          wavesurfers.push(wavesurfer);
+        }
+        this.setState({
+          wavesurfers: wavesurfers,
+        });
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    wavesurfer.stop();
   }
 
   resize() {
@@ -281,37 +359,14 @@ class StoryPage extends Component {
       currentStory: this.props.currentStory,
       comment: "",
       isMobile: false,
-      progress: 0,
       nextSecond: 0,
-      emojis: {
-        "1": [
-          {
-            profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/sean@pokadotapp.com_1547082885400.315.jpg"
-          },
-          {
-            profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/sean@pokadotapp.com_1547082885400.315.jpg"
-          }
-        ],
-        "8": [
-          {
-            profile_picture: null,
-          },
-          {
-            profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/houston@pokadotapp.com_1547847860205.741.jpg",
-          },
-          {
-            profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/houston@pokadotapp.com_1547847860205.741.jpg",
-          },
-          {
-            profile_picture: null,
-          },
-          {
-            profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/sean@pokadotapp.com_1547082885400.315.jpg",
-          },
-        ]
-      },
+      emojis: {},
       currentEmojis: [],
       isFollowing: false,
+      clips: [],
+      wavesurfers: [],
+      currentClip: -1,
+      isPlaying: false,
     };
 
     this.handleStoryClick = this.handleStoryClick.bind(this);
@@ -332,16 +387,27 @@ class StoryPage extends Component {
     this.renderEmojis = this.renderEmojis.bind(this);
     this.getDurationStr = this.getDurationStr.bind(this);
     this.handleHeartClick = this.handleHeartClick.bind(this);
+    this.renderClips = this.renderClips.bind(this);
+    this.playClip = this.playClip.bind(this);
+    this.openClip = this.openClip.bind(this);
   }
 
   handleStoryClick(story) {
-    this.props.history.push('/story/' + story.id);
-    this.props.handleStoryClick(story.id);
     if (wavesurfer != null) {
       if (!wavesurfer.isPlaying()) {
-        wavesurfer.seekTo(this.state.progress);
+        for (var i = 0; i < this.state.wavesurfers.length; i++) {
+          if (this.state.wavesurfers[i] != null) {
+            this.state.wavesurfers[i].pause();
+          }
+        }
+        this.setState({
+          isPlaying: true,
+        });
         wavesurfer.play();
       } else {
+        this.setState({
+          isPlaying: false,
+        });
         wavesurfer.pause();
       }
     }
@@ -361,15 +427,15 @@ class StoryPage extends Component {
     if (this.props.isLoggedIn) {
       var status = 1
       for (var i = 0; i < this.props.following.length; i++) {
-        if (this.props.following[i].id == this.props.currentStory.user_id) {
+        if (this.props.following[i].id == this.state.currentStory.user_id) {
           status = -1;
         }
       }
-      this.props.handleFollowClick(this.props.currentStory.user_id,
-        this.props.currentStory.profile_picture,
-        this.props.currentStory.first_name,
-        this.props.currentStory.last_name,
-        this.props.currentStory.bio,
+      this.props.handleFollowClick(this.state.currentStory.user_id,
+        this.state.currentStory.profile_picture,
+        this.state.currentStory.first_name,
+        this.state.currentStory.last_name,
+        this.state.currentStory.bio,
         status,
       );
       this.setState({
@@ -431,16 +497,16 @@ class StoryPage extends Component {
     if (this.props.isLoggedIn) {
       BackendManager.makeQuery('public/comments/create', JSON.stringify({
         donation: 0,
-        story_id: this.props.currentStory.id,
+        story_id: this.state.currentStory.id,
         name: UserManager.firstName + " " + UserManager.lastName,
         email: UserManager.email,
         comment: this.state.comment,
-        title: this.props.currentStory.title,
+        title: this.state.currentStory.title,
       }))
       .then(data => {
         if (data.success) {
           this.props.showToast("Sent!");
-          this.props.fetchComments(this.props.currentStory.id);
+          this.props.fetchComments(this.state.currentStory.id);
           this.setState({
             comment: "",
           });
@@ -457,18 +523,18 @@ class StoryPage extends Component {
     if (this.props.isLoggedIn) {
       BackendManager.makeQuery('public/comments/reply', JSON.stringify({
         donation: 0,
-        story_id: this.props.currentStory.id,
+        story_id: this.state.currentStory.id,
         name: UserManager.firstName + " " + UserManager.lastName,
         email: UserManager.email,
         comment: reply,
-        title: this.props.currentStory.title,
+        title: this.state.currentStory.title,
         parent_comment_id: parentCommentId,
         parent_email: parentEmail,
       }))
       .then(data => {
         if (data.success) {
           this.props.showToast("Sent!");
-          this.props.fetchComments(this.props.currentStory.id);
+          this.props.fetchComments(this.state.currentStory.id);
         }
       });
     } else {
@@ -519,7 +585,7 @@ class StoryPage extends Component {
   renderFollowButton() {
     var isFollowing = this.state.isFollowing;
     for (var i = 0; i < this.props.following.length; i++) {
-      if (this.props.following[i].id == this.props.currentStory.user_id) {
+      if (this.props.following[i].id == this.state.currentStory.user_id) {
         isFollowing = true;
       }
     }
@@ -548,17 +614,17 @@ class StoryPage extends Component {
       return (
         <div>
           <div style={{width: '100%', textAlign: 'center'}}>
-            <img style={{display: 'inline-block', height: 200, marginBottom: 20}} src={this.props.currentStory.profile_picture} backgroundColor={'transparent'}/>
+            <img style={{display: 'inline-block', height: 200, marginBottom: 20}} src={this.state.currentStory.profile_picture} backgroundColor={'transparent'}/>
           </div>
           <Container>
-            <a style={storyTextStyle} onClick={() => this.handleUserClick(this.props.currentStory.user_id)} activeClassName="active">
-              {this.props.currentStory.first_name + " " + this.props.currentStory.last_name}
+            <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.currentStory.user_id)} activeClassName="active">
+              {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
             </a>
             {this.renderFollowButton()}
             <button className='button-rounded-gold' onClick={() => this.openDonateModal()} style={{marginTop: 10, marginLeft: 10}}>
               {"Send a direct message"}
             </button>
-            <p style={{paddingLeft: 20, flex: 1}}>{this.props.currentStory.bio}</p>
+            <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
           </Container>
         </div>
       );
@@ -566,11 +632,11 @@ class StoryPage extends Component {
       return (
         <Container style={{marginBottom: 20}}>
           <Row>
-            <img style={storyImgStyle} src={this.props.currentStory.profile_picture} backgroundColor={'transparent'}/>
+            <img style={storyImgStyle} src={this.state.currentStory.profile_picture} backgroundColor={'transparent'}/>
             <Col>
               <div>
-                <a style={storyTextStyle} onClick={() => this.handleUserClick(this.props.currentStory.user_id)} activeClassName="active">
-                  {this.props.currentStory.first_name + " " + this.props.currentStory.last_name}
+                <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.currentStory.user_id)} activeClassName="active">
+                  {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
                 </a>
                 <Row>
                   {this.renderFollowButton()}
@@ -578,7 +644,7 @@ class StoryPage extends Component {
                     {"Send a direct message"}
                   </button>
                 </Row>
-                <p style={{paddingLeft: 20, flex: 1}}>{this.props.currentStory.bio}</p>
+                <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
                 <Row>
                   <img style={{marginTop: 17, marginLeft: 30, width: 20, height: 20}} src='../../../../../images/ear.png'/>
                   <p style={{color: "#888888"}}>{this.getDurationStr(this.props.totalListenedTo)}</p>
@@ -589,6 +655,20 @@ class StoryPage extends Component {
         </Container>
       );
     }
+  }
+
+  renderClips() {
+    return (
+      <div>
+        <ul>
+          {this.state.clips.map((item, index) => {
+            return (<ClipItem index={index} id={item.id} title={item.title}
+              url={item.url} name={item.first_name} playClip={this.playClip}
+              currentClip={this.state.currentClip} duration={item.duration}/>)
+          })}
+        </ul>
+      </div>
+    );
   }
 
   renderComment() {
@@ -641,25 +721,19 @@ class StoryPage extends Component {
   }
 
   renderPlayPause() {
-    if (wavesurfer != null) {
-      if (wavesurfer.isPlaying()) {
-        return (
-          <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
-        );
-      } else {
-        return (
-          <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
-        );
-      }
-    } else {
+    if (this.state.isPlaying) {
       return (
         <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
+      );
+    } else {
+      return (
+        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
       );
     }
   }
 
   getPercentage() {
-    var percent = 100 * this.state.currentTime/this.props.currentStory.duration;
+    var percent = 100 * this.state.currentTime/this.state.currentStory.duration;
     return percent + "%";
   }
 
@@ -699,7 +773,51 @@ class StoryPage extends Component {
     this.setState({
       currentEmojis: currentEmojis,
     });
-    this.props.handleEmoteClick(this.props.currentStory.id, this.state.currentTime);
+    this.props.handleEmoteClick(this.state.currentStory.id, this.state.currentTime);
+  }
+
+  playClip(index) {
+    if (wavesurfer != null) {
+      if (wavesurfer.isPlaying()) {
+        this.setState({
+          isPlaying: false,
+        });
+        wavesurfer.pause();
+      }
+    }
+    for (var i = 0; i < this.state.wavesurfers.length; i++) {
+      if (this.state.wavesurfers[i] != null && i != index) {
+        this.state.wavesurfers[i].pause();
+      }
+    }
+    if (this.state.wavesurfers[index] != null) {
+      if (this.state.wavesurfers[index].isPlaying()) {
+        this.state.wavesurfers[index].pause();
+        this.setState({
+          currentClip: -1,
+        });
+      } else {
+        this.state.wavesurfers[index].play();
+        this.setState({
+          currentClip: index,
+        });
+      }
+    }
+  }
+
+  openClip() {
+    if (wavesurfer != null) {
+      localStorage.setItem('url', this.state.currentStory.url);
+      localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
+      localStorage.setItem('duration', wavesurfer.getDuration());
+      if (wavesurfer.isPlaying()) {
+        wavesurfer.pause();
+        this.setState({
+          isPlaying: false,
+        });
+      }
+      window.open('/clip');
+    }
   }
 
   render() {
@@ -713,7 +831,7 @@ class StoryPage extends Component {
                 {this.renderPlayPause()}
                 <div>
                   <Typography style={storyTitleStyle}>
-                    {this.props.currentStory.title}
+                    {this.state.currentStory.title}
                   </Typography>
                 </div>
               </Row>
@@ -724,38 +842,16 @@ class StoryPage extends Component {
         {this.renderEmojis()}
         {this.renderProfile()}
         <Divider style={{margin: 10}}/>
-        <p style={{fontSize: 20, textAlign: 'center'}}>{"Chat with " + this.props.currentStory.first_name + " " + this.props.currentStory.last_name + "!"}</p>
+        <p style={{fontSize: 20, textAlign: 'center'}}>{"Clips"}</p>
         {this.renderDonateTextField()}
-        {this.renderComment()}
         <div style={commentStyle}>
-          {this.renderComments()}
+          {this.renderClips()}
         </div>
-        <div className="footer" style={{zIndex: 10}}>
-          <div className={"fab"}
-            style={{position: "absolute", float: "right", marginRight: 35, paddingBottom: 300, cursor: 'pointer'}}
-            onClick={() => this.handleHeartClick()}>
-            <img style={heartIconStyle} src='../../../../../images/heart_filled.png'/>
-          </div>
-          <div className={"fab"} style={{position: "absolute", float: "right", marginRight: 40, paddingBottom: 260, cursor: 'pointer'}}>
-            <TwitterShareButton
-              url={"https://theopenmic.fm/story/" + this.props.currentStory.id}
-              title={this.props.currentStory.title}
-              className="share-button">
-              <TwitterIcon
-                size={32}
-                round />
-            </TwitterShareButton>
-          </div>
-          <div className={"fab"} style={{position: "absolute", float: "right", marginRight: 40, paddingBottom: 220, cursor: 'pointer'}}>
-            <FacebookShareButton
-              url={"https://theopenmic.fm/story/" + this.props.currentStory.id}
-              quote={this.props.currentStory.title}
-              className="share-button">
-              <FacebookIcon
-                size={32}
-                round />
-            </FacebookShareButton>
-          </div>
+        <div style={{position: 'fixed', bottom: 0, zIndex: 10, width: '100%'}}>
+          <Avatar className='footer-clip'
+            style={{cursor: 'pointer', width: 100, height: 100, boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)'}}
+            src='../../../../../images/clip.png'
+            onClick={() => this.openClip()}/>
         </div>
       </div>
     )

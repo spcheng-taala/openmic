@@ -32,55 +32,97 @@ const sliderStyle = {
   margin: 50,
 }
 
+const playPauseButtonStyle = {
+  width: 60,
+  height: 60,
+  paddingLeft: 10,
+  marginBottom: 10,
+}
+
 var wavesurfer = null;
 
 class ClipAudioPage extends Component {
 
   componentDidMount() {
-    wavesurfer = WaveSurfer.create({
-      container: '#waveform',
-      waveColor: 'violet',
-      progressColor: 'purple',
-      scrollParent: false,
-      barWidth: 3,
-    });
-    var self = this;
-    Ciseaux.context = new AudioContext();
-    Ciseaux.from("https://s3-us-west-2.amazonaws.com/pokadotmedia/mbb_part2.mp3").then((tape) => {
-      // edit tape
-      tape = Ciseaux.concat([ tape.slice(0, 180) ]);
+    var url = localStorage.getItem('url');
+    if (url != null) {
+      var clipTime = localStorage.getItem('clip_time');
+      var duration = localStorage.getItem('duration');
+      var startTime = clipTime - 150;
+      if (startTime < 0) {
+        startTime = 0;
+      }
+      
+      var length = 180;
+      if (length > duration) {
+        length = duration;
+      }
 
-      // render the tape to an AudioBuffer
-      return tape.render();
-    }).then((audioBuffer) => {
-      var wavFile = toWav(audioBuffer);
-      var blob = new window.Blob([ new DataView(wavFile) ], {
-        type: 'audio/wav'
-      });
+      var min = 90;
+      if (clipTime - 60 < 0) {
+        min = 0;
+      }
 
-      var url = window.URL.createObjectURL(blob);
+      var max = min + 60;
+      if (max > duration) {
+        max = duration;
+      }
+
       this.setState({
-        url: url,
-      });
-      wavesurfer.load(url);
-      wavesurfer.on('ready', function() {
-        wavesurfer.play();
-      });
-      wavesurfer.on('seek', function (progress) {
-        if (progress < self.state.value.min/180) {
-          wavesurfer.seekTo(self.state.value.min/180);
-        } else if (progress > self.state.value.max/180) {
-          wavesurfer.seekTo(self.state.value.max/180);
+        value: {
+          min: min,
+          max: max,
         }
       });
-      wavesurfer.on('audioprocess', function(progress) {
-        if (progress > self.state.value.max) {
-          wavesurfer.pause();
-          wavesurfer.seekTo(self.state.value.min/180);
+
+      localStorage.removeItem('url');
+      localStorage.removeItem('clip_time');
+      localStorage.removeItem('duration');
+      wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        scrollParent: false,
+        barWidth: 3,
+      });
+      var self = this;
+      Ciseaux.context = new AudioContext();
+      Ciseaux.from(url).then((tape) => {
+        // edit tape
+        tape = Ciseaux.concat([ tape.slice(startTime, length) ]);
+        // render the tape to an AudioBuffer
+        return tape.render();
+      }).then((audioBuffer) => {
+        var wavFile = toWav(audioBuffer);
+        var blob = new window.Blob([ new DataView(wavFile) ], {
+          type: 'audio/wav'
+        });
+
+        var url = window.URL.createObjectURL(blob);
+        this.setState({
+          url: url,
+        });
+        wavesurfer.load(url);
+        wavesurfer.on('ready', function() {
+          wavesurfer.seekTo((clipTime - 60)/duration);
           wavesurfer.play();
-        }
+        });
+        wavesurfer.on('seek', function (progress) {
+          if (progress < self.state.value.min/180) {
+            wavesurfer.seekTo(self.state.value.min/180);
+          } else if (progress > self.state.value.max/180) {
+            wavesurfer.seekTo(self.state.value.max/180);
+          }
+        });
+        wavesurfer.on('audioprocess', function(progress) {
+          if (progress > self.state.value.max) {
+            wavesurfer.pause();
+            wavesurfer.seekTo(self.state.value.min/180);
+            wavesurfer.play();
+          }
+        });
       });
-    });
+    }
   }
 
   constructor(props) {
@@ -96,6 +138,10 @@ class ClipAudioPage extends Component {
       audioUrl: null,
       stage: STAGE_CLIP,
       progress: 18,
+      isPlaying: false,
+      interimText: '',
+      finalisedText: [],
+      error: '',
     };
 
     this.createAudioClip = this.createAudioClip.bind(this);
@@ -105,6 +151,7 @@ class ClipAudioPage extends Component {
     this.createMinString = this.createMinString.bind(this);
     this.renderBottomView = this.renderBottomView.bind(this);
     this.updateInterval = this.updateInterval.bind(this);
+    this.renderPlayPause = this.renderPlayPause.bind(this);
   }
 
   createAudioClip() {
@@ -121,7 +168,7 @@ class ClipAudioPage extends Component {
         var blob = new window.Blob([ new DataView(wavFile) ], {
           type: 'audio/wav'
         });
-        var file = new File([blob], Date.now().toString() + ".mp3");
+        var file = new File([blob], UserManager.id + "_" + Date.now().toString() + ".mp3");
         this.setState({
           stage: STAGE_CLIPPING,
         });
@@ -143,9 +190,9 @@ class ClipAudioPage extends Component {
 		axios.post(`http://localhost:8080/pp/upload/`, formData, {
 		}).then(data => {
 			var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
-			var clipUrl = url + data.data.title.split(' ').join('+');
+			var audioUrl = url + data.data.title.split(' ').join('+');
 			BackendManager.makeQuery('clip', JSON.stringify({
-				audio_url: clipUrl,
+				audio_url: audioUrl,
 				image_url: 'https://s3-us-west-2.amazonaws.com/pokadotmedia/houston@pokadotapp.com_1547596700487.555.jpg',
 				user_id: UserManager.id,
 			}))
@@ -154,6 +201,7 @@ class ClipAudioPage extends Component {
 					var clipUrl = url + data.title;
 					BackendManager.makeQuery('clips/create', JSON.stringify({
 						title: "test",
+            audio_url: audioUrl,
 						url: clipUrl,
 						story_id: 1,
 						user_id: UserManager.id,
@@ -204,6 +252,18 @@ class ClipAudioPage extends Component {
     }
   }
 
+  renderPlayPause() {
+    if (this.state.isPlaying) {
+      return (
+        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
+      );
+    } else {
+      return (
+        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
+      );
+    }
+  }
+
   createMinString(seconds) {
     var minutes = Math.floor(seconds/60);
     var remainingSeconds = seconds - minutes * 60;
@@ -218,6 +278,7 @@ class ClipAudioPage extends Component {
     if (this.state.stage == STAGE_CLIP) {
       return (
         <div>
+          {this.renderPlayPause()}
           <div id="waveform" style={waveformStyle}></div>
           <div style={sliderStyle}>
             <InputRange

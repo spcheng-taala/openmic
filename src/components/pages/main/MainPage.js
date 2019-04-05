@@ -766,7 +766,7 @@ class MainPage extends React.Component {
         this.setState({currentStory: data.story, playing: true});
 				this.fetchUser(data.story.user_id);
         this.fetchComments(data.story.id);
-				this.fetchEmotes(data.story.id);        
+				this.fetchEmotes(data.story.id);
       }
     });
   }
@@ -1528,14 +1528,7 @@ class MainPage extends React.Component {
 									</Switch>
                 </div>
             </main>
-          </div>
-          <div className="footer">
-            <div className={"fab"} style={fabContainerStyle}>
-              <Fab style={fabStyle} onClick={() => this.openUploadModal()}>
-								<img style={fabIconStyle} src='../../../../../images/plus.png'/>
-              </Fab>
-            </div>
-          </div>
+          </div>          
 					<Notifications />
         </div>
       </BrowserRouter>
