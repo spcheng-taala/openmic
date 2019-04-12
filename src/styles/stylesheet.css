@@ -812,6 +812,19 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
+.floating {
+  animation-name: floating;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes floating {
+    from { transform: translate(0,  0px); }
+    65%  { transform: translate(0, 15px); }
+    to   { transform: translate(0, -0px); }
+}
+
 :root {
   --font-family: 'Avenir Next', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --container-width: 820px;

@@ -174,7 +174,7 @@ class FeedPage extends Component {
   }
 
   handleStoryClick(story) {
-    this.props.history.push('/story/' + story.id);    
+    this.props.history.push('/story/' + story.id);
     this.props.handleStoryClick(story.id);
   }
 
@@ -264,20 +264,20 @@ class FeedPage extends Component {
       return (
         <div>
           <ul style={listStyle}>
-              {this.props.followingStories.map((item) => {
-                return (this.renderListItem(item))
-              })}
-            </ul>
+            {this.props.followingStories.map((item) => {
+              return (this.renderListItem(item))
+            })}
+          </ul>
         </div>
       )
     } else if (this.state.type == 0) {
       return (
         <div>
           <ul style={listStyle}>
-              {this.props.allStories.map((item) => {
-                return (this.renderListItem(item))
-              })}
-            </ul>
+            {this.props.allStories.map((item) => {
+              return (this.renderListItem(item))
+            })}
+          </ul>
         </div>
       )
     }

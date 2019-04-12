@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
+import ReactTooltip from 'react-tooltip'
 import WaveSurfer from 'wavesurfer.js';
 import Ciseaux from 'ciseaux/browser';
 import toWav from 'audiobuffer-to-wav';
 import './assets/index.scss';
 import "react-input-range/lib/css/index.css";
+import { Planet } from 'react-kawaii';
 import InputRange from 'react-input-range';
 import ReactPlayer from 'react-player';
 import GridLayout from 'react-grid-layout';
@@ -20,6 +22,7 @@ import ListSubheader from '@material-ui/core/ListSubheader';
 import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import TextField from '@material-ui/core/TextField';
+import Divider from '@material-ui/core/Divider';
 import axios from 'axios';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
@@ -27,6 +30,10 @@ import BackendManager from '../../singletons/BackendManager.js';
 const STAGE_CLIP = 0;
 const STAGE_CLIPPING = 1;
 const STAGE_CLIPPED = 2;
+const STAGE_PUBLISHING = 3;
+const STAGE_TRANSCRIPTION = 4;
+
+var uniqueCounter = 0;
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -44,8 +51,8 @@ const sliderStyle = {
 const playPauseButtonStyle = {
   width: 60,
   height: 60,
-  paddingLeft: 10,
   marginBottom: 10,
+  cursor: 'pointer',
 }
 
 const root = {
@@ -54,6 +61,16 @@ const root = {
   justifyContent: 'space-around',
   overflow: 'hidden',
   marginTop: 20,
+}
+
+const animationRoot = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  height: 250,
+  justifyContent: 'space-around',
+  overflow: 'hidden',
+  marginTop: 20,
+
 }
 
 const buttonRoot = {
@@ -87,6 +104,23 @@ const editorStyle = {
   height: 100,
 }
 
+const listStyle = {
+  marginTop: 25,
+  width: 400,
+  height: 470,
+  overflow: 'scroll',
+  overflowX: 'hidden',
+}
+
+const timeTextFieldStyle = {
+  width: 100,
+}
+
+const timeTextFiledFontStyle = {
+  font: 'Lato',
+  fontSize: 14,
+}
+
 var wavesurfer = null;
 
 class ClipAudioPage extends Component {
@@ -101,9 +135,18 @@ class ClipAudioPage extends Component {
 
   componentDidMount() {
     var url = localStorage.getItem('url');
+    if (this.state.stage == STAGE_TRANSCRIPTION) {
+      this.parseTranscription();
+    }
     if (url != null) {
       var clipTime = localStorage.getItem('clip_time');
       var duration = localStorage.getItem('duration');
+      var storyId = localStorage.getItem('story_id');
+
+      this.setState({
+        storyId: storyId,
+      });
+
       var startTime = clipTime - 150;
       if (startTime < 0) {
         startTime = 0;
@@ -113,6 +156,12 @@ class ClipAudioPage extends Component {
       if (length > duration) {
         length = duration;
       }
+
+      length = Math.floor(length);
+
+      this.setState({
+        clipMax: length,
+      });
 
       var min = 90;
       if (clipTime - 60 < 0) {
@@ -134,10 +183,18 @@ class ClipAudioPage extends Component {
       localStorage.removeItem('url');
       localStorage.removeItem('clip_time');
       localStorage.removeItem('duration');
+      localStorage.removeItem('story_id');
+      var ctx = document.createElement('canvas').getContext('2d');
+      var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+      linGrad.addColorStop(0.5, 'rgba(223, 131, 170, 1.000)');
+      linGrad.addColorStop(0.5, 'rgba(237, 185, 207, 1.000)');
+      var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+      progressGrad.addColorStop(0.5, 'rgba(119, 31, 68, 1.000)');
+      progressGrad.addColorStop(0.5, 'rgba(209, 77, 133, 1.000)');
       wavesurfer = WaveSurfer.create({
         container: '#waveform',
-        waveColor: 'violet',
-        progressColor: 'purple',
+        waveColor: linGrad,
+        progressColor: progressGrad,
         scrollParent: false,
         barWidth: 3,
       });
@@ -160,13 +217,15 @@ class ClipAudioPage extends Component {
         });
 
         wavesurfer.load(url);
-        // wavesurfer.load("https://s3-us-west-2.amazonaws.com/openmic-test/15538979925711553897992547.mp3");
         wavesurfer.on('ready', function() {
           if (self.state.stage == STAGE_CLIPPED) {
 
           } else {
             wavesurfer.seekTo((clipTime - 60)/duration);
           }
+          self.setState({
+            isPlaying: true,
+          });
           // wavesurfer.play();
         });
         wavesurfer.on('seek', function (progress) {
@@ -181,8 +240,6 @@ class ClipAudioPage extends Component {
           }
         });
         wavesurfer.on('audioprocess', function(progress) {
-          console.log(progress);
-          console.log('max: ' + self.state.value.max);
           if (self.state.stage == STAGE_CLIPPED) {
             for (var i = 0; i < self.state.frames.length; i++) {
               if ((progress/wavesurfer.getDuration()) > parseFloat(self.state.frames[i].grid.x)/100 &&
@@ -207,6 +264,11 @@ class ClipAudioPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      id: 12,
+      storyId: 0,
+      isPlaying: false,
+      clipTitle: "",
+      clipMax: 180,
       value: {
         min: 0,
         max: 60,
@@ -215,7 +277,8 @@ class ClipAudioPage extends Component {
       prevMax: 60,
       url: "https://s3-us-west-2.amazonaws.com/pokadotmedia/25_1547597820129.064.mp4",
       audioUrl: "https://s3-us-west-2.amazonaws.com/pokadotmedia/25_1547597820129.064.mp4",
-      stage: STAGE_CLIP,
+      videoUrl: "https://openmic-test.s3.us-west-2.amazonaws.com/undefined_1554937267665.mp4",
+      stage: STAGE_TRANSCRIPTION,
       progress: 18,
       isPlaying: false,
       interimText: '',
@@ -226,8 +289,11 @@ class ClipAudioPage extends Component {
       searchQuery: "",
       buttonType: 0,
       frames: [],
+      transcription: [],
+      transcribedValue: 0,
     };
 
+    this.handleTitleChange = this.handleTitleChange.bind(this);
     this.createAudioClip = this.createAudioClip.bind(this);
     this.uploadClip = this.uploadClip.bind(this);
     this.checkValue = this.checkValue.bind(this);
@@ -248,6 +314,21 @@ class ClipAudioPage extends Component {
     this.setGifDuration = this.setGifDuration.bind(this);
     this.createVideo = this.createVideo.bind(this);
     this.renderGifsText = this.renderGifsText.bind(this);
+    this.togglePlayPause = this.togglePlayPause.bind(this);
+    this.parseTranscription = this.parseTranscription.bind(this);
+    this.renderTranscriptionItem = this.renderTranscriptionItem.bind(this);
+    this.handleTranscriptionStartTimeChange = this.handleTranscriptionStartTimeChange.bind(this);
+    this.handleTranscriptionEndTimeChange = this.handleTranscriptionEndTimeChange.bind(this);
+    this.handleTranscriptionTextChange = this.handleTranscriptionTextChange.bind(this);
+    this.saveCaptions = this.saveCaptions.bind(this);
+    this.handleTranscriptionVideoProgress = this.handleTranscriptionVideoProgress.bind(this);
+    this.handleTranscriptionProgressChange = this.handleTranscriptionProgressChange.bind(this);
+  }
+
+  handleTitleChange(e) {
+    this.setState({
+      clipTitle: e.target.value
+    });
   }
 
   createAudioClip() {
@@ -268,10 +349,10 @@ class ClipAudioPage extends Component {
         wavesurfer.empty();
         wavesurfer.load(url);
         wavesurfer.play();
-        // this.setState({
-        //   stage: STAGE_CLIPPING,
-        // });
-        // this.uploadClip(file);
+        this.setState({
+          stage: STAGE_CLIPPING,
+        });
+        this.uploadClip(file);
       });
     }
   }
@@ -286,42 +367,40 @@ class ClipAudioPage extends Component {
     const formData = new FormData();
 		formData.append('file', file);
     interval = setInterval(() => this.updateInterval(), 100);
+    var self = this;
 		axios.post(`http://localhost:8080/pp/upload/`, formData, {
 		}).then(data => {
-			var url = "https://s3-us-west-2.amazonaws.com/openmic-test/test.mov";
-			// var audioUrl = url + data.data.title.split(' ').join('+');
-      // console.log(audioUrl);
+			var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+			var audioUrl = url + data.data.title.split(' ').join('+');
+      console.log(audioUrl);
       this.setState({
         stage: STAGE_CLIPPED,
+        audioUrl: audioUrl,
       });
       wavesurfer.empty();
-      wavesurfer.load(url);
-			// BackendManager.makeQuery('clip', JSON.stringify({
-			// 	audio_url: audioUrl,
-			// 	image_url: 'https://s3-us-west-2.amazonaws.com/pokadotmedia/houston@pokadotapp.com_1547596700487.555.jpg',
-			// 	user_id: UserManager.id,
-			// }))
-			// .then(data => {
-			// 	if (data.success) {
-			// 		var clipUrl = url + data.title;
-			// 		BackendManager.makeQuery('clips/create', JSON.stringify({
-			// 			title: "test",
-      //       audio_url: audioUrl,
-			// 			url: clipUrl,
-			// 			story_id: 1,
-			// 			user_id: UserManager.id,
-			// 			duration: this.state.value.max - this.state.value.min,
-			// 		}))
-			// 		.then(data => {
-      //       clearInterval(this.interval);
-      //       this.setState({
-      //         progress: 100,
-      //         stage: STAGE_CLIPPED,
-      //       });
-      //       console.log(data);
-			// 		});
-			// 	}
-			// });
+      wavesurfer.load(audioUrl);
+      BackendManager.makeQuery('clips/create', JSON.stringify({
+        title: self.state.clipTitle,
+        audio_url: audioUrl,
+        story_id: self.state.storyId,
+        user_id: UserManager.id,
+        duration: self.state.value.max - self.state.value.min,
+      }))
+      .then(data => {
+        console.log(data);
+        if (data.success) {
+          self.setState({
+            id: data.id,
+          });
+          BackendManager.makeQuery('transcribe', JSON.stringify({
+            url: audioUrl,
+            id: data.id,
+          }))
+          .then(data => {
+            console.log(data);
+          });
+        }
+      });
 		}).catch(error => {
 			// handle your error
 		});
@@ -357,14 +436,30 @@ class ClipAudioPage extends Component {
     }
   }
 
+  togglePlayPause() {
+    var isPlaying = !this.state.isPlaying;
+    if (isPlaying) {
+      wavesurfer.play();
+    } else {
+      wavesurfer.pause();
+    }
+    this.setState({
+      isPlaying: isPlaying,
+    });
+  }
+
   renderPlayPause() {
     if (this.state.isPlaying) {
       return (
-        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
+        <div style={root}>
+          <img style={playPauseButtonStyle} src='../../../../../images/pause.png' onClick={() => this.togglePlayPause()}/>
+        </div>
       );
     } else {
       return (
-        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
+        <div style={root}>
+          <img style={playPauseButtonStyle} src='../../../../../images/play.png' onClick={() => this.togglePlayPause()}/>
+        </div>
       );
     }
   }
@@ -498,7 +593,6 @@ class ClipAudioPage extends Component {
   }
 
   renderFrameItem(item) {
-    console.log(item);
     if (item.grid.y > 0 && this.state.frames.length > 1) {
       return (
         <div style={invalidGif} key={item.i} data-grid={item.grid}>
@@ -530,7 +624,18 @@ class ClipAudioPage extends Component {
 
   onRemoveItem(i) {
     console.log("removing", i);
-    this.setState({ frames: _.reject(this.state.frames, { i: i }) });
+    var frames = this.state.frames;
+    for (var j = 0; j < frames.length; j++) {
+      if (frames[j].i == i) {
+        frames.splice(j, 1);
+        break;
+      }
+    }
+    this.setState({
+      frames: frames
+    });
+    console.log(frames);
+    // this.setState({ frames: _.reject(this.state.frames, { i: i }) });
   }
 
   renderGifsText() {
@@ -599,10 +704,11 @@ class ClipAudioPage extends Component {
   }
 
   addGif() {
+    uniqueCounter += 1;
     var title = this.state.searchQuery;
     var self = this;
     var gif = {
-      i: this.state.frames.length + 1,
+      i: uniqueCounter,
       id: this.state.currentGif.id,
       grid: {
         x: 0,
@@ -651,8 +757,6 @@ class ClipAudioPage extends Component {
       }
     });
 
-    console.log(gif);
-
     window.scrollTo(0, 0);
   }
 
@@ -668,20 +772,54 @@ class ClipAudioPage extends Component {
     }
   }
 
+  parseTranscription() {
+    BackendManager.makeQuery('transcription', JSON.stringify({
+      id: this.state.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        var items = data.transcription.results.items;
+        var startTime = 0;
+        var endTime = 0;
+        var transcription = [];
+        var line = "";
+        var isNewStartTime = true;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type != "punctuation" && !isNewStartTime) {
+            endTime = items[i].end_time;
+            line += " ";
+          }
+          if (isNewStartTime) {
+            startTime = items[i].start_time;
+            isNewStartTime = false;
+          }
+          line += items[i].alternatives[0].content;
+          if (items[i].type == "punctuation" && items[i].alternatives != null && items[i].alternatives[0].content != ",") {
+            var sentence = line;
+            transcription.push({
+              start_time: startTime,
+              end_time: endTime,
+              line: sentence,
+            });
+            isNewStartTime = true;
+            line = "";
+          }
+        }
+        this.setState({
+          transcription: transcription
+        });
+        console.log(transcription);
+      }
+    });
+  }
+
   createVideo() {
     var totalGifs = [];
     var frames = this.state.frames;
     // frames.sort((a,b) => (a.grid.x > b.grid.x) ? 1 : ((b.grid.x > a.grid.x) ? -1 : 0));
-    console.log(this.state.frames);
     for (var i = 0; i < frames.length; i++) {
       var perc = parseFloat(frames[i].grid.w)/100;
       var clipTime = perc * wavesurfer.getDuration();
-      // var gifToAdd = {
-      //   url: frames[i].url,
-      //   loop: clipTime,
-      // }
-      // totalGifs.push(gifToAdd);
-      // totalGifs.push(gifToAdd);
       var numOfGifs = clipTime/frames[i].duration;
       var numOfGifsInt = Math.floor(numOfGifs);
       for (var j = 0; j < numOfGifsInt; j++) {
@@ -703,33 +841,129 @@ class ClipAudioPage extends Component {
     }
     console.log(frames);
     BackendManager.makeQuery('clip', JSON.stringify({
+      audio_url: this.state.audioUrl,
       frames: totalGifs,
+      user_id: UserManager.id,
     }))
     .then(data => {
       console.log(data);
       if (data.success) {
-
+        var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+        var videoUrl = url + data.title;
+        this.setState({
+          videoUrl: videoUrl,
+        });
+        BackendManager.makeQuery('clips/update', JSON.stringify({
+          id: this.state.id,
+          url: videoUrl
+        }));
       }
     });
+  }
+
+  handleTranscriptionStartTimeChange(e, i) {
+
+  }
+
+  handleTranscriptionEndTimeChange(e, i) {
+
+  }
+
+  handleTranscriptionTextChange(e, i) {
+
+  }
+
+  renderTranscriptionItem(item) {
+    return (
+      <div>
+        <Col>
+          <Row>
+            <TextField
+              style={timeTextFieldStyle}
+              label="Start Time"
+              margin="normal"
+              variant="outlined"
+              value={item.start_time}
+              onChange={this.handleSearchChange}/>
+            <TextField
+              style={timeTextFieldStyle}
+              label="End Time"
+              margin="normal"
+              variant="outlined"
+              value={item.end_time}
+              onChange={this.handleSearchChange}/>
+          </Row>
+          <TextField
+            multiline
+            fullWidth
+            style={{marginBottom: 25}}
+            variant="outlined"
+            value={item.line}
+            onChange={this.handleSearchChange}/>
+        </Col>
+        <Divider/>
+      </div>
+    );
+  }
+
+
+  saveCaptions() {
+    BackendManager.makeQuery('caption', JSON.stringify({
+      transcription: this.state.transcription,
+      url: this.state.videoUrl,
+    }))
+    .then(data => {
+      console.log(data);
+    });
+  }
+
+  handleTranscriptionVideoProgress(state) {
+    var seconds = state.played * this.player.getDuration();
+    this.setState({
+      transcribedValue: seconds,
+    });
+  }
+
+  handleTranscriptionProgressChange(state) {
+
+  }
+
+  ref = player => {
+    this.player = player
   }
 
   renderBottomView() {
     if (this.state.stage == STAGE_CLIP) {
       return (
         <div>
-          <div style={{position: 'relative'}}>
-            <div style={sliderStyle}>
-              <InputRange
-                style={editorStyle}
-                draggableTrack
-                maxValue={180}
-                minValue={0}
-                formatLabel={value => this.createMinString(value)}
-                onChange={value => this.checkValue(value)}
-                onChangeComplete={value => this.playAtValue(value)}
-                value={this.state.value} />
-              <div id="waveform" style={waveformStyle}></div>
-            </div>
+          <div style={sliderStyle} data-tip data-for='sliderTT'>
+            <InputRange
+              draggableTrack
+              maxValue={this.state.clipMax}
+              minValue={0}
+              formatLabel={value => this.createMinString(value)}
+              onChange={value => this.checkValue(value)}
+              onChangeComplete={value => this.playAtValue(value)}
+              value={this.state.value} />
+          </div>
+          <ReactTooltip id="sliderTT" place="bottom" type="dark" effect="float">
+            <span>Drag the blue part!</span>
+          </ReactTooltip>
+          <h3 style={{color: 'grey', textAlign: 'center'}}>Drag the left and right blue dots to clip</h3>
+          <p style={{color: 'grey', textAlign: 'center'}}>Clips can be up to 2 minutes long</p>
+          {this.renderPlayPause()}
+          <div style={{margin: 50}}>
+            <TextField
+              label="Title"
+              placeholder="Title"
+              fullWidth
+              margin="normal"
+              variant="outlined"
+              InputLabelProps={{
+                shrink: true,
+              }}
+              value={this.state.clipTitle}
+              onChange={this.handleTitleChange}/>
           </div>
           <button className='button-rounded' onClick={() => this.createAudioClip()}>
             {"Clip"}
@@ -739,12 +973,17 @@ class ClipAudioPage extends Component {
     } else if (this.state.stage == STAGE_CLIPPING) {
       return (
         <div>
+          {this.renderPlayPause()}
           <div style={sliderStyle}>
-            <LinearProgress variant="determinate" value={this.state.progress} />
+            <LinearProgress colorPrimary="#3abcbc" colorSecondary="#83d9d9" variant="determinate" value={this.state.progress} />
           </div>
+          <div style={animationRoot}>
+            <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
+          </div>
+          <p style={{color: 'grey', textAlign: 'center'}}>{"Snip snip! We'll be done shortly!"}</p>
         </div>
       );
-    } else {
+    } else if (this.state.stage == STAGE_CLIPPED) {
       return (
         <div>
           <div style={{position: 'relative'}}>
@@ -797,6 +1036,39 @@ class ClipAudioPage extends Component {
           </div>
         </div>
       )
+    } else if (this.state.stage == STAGE_PUBLISHING) {
+
+    } else if (this.state.stage == STAGE_TRANSCRIPTION) {
+      return (
+        <div>
+          <Row>
+            <ul style={listStyle}>
+              {this.state.transcription.map((item) => {
+                return (this.renderTranscriptionItem(item))
+              })}
+            </ul>
+            <Col>
+              <ReactPlayer
+                ref={this.ref}
+                style={{marginTop: 25}}
+                url={this.state.videoUrl}
+                onProgress={this.handleTranscriptionVideoProgress}
+                playing />
+              <InputRange
+                maxValue={this.player.getDuration()}
+                minValue={0}
+                formatLabel={value => this.createMinString(value)}
+                onChangeComplete={value => this.playAtValue(value)}
+                value={this.state.transcribedValue} />
+            </Col>
+          </Row>
+          <div style={buttonRoot}>
+            <button className='button-rounded-gold' onClick={() => this.saveCaptions()}>
+              {"Save"}
+            </button>
+          </div>
+        </div>
+      );
     }
   }
 
@@ -806,7 +1078,7 @@ class ClipAudioPage extends Component {
       <div>
         {this.renderVideoPlayer()}
         {this.renderAddButton()}
-        
+        <div id="waveform" style={waveformStyle}></div>
         {this.renderBottomView()}
       </div>
     )

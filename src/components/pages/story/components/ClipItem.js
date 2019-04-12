@@ -1,4 +1,4 @@
-// Comment.js
+// ClipItem.js
 import React from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Row } from 'react-grid-system';

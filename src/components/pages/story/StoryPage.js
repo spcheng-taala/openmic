@@ -810,6 +810,7 @@ class StoryPage extends Component {
       localStorage.setItem('url', this.state.currentStory.url);
       localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
       localStorage.setItem('duration', wavesurfer.getDuration());
+      localStorage.setItem('story_id', this.state.currentStory.id);
       if (wavesurfer.isPlaying()) {
         wavesurfer.pause();
         this.setState({
