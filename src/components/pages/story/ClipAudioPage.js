@@ -31,7 +31,6 @@ const STAGE_CLIP = 0;
 const STAGE_CLIPPING = 1;
 const STAGE_CLIPPED = 2;
 const STAGE_PUBLISHING = 3;
-const STAGE_TRANSCRIPTION = 4;
 
 var uniqueCounter = 0;
 
@@ -135,9 +134,7 @@ class ClipAudioPage extends Component {
 
   componentDidMount() {
     var url = localStorage.getItem('url');
-    if (this.state.stage == STAGE_TRANSCRIPTION) {
-      this.parseTranscription();
-    }
+
     if (url != null) {
       var clipTime = localStorage.getItem('clip_time');
       var duration = localStorage.getItem('duration');
@@ -226,7 +223,7 @@ class ClipAudioPage extends Component {
           self.setState({
             isPlaying: true,
           });
-          // wavesurfer.play();
+          wavesurfer.play();
         });
         wavesurfer.on('seek', function (progress) {
           if (self.state.stage == STAGE_CLIPPED) {
@@ -278,9 +275,8 @@ class ClipAudioPage extends Component {
       url: "https://s3-us-west-2.amazonaws.com/pokadotmedia/25_1547597820129.064.mp4",
       audioUrl: "https://s3-us-west-2.amazonaws.com/pokadotmedia/25_1547597820129.064.mp4",
       videoUrl: "https://openmic-test.s3.us-west-2.amazonaws.com/undefined_1554937267665.mp4",
-      stage: STAGE_TRANSCRIPTION,
+      stage: STAGE_CLIP,
       progress: 18,
-      isPlaying: false,
       interimText: '',
       finalisedText: [],
       error: '',
@@ -289,8 +285,6 @@ class ClipAudioPage extends Component {
       searchQuery: "",
       buttonType: 0,
       frames: [],
-      transcription: [],
-      transcribedValue: 0,
     };
 
     this.handleTitleChange = this.handleTitleChange.bind(this);
@@ -315,14 +309,7 @@ class ClipAudioPage extends Component {
     this.createVideo = this.createVideo.bind(this);
     this.renderGifsText = this.renderGifsText.bind(this);
     this.togglePlayPause = this.togglePlayPause.bind(this);
-    this.parseTranscription = this.parseTranscription.bind(this);
-    this.renderTranscriptionItem = this.renderTranscriptionItem.bind(this);
-    this.handleTranscriptionStartTimeChange = this.handleTranscriptionStartTimeChange.bind(this);
-    this.handleTranscriptionEndTimeChange = this.handleTranscriptionEndTimeChange.bind(this);
-    this.handleTranscriptionTextChange = this.handleTranscriptionTextChange.bind(this);
-    this.saveCaptions = this.saveCaptions.bind(this);
-    this.handleTranscriptionVideoProgress = this.handleTranscriptionVideoProgress.bind(this);
-    this.handleTranscriptionProgressChange = this.handleTranscriptionProgressChange.bind(this);
+    this.renderWavesurfer = this.renderWavesurfer.bind(this);
   }
 
   handleTitleChange(e) {
@@ -466,7 +453,7 @@ class ClipAudioPage extends Component {
 
   createMinString(seconds) {
     var minutes = Math.floor(seconds/60);
-    var remainingSeconds = seconds - minutes * 60;
+    var remainingSeconds = Math.floor(seconds - minutes * 60);
     if (remainingSeconds < 10) {
       return minutes + ":0" + remainingSeconds;
     } else {
@@ -772,47 +759,6 @@ class ClipAudioPage extends Component {
     }
   }
 
-  parseTranscription() {
-    BackendManager.makeQuery('transcription', JSON.stringify({
-      id: this.state.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        var items = data.transcription.results.items;
-        var startTime = 0;
-        var endTime = 0;
-        var transcription = [];
-        var line = "";
-        var isNewStartTime = true;
-        for (var i = 0; i < items.length; i++) {
-          if (items[i].type != "punctuation" && !isNewStartTime) {
-            endTime = items[i].end_time;
-            line += " ";
-          }
-          if (isNewStartTime) {
-            startTime = items[i].start_time;
-            isNewStartTime = false;
-          }
-          line += items[i].alternatives[0].content;
-          if (items[i].type == "punctuation" && items[i].alternatives != null && items[i].alternatives[0].content != ",") {
-            var sentence = line;
-            transcription.push({
-              start_time: startTime,
-              end_time: endTime,
-              line: sentence,
-            });
-            isNewStartTime = true;
-            line = "";
-          }
-        }
-        this.setState({
-          transcription: transcription
-        });
-        console.log(transcription);
-      }
-    });
-  }
-
   createVideo() {
     var totalGifs = [];
     var frames = this.state.frames;
@@ -839,7 +785,13 @@ class ClipAudioPage extends Component {
         totalGifs.push(gifToAdd);
       }
     }
-    console.log(frames);
+
+    this.setState({
+      stage: STAGE_PUBLISHING
+    });
+
+    wavesurfer.stop();
+    
     BackendManager.makeQuery('clip', JSON.stringify({
       audio_url: this.state.audioUrl,
       frames: totalGifs,
@@ -856,80 +808,25 @@ class ClipAudioPage extends Component {
         BackendManager.makeQuery('clips/update', JSON.stringify({
           id: this.state.id,
           url: videoUrl
-        }));
+        }))
+        .then(data => {
+          var clip = {
+            id: this.state.id,
+            url: videoUrl,
+          };
+          localStorage.setItem('clip', clip);
+          this.props.history.push('/transcribe')
+        });
       }
     });
   }
 
-  handleTranscriptionStartTimeChange(e, i) {
-
-  }
-
-  handleTranscriptionEndTimeChange(e, i) {
-
-  }
-
-  handleTranscriptionTextChange(e, i) {
-
-  }
-
-  renderTranscriptionItem(item) {
-    return (
-      <div>
-        <Col>
-          <Row>
-            <TextField
-              style={timeTextFieldStyle}
-              label="Start Time"
-              margin="normal"
-              variant="outlined"
-              value={item.start_time}
-              onChange={this.handleSearchChange}/>
-            <TextField
-              style={timeTextFieldStyle}
-              label="End Time"
-              margin="normal"
-              variant="outlined"
-              value={item.end_time}
-              onChange={this.handleSearchChange}/>
-          </Row>
-          <TextField
-            multiline
-            fullWidth
-            style={{marginBottom: 25}}
-            variant="outlined"
-            value={item.line}
-            onChange={this.handleSearchChange}/>
-        </Col>
-        <Divider/>
-      </div>
-    );
-  }
-
-
-  saveCaptions() {
-    BackendManager.makeQuery('caption', JSON.stringify({
-      transcription: this.state.transcription,
-      url: this.state.videoUrl,
-    }))
-    .then(data => {
-      console.log(data);
-    });
-  }
-
-  handleTranscriptionVideoProgress(state) {
-    var seconds = state.played * this.player.getDuration();
-    this.setState({
-      transcribedValue: seconds,
-    });
-  }
-
-  handleTranscriptionProgressChange(state) {
-
-  }
-
-  ref = player => {
-    this.player = player
+  renderWavesurfer() {
+    if (this.state.stage != STAGE_PUBLISHING) {
+      return (
+        <div id="waveform" style={waveformStyle}></div>
+      );
+    }
   }
 
   renderBottomView() {
@@ -1037,36 +934,16 @@ class ClipAudioPage extends Component {
         </div>
       )
     } else if (this.state.stage == STAGE_PUBLISHING) {
-
-    } else if (this.state.stage == STAGE_TRANSCRIPTION) {
       return (
         <div>
-          <Row>
-            <ul style={listStyle}>
-              {this.state.transcription.map((item) => {
-                return (this.renderTranscriptionItem(item))
-              })}
-            </ul>
-            <Col>
-              <ReactPlayer
-                ref={this.ref}
-                style={{marginTop: 25}}
-                url={this.state.videoUrl}
-                onProgress={this.handleTranscriptionVideoProgress}
-                playing />
-              <InputRange
-                maxValue={this.player.getDuration()}
-                minValue={0}
-                formatLabel={value => this.createMinString(value)}
-                onChangeComplete={value => this.playAtValue(value)}
-                value={this.state.transcribedValue} />
-            </Col>
-          </Row>
-          <div style={buttonRoot}>
-            <button className='button-rounded-gold' onClick={() => this.saveCaptions()}>
-              {"Save"}
-            </button>
+
+          <div style={sliderStyle}>
+            <LinearProgress colorPrimary="#3abcbc" colorSecondary="#83d9d9" variant="determinate" value={this.state.progress} />
           </div>
+          <div style={animationRoot}>
+            <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
+          </div>
+          <p style={{color: 'grey', textAlign: 'center'}}>{"Snip snip! We'll be done shortly!"}</p>
         </div>
       );
     }
@@ -1078,7 +955,7 @@ class ClipAudioPage extends Component {
       <div>
         {this.renderVideoPlayer()}
         {this.renderAddButton()}
-        <div id="waveform" style={waveformStyle}></div>
+        {this.renderWavesurfer()}
         {this.renderBottomView()}
       </div>
     )

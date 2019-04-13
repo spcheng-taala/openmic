@@ -42,6 +42,7 @@ import CheckoutPage from '../payment/CheckoutPage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
 import ClipAudioPage from '../story/ClipAudioPage.js';
+import TranscribePage from '../story/TranscribePage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
@@ -1449,6 +1450,7 @@ class MainPage extends React.Component {
 												currentStory={this.state.currentStory}
 											/>}
 									/>
+									<Route path="/transcribe" component={TranscribePage}/>									
 									<Route
                     exact path='/donations'
                     render={(props) =>
@@ -1528,7 +1530,7 @@ class MainPage extends React.Component {
 									</Switch>
                 </div>
             </main>
-          </div>          
+          </div>
 					<Notifications />
         </div>
       </BrowserRouter>
