@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Modal from 'react-modal';
+import WaveSurfer from 'wavesurfer.js';
 import { withRouter } from "react-router-dom";
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -18,6 +19,12 @@ const visibility = [
   'Anyone',
   'Only Followers',
 ];
+
+const waveformStyle = {
+  marginLeft: 50,
+  marginRight: 50,
+  display: 'none',
+}
 
 const textFieldStyle = {
   color: "#222225",
@@ -72,7 +79,34 @@ const MenuProps = {
   },
 };
 
+var wavesurfer = null;
+
 class UploadModal extends Component {
+
+  componentDidMount() {
+    var ctx = document.createElement('canvas').getContext('2d');
+    var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+    linGrad.addColorStop(0.5, 'rgba(223, 131, 170, 1.000)');
+    linGrad.addColorStop(0.5, 'rgba(237, 185, 207, 1.000)');
+    var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+    progressGrad.addColorStop(0.5, 'rgba(119, 31, 68, 1.000)');
+    progressGrad.addColorStop(0.5, 'rgba(209, 77, 133, 1.000)');
+    wavesurfer = WaveSurfer.create({
+      container: '#upload-waveform',
+      waveColor: linGrad,
+      progressColor: progressGrad,
+      scrollParent: false,
+      barWidth: 3,
+    });
+    var self = this;
+    wavesurfer.on('ready', function() {
+      console.log(wavesurfer.getDuration());
+      self.setState({
+        seconds: Math.ceil(wavesurfer.getDuration()),
+      });
+    });
+  }
+
   constructor(props) {
     super(props);
     this.state = {
@@ -81,15 +115,13 @@ class UploadModal extends Component {
       type: 0,
       isPublicStr: "Anyone",
       selectedFile: null,
-      minutes: 0,
       seconds: 0,
     }
 
     this.renderFileView = this.renderFileView.bind(this);
     this.removeFile = this.removeFile.bind(this);
     this.handleTitleChange = this.handleTitleChange.bind(this);
-    this.handleMinutesChange = this.handleMinutesChange.bind(this);
-    this.handleSecondsChange = this.handleSecondsChange.bind(this);
+    this.renderDoneButton = this.renderDoneButton.bind(this);
   }
 
   renderFileView() {
@@ -121,23 +153,22 @@ class UploadModal extends Component {
     });
   }
 
-  handleMinutesChange(e) {
-    this.setState({
-      minutes: e.target.value
-    });
-  }
-
-  handleSecondsChange(e) {
-    this.setState({
-      seconds: e.target.value
-    });
-  }
-
   fileSelectedHandler = event => {
     this.setState({
       selectedFile: event.target.files[0]
     });
+    wavesurfer.load(URL.createObjectURL(event.target.files[0]));
     console.log(event.target.files[0]);
+  }
+
+  renderDoneButton() {
+    if (this.state.seconds > 0) {
+      return (
+        <button className='button-rounded' onClick={() => this.props.uploadFile(this.state.selectedFile, this.state.title, this.state.seconds)}>
+          Done!
+        </button>
+      );
+    }
   }
 
   render() {
@@ -158,21 +189,8 @@ class UploadModal extends Component {
             value={this.state.title}
             onChange={this.handleTitleChange} />
         </div>
-        <TextField
-          label="How many minutes?"
-          floatingLabelText="How many minutes?"
-          style={textFieldStyle}
-          value={this.state.minutes}
-          onChange={this.handleMinutesChange} />
-        <TextField
-          label="How many seconds?"
-          floatingLabelText="How many seconds?"
-          style={textFieldStyle}
-          value={this.state.seconds}
-          onChange={this.handleSecondsChange} />
-        <button className='button-rounded' onClick={() => this.props.uploadFile(this.state.selectedFile, this.state.title, this.state.minutes, this.state.seconds)}>
-          Done!
-        </button>
+        <div id="upload-waveform" style={waveformStyle}></div>
+        {this.renderDoneButton()}        
       </div>
     )
   }

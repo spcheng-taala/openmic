@@ -40,6 +40,22 @@ class BackendManager {
     })
   }
 
+  fetch(query, body) {
+    return fetch(query, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
+      },
+      body: body
+    })
+    .then((resp) => resp.json())
+    .then(data => {
+      return data;
+    })
+  }
+
   makeQuery(query, body) {
     return fetch(this.domain + query, {
       method: 'POST',

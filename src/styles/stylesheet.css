@@ -162,9 +162,11 @@ h1, h2, h3, h4, p, span {
   color: linear-gradient(to bottom right, #3ABCBC, #D2EEE1); /* Standard syntax */
   border: none;
   background: #F3F5F8;
+  cursor: pointer;
 }
 
 .button-rounded {
+  cursor: pointer;
   position: relative;
   margin: auto;
   display: block;
@@ -192,6 +194,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-rounded-gold {
@@ -221,6 +224,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-purple {
@@ -235,6 +239,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-green {
@@ -249,6 +254,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-preview {
@@ -264,6 +270,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-rounded-purple {
@@ -279,6 +286,7 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
 }
 
 .button-rounded-purple-empty {
@@ -294,7 +302,7 @@ h1, h2, h3, h4, p, span {
   font-weight: 400;
   font-size: 20px;
   font-family: "Lato";
-
+  cursor: pointer;
 }
 
 .center-cropped {

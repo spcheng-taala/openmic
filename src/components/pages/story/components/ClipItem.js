@@ -1,7 +1,7 @@
 // ClipItem.js
 import React from 'react';
-import WaveSurfer from 'wavesurfer.js';
-import { Row } from 'react-grid-system';
+import VideoThumbnail from 'react-video-thumbnail';
+import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Card from '@material-ui/core/Card';
@@ -19,7 +19,7 @@ const textStyleSmall = {
   color: 'white',
   fontFamily: "Lato",
   fontSize: 20,
-  marginLeft: 90,
+  marginLeft: 20,
 }
 
 const durationStyle = {
@@ -38,21 +38,8 @@ class ClipItem extends React.Component {
       progress: 0,
     };
 
-    this.renderPlayPause = this.renderPlayPause.bind(this);
     this.playPause = this.playPause.bind(this);
     this.createMinString = this.createMinString.bind(this);
-  }
-
-  renderPlayPause() {
-    if (this.props.currentClip == this.props.index) {
-      return (
-        <img style={{width: 50, height: 50}} src='../../../../../../images/pause_simple.png'/>
-      )
-    } else {
-      return (
-        <img style={{width: 50, height: 50}} src='../../../../../../images/play_simple.png'/>
-      )
-    }
   }
 
   playPause() {
@@ -75,22 +62,27 @@ class ClipItem extends React.Component {
         <CardActionArea onClick={() => this.playPause()}>
           <Paper elevation={1} style={{backgroundColor:'#5C70D8'}}>
             <div>
-              <Row style={{marginLeft: 20, marginTop: 20, paddingTop: 20}}>
-                {this.renderPlayPause()}
-                <Typography style={textStyleBig}>
-                  {this.props.title}
-                </Typography>
-                <Typography style={durationStyle}>
-                  {this.createMinString(this.props.duration)}
-                </Typography>
-              </Row>
-              <Typography style={textStyleSmall}>
-                {"Clipped by " + this.props.name}
-              </Typography>
-              <div id={"waveform-clip" + this.props.id} style={{ marginLeft: 50, marginRight: 50 }}></div>
-              <Row style={{float: 'right', marginRight: 30}}>
-                <img style={{width: 50, height: 50}} src='../../../../../../images/share_white.png'/>
-                <img style={{width: 50, height: 50}} src='../../../../../../images/heart.png'/>
+              <Row style={{marginLeft: 20, marginTop: 20, paddingTop: 20, paddingBottom: 20}}>
+                <div style={{width: 120, height: 80}}>
+                  <VideoThumbnail
+                    videoUrl={this.props.url}
+                    thumbnailHandler={(thumbnail) => console.log(thumbnail)}
+                    width={120}
+                    height={80} />
+                </div>
+                <Col>
+                  <Typography style={textStyleBig}>
+                    {this.props.title}
+                  </Typography>
+                  <Typography style={textStyleSmall}>
+                    {"Clipped by " + this.props.name}
+                  </Typography>
+                </Col>
+                <div style={{float: 'right'}}>
+                  <Typography style={durationStyle}>
+                    {this.createMinString(this.props.duration)}
+                  </Typography>                  
+                </div>
               </Row>
             </div>
           </Paper>

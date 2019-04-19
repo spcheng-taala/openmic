@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
+import ReactTooltip from 'react-tooltip';
+import TwitterLogin from 'react-twitter-auth';
 import './assets/index.scss';
 import "react-input-range/lib/css/index.css";
-import { Planet } from 'react-kawaii';
+import { Ghost } from 'react-kawaii';
 import InputRange from 'react-input-range';
 import ReactPlayer from 'react-player';
 import GridLayout from 'react-grid-layout';
@@ -22,6 +24,11 @@ import Divider from '@material-ui/core/Divider';
 import axios from 'axios';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
+
+const STAGE_TRANSCRIBING = 0;
+const STAGE_PUBLISHING = 1;
+
+var interval = null;
 
 const waveformStyle = {
   marginLeft: 50,
@@ -45,6 +52,7 @@ const root = {
   justifyContent: 'space-around',
   overflow: 'hidden',
   marginTop: 20,
+  cursor: 'pointer',
 }
 
 const animationRoot = {
@@ -96,31 +104,27 @@ const listStyle = {
   overflowX: 'hidden',
 }
 
-const timeTextFieldStyle = {
-  width: 100,
-}
-
 const timeTextFiledFontStyle = {
   font: 'Lato',
   fontSize: 14,
 }
 
-
 class TranscribePage extends Component {
 
   componentDidMount() {
-    var clip = localStorage.getItem('clip');
-    console.log(clip);
-    if (clip != null) {
-      this.parseTranscription();
-      var clip = localStorage.getItem('clip');
+    var id = localStorage.getItem('clip_id');
+    console.log(id);
+    if (id != null) {
+      var url = localStorage.getItem('clip_url');
       this.setState({
-        id: clip.id,
-        url: clip.url,
+        id: id,
+        url: url,
       });
-      localStorage.removeItem('clip');
+      this.parseTranscription(id);
+      localStorage.removeItem('clip_id');
+      localStorage.removeItem('clip_url');
     } else {
-      // this.props.history.push('/')
+      // this.props.history.push('/');
     }
   }
 
@@ -128,12 +132,15 @@ class TranscribePage extends Component {
     super(props);
     this.state = {
       id: 12,
+      stage: STAGE_TRANSCRIBING,
       isPlaying: true,
-      url: "https://openmic-test.s3.us-west-2.amazonaws.com/undefined_1554937267665.mp4",
+      url: "",
       transcription: [],
       transcribedValue: 0,
       transcribedDuration: 0,
       scrubberShouldMove: true,
+      hasTranscription: false,
+      progress: 18,
     };
 
     this.createMinString = this.createMinString.bind(this);
@@ -152,6 +159,20 @@ class TranscribePage extends Component {
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtTranscribedValue = this.playAtTranscribedValue.bind(this);
     this.setTranscribedPlayTime = this.setTranscribedPlayTime.bind(this);
+    this.handleAddLine = this.handleAddLine.bind(this);
+    this.handleRemoveLine = this.handleRemoveLine.bind(this);
+    this.renderFirstLineAddTopButton = this.renderFirstLineAddTopButton.bind(this);
+    this.onSuccess = this.onSuccess.bind(this);
+    this.onFailure = this.onFailure.bind(this);
+    this.renderRefreshTranscription = this.renderRefreshTranscription.bind(this);
+    this.updateInterval = this.updateInterval.bind(this);
+    this.renderLeftPanel = this.renderLeftPanel.bind(this);
+  }
+
+  updateInterval() {
+    if (this.state.progress < 99) {
+      this.setState({ progress: this.state.progress + 0.1 });
+    }
   }
 
   togglePlayPause() {
@@ -187,18 +208,22 @@ class TranscribePage extends Component {
     }
   }
 
-  parseTranscription() {
+  parseTranscription(id) {
     BackendManager.makeQuery('transcription', JSON.stringify({
-      id: this.state.id,
+      id: id,
     }))
     .then(data => {
       if (data.success) {
+        this.setState({
+          hasTranscription: true,
+        });
         var items = data.transcription.results.items;
         var startTime = 0;
         var endTime = 0;
         var transcription = [];
         var line = "";
         var isNewStartTime = true;
+        var wordsInSentence = 0;
         for (var i = 0; i < items.length; i++) {
           if (items[i].type != "punctuation" && !isNewStartTime) {
             endTime = items[i].end_time;
@@ -209,13 +234,16 @@ class TranscribePage extends Component {
             isNewStartTime = false;
           }
           line += items[i].alternatives[0].content;
-          if (items[i].type == "punctuation" && items[i].alternatives != null && items[i].alternatives[0].content != ",") {
+          wordsInSentence += 1
+          if ((items[i].type == "punctuation" && items[i].alternatives != null && items[i].alternatives[0].content != ",")
+            || wordsInSentence >= 15) {
             var sentence = line;
             transcription.push({
               start_time: startTime,
               end_time: endTime,
               line: sentence,
             });
+            wordsInSentence = 0;
             isNewStartTime = true;
             line = "";
           }
@@ -272,13 +300,70 @@ class TranscribePage extends Component {
     });
   }
 
+  handleAddLine(i) {
+    var transcription = this.state.transcription;
+    if (i >= 0) {
+      if (i < transcription.length - 2) {
+        if (transcription[i + 1].start_time - transcription[i].end_time > 0) {
+          var line = {
+            start_time: transcription[i].end_time,
+            end_time: transcription[i + 1].start_time,
+            line: '',
+          }
+          transcription.splice(i + 1, 0, line);
+        }
+      } else {
+        if (transcription[i].end_time < this.state.transcribedDuration) {
+          var line = {
+            start_time: transcription[i].end_time,
+            end_time: this.state.transcribedDuration,
+            line: '',
+          }
+          transcription.splice(i + 1, 0, line);
+        }
+      }
+    } else {
+      if (transcription[i + 1].start_time > 0) {
+        var line = {
+          start_time: 0,
+          end_time: transcription[i + 1].start_time,
+          line: '',
+        }
+        transcription.splice(i + 1, 0, line);
+      }
+    }
+
+    this.setState({
+      transcription: transcription,
+    });
+  }
+
+  handleRemoveLine(i) {
+    var transcription = this.state.transcription;
+    transcription.splice(i, 1);
+    this.setState({
+      transcription: transcription,
+    });
+  }
+
+  renderFirstLineAddTopButton(i) {
+    if (i == 0) {
+      return (
+        <img data-tip data-for='plusTopTT'
+          style={{width: 30, height: 30, float: 'right', marginTop: 20, cursor: 'pointer'}}
+          src='../../../../../images/plus_top.png'
+          onClick={() => this.handleAddLine(-1)} />
+      );
+    }
+  }
+
   renderTranscriptionItem(item, i) {
     return (
       <div>
         <Col>
           <Row>
             <TextField
-              style={timeTextFieldStyle}
+              style={{width: 100}}
               label="Start Time"
               margin="normal"
               variant="outlined"
@@ -286,13 +371,31 @@ class TranscribePage extends Component {
               onFocus={() => this.setTranscribedPlayTime(i)}
               onChange={(e) => this.handleTranscriptionStartTimeChange(e, i)}/>
             <TextField
-              style={timeTextFieldStyle}
+              style={{width: 100, marginRight: 20}}
               label="End Time"
               margin="normal"
               variant="outlined"
               value={item.end_time}
               onFocus={() => this.setTranscribedPlayTime(i)}
               onChange={(e) => this.handleTranscriptionEndTimeChange(e, i)}/>
+            {this.renderFirstLineAddTopButton(i)}
+            <img data-tip data-for='plusTT'
+              style={{width: 30, height: 30, float: 'right', marginTop: 20, cursor: 'pointer'}}
+              src='../../../../../images/plus_green.png'
+              onClick={() => this.handleAddLine(i)} />
+            <img data-tip data-for='trashTT'
+              style={{width: 30, height: 30, float: 'right', marginTop: 20, cursor: 'pointer'}}
+              src='../../../../../images/trash.png'
+              onClick={() => this.handleRemoveLine(i)} />
+            <ReactTooltip id="plusTopTT" place="bottom" type="dark" effect="float">
+              <span>{"Add a new line above!"}</span>
+            </ReactTooltip>
+            <ReactTooltip id="plusTT" place="bottom" type="dark" effect="float">
+              <span>{"Add a new line below!"}</span>
+            </ReactTooltip>
+            <ReactTooltip id="trashTT" place="bottom" type="dark" effect="float">
+              <span>{"Remove line!"}</span>
+            </ReactTooltip>
           </Row>
           <TextField
             multiline
@@ -309,12 +412,29 @@ class TranscribePage extends Component {
   }
 
   saveCaptions() {
+    this.setState({
+      stage: STAGE_PUBLISHING,
+    });
+    interval = setInterval(() => this.updateInterval(), 100);
     BackendManager.makeQuery('caption', JSON.stringify({
       transcription: this.state.transcription,
       url: this.state.url,
+      user_id: UserManager.id,
     }))
     .then(data => {
-      console.log(data);
+      if (data.success) {
+        var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+        var videoUrl = url + data.title;
+        BackendManager.makeQuery('clips/update', JSON.stringify({
+          id: this.state.id,
+          url: videoUrl,
+        }))
+        .then(data => {
+          if (data.success) {
+            this.props.history.push('/clips/' + this.state.id);
+          }
+        });
+      }
     });
   }
 
@@ -342,7 +462,6 @@ class TranscribePage extends Component {
   }
 
   handleScrubberMove(value) {
-    console.log(value);
     this.setState({
       scrubberShouldMove: false,
       transcribedValue: value,
@@ -358,45 +477,99 @@ class TranscribePage extends Component {
     this.player.seekTo(parseFloat(value));
   }
 
-  renderBottomView() {
-    return (
-      <div>
-        <Row style={{height: 550}}>
+  onSuccess(response) {
+    response.json().then(body => {
+      alert(JSON.stringify(body));
+    });
+  }
+
+  onFailure(error) {
+    alert(error);
+  }
+
+  renderLeftPanel() {
+    if (this.state.transcription.length > 0) {
+      return (
+        <div>
           <ul style={listStyle}>
             {this.state.transcription.map((item, i) => {
               return (this.renderTranscriptionItem(item, i))
             })}
           </ul>
-          <div style={root}>
-            <Col>
-              <ReactPlayer
-                ref={this.ref}
-                style={{marginTop: 20}}
-                url={this.state.url}
-                onProgress={this.handleTranscriptionVideoProgress}
-                onDuration={this.handleDurationChange}
-                playing={this.state.isPlaying} />
-              {this.renderPlayPause()}
-              <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
-                <InputRange
-                  draggableTrack
-                  maxValue={this.state.transcribedDuration}
-                  minValue={0}
-                  formatLabel={value => this.createMinString(value)}
-                  onChange={value => this.handleScrubberMove(value)}
-                  onChangeComplete={value => this.playAtTranscribedValue(value)}
-                  value={this.state.transcribedValue} />
-              </div>
-            </Col>
-          </div>
-        </Row>
-        <div style={buttonRoot}>
-          <button className='button-rounded-gold' onClick={() => this.saveCaptions()}>
-            {"Save"}
-          </button>
         </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div style={listStyle}>
+          <div style={{marginLeft: 150}}>
+            <Ghost className='floating' size={100} mood="happy" color="#FDA7DC" />
+          </div>
+          <p style={{margin: 20, color: 'grey', textAlign: 'center'}}>{"Sometimes our transcriptions take time. Hit refresh transcription to see if it's ready!"}</p>
+        </div>
+      );
+    }
+  }
+
+  renderBottomView() {
+    if (this.state.stage == STAGE_TRANSCRIBING) {
+      return (
+        <div>
+          <Row style={{height: 550}}>
+            {this.renderLeftPanel()}
+            <div style={root}>
+              <Col>
+                <ReactPlayer
+                  ref={this.ref}
+                  style={{marginTop: 20}}
+                  url={this.state.url}
+                  onProgress={this.handleTranscriptionVideoProgress}
+                  onDuration={this.handleDurationChange}
+                  playing={this.state.isPlaying} />
+                {this.renderPlayPause()}
+                <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
+                  <InputRange
+                    draggableTrack
+                    maxValue={this.state.transcribedDuration}
+                    minValue={0}
+                    formatLabel={value => this.createMinString(value)}
+                    onChange={value => this.handleScrubberMove(value)}
+                    onChangeComplete={value => this.playAtTranscribedValue(value)}
+                    value={this.state.transcribedValue} />
+                </div>
+              </Col>
+            </div>
+          </Row>
+          {this.renderRefreshTranscription()}
+          <div style={buttonRoot}>
+            <button className='button-rounded' onClick={() => this.saveCaptions()} style={{cursor: 'pointer'}}>
+              {"Publish"}
+            </button>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <div style={{margin: 50}}>
+            <LinearProgress variant="determinate" value={this.state.progress} />
+          </div>
+          <div style={animationRoot}>
+            <Ghost className='floating' size={200} mood="shocked" color="#FCCB7E" />
+          </div>
+          <p style={{color: 'grey', textAlign: 'center'}}>{"Publishing your clip!"}</p>
+        </div>
+      );
+    }
+  }
+
+  renderRefreshTranscription() {
+    if (!this.state.hasTranscription) {
+      return(
+        <button className='button-rounded-gold' style={{cursor: 'pointer'}} onClick={() => this.parseTranscription(this.state.id)}>
+          {"Refresh Transcription"}
+        </button>
+      );
+    }
   }
 
   render() {

@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import WaveSurfer from 'wavesurfer.js';
-import { Link } from 'react-router-dom'
+import ReactTooltip from 'react-tooltip';
+import InputRange from 'react-input-range';
+import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
+import TwitterLogin from './components/TwitterLogin.js';
 import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
@@ -15,6 +18,7 @@ import Typography from '@material-ui/core/Typography';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import InputAdornment from '@material-ui/core/InputAdornment';
+import ReactPlayer from 'react-player';
 import Fab from '@material-ui/core/Fab';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
@@ -25,6 +29,7 @@ import { PlayButton, PrevButton, NextButton, Progress, Timer, VolumeControl } fr
 import { withCustomAudio } from 'react-soundplayer/addons';
 import { TwitterShareButton, TwitterIcon, FacebookShareButton, FacebookIcon } from 'react-share';
 import ClipItem from './components/ClipItem.js';
+import ShareModal from './components/ShareModal.js';
 // some track meta information
 const trackTitle = 'Immigration and the wall';
 var wavesurfer = null;
@@ -185,10 +190,6 @@ const mobileTextFieldStyle = {
   marginRight: 10,
 }
 
-const commentStyle = {
-  margin: 50,
-}
-
 const playPauseButtonStyle = {
   width: 60,
   height: 60,
@@ -220,6 +221,33 @@ const clipStyle = {
   display: 'inline-block',
   marginBottom: 50,
   left: '50%',
+}
+
+const clip = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-around',
+  // overflow: 'hidden',
+  marginTop: 20,
+}
+
+const textStyleBig = {
+  color: '#2D2D31',
+  fontFamily: "Lato",
+  textAlign: 'left',
+  fontSize: 30,
+  marginLeft: 20,
+  marginRight: 50,
+}
+
+const textStyleSmall = {
+  color: '#2D2D31',
+  fontFamily: "Lato",
+  textAlign: 'left',
+  fontSize: 20,
+  marginLeft: 20,
+  marginRight: 50,
+  marginBottom: 20,
 }
 
 class StoryPage extends Component {
@@ -265,70 +293,40 @@ class StoryPage extends Component {
     });
     wavesurfer.on('audioprocess', function(progress) {
       var currentTime = Math.floor(progress);
-      if (currentTime in self.props.emotes && currentTime > self.state.nextSecond) {
-        var emojis = [];
-        for (var i = 0; i < self.props.emotes[currentTime].length; i++) {
-          if (self.props.emotes[currentTime][i].profile_picture == null) {
-            emojis.push({profilePicture: '../../../../../images/heart_emoji.png',
-              xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-              time: currentTime});
-          } else {
-            emojis.push({profilePicture: self.props.emotes[currentTime][i].profile_picture,
-              xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-              time: currentTime});
-          }
-        }
-        var currentEmojis = self.state.currentEmojis;
-        currentEmojis.push({emojis: emojis});
-        console.log(progress);
-        self.setState({
-          currentEmojis: currentEmojis,
-          nextSecond: currentTime + 1,
-        });
-      }
+      self.setState({
+        currentTime: Math.floor(progress),
+      });
+    //   if (currentTime in self.props.emotes && currentTime > self.state.nextSecond) {
+    //     var emojis = [];
+    //     for (var i = 0; i < self.props.emotes[currentTime].length; i++) {
+    //       if (self.props.emotes[currentTime][i].profile_picture == null) {
+    //         emojis.push({profilePicture: '../../../../../images/heart_emoji.png',
+    //           xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
+    //           time: currentTime});
+    //       } else {
+    //         emojis.push({profilePicture: self.props.emotes[currentTime][i].profile_picture,
+    //           xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
+    //           time: currentTime});
+    //       }
+    //     }
+    //     var currentEmojis = self.state.currentEmojis;
+    //     currentEmojis.push({emojis: emojis});
+    //     console.log(progress);
+    //     self.setState({
+    //       currentEmojis: currentEmojis,
+    //       nextSecond: currentTime + 1,
+    //     });
+    //   }
     });
     var hasListened = false;
     BackendManager.makeQuery('clips/story', JSON.stringify({
       story_id: this.props.match.params.id,
     }))
     .then(data => {
+      console.log(data);
       if (data.success) {
         this.setState({
 					clips: data.clips,
-        });
-
-        var wavesurfers = [];
-        for (var i = 0; i < data.clips.length; i++) {
-          var ctx = document.createElement('canvas').getContext('2d');
-          var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
-          linGrad.addColorStop(0.5, 'rgba(200, 194, 210, 1.000)');
-          linGrad.addColorStop(0.5, 'rgba(164, 156, 180, 1.000)');
-          var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
-          progressGrad.addColorStop(0.5, 'rgba(255, 255, 255, 1.000)');
-          progressGrad.addColorStop(0.5, 'rgba(226, 224, 231, 1.000)');
-          var wavesurfer = WaveSurfer.create({
-            container: '#waveform-clip' + data.clips[i].id,
-            waveColor: linGrad,
-            progressColor: progressGrad,
-            scrollParent: false,
-            cursorWidth: 0,
-            barHeight: 1,
-            barWidth: 2,
-            barGap: 2,
-          });
-          wavesurfer.load(data.clips[i].url);
-          wavesurfer.on('error', function(error) {
-            console.log(error);
-          });
-          wavesurfer.on('finish', function() {
-            self.setState({
-              currentClip: -1
-            });
-          });
-          wavesurfers.push(wavesurfer);
-        }
-        this.setState({
-          wavesurfers: wavesurfers,
         });
       }
     });
@@ -353,6 +351,8 @@ class StoryPage extends Component {
   constructor(props) {
     super(props);
 
+    this.playerRef = React.createRef();
+
     this.state = {
       currentTime: 0,
       duration: 0,
@@ -364,9 +364,14 @@ class StoryPage extends Component {
       currentEmojis: [],
       isFollowing: false,
       clips: [],
-      wavesurfers: [],
-      currentClip: -1,
+      currentClip: null,
       isPlaying: false,
+      isPlayingClip: false,
+      currentTime: 0,
+      clipDuration: 0,
+      clipValue: 0,
+      scrubberShouldMove: true,
+      isShareModalOpen: false,
     };
 
     this.handleStoryClick = this.handleStoryClick.bind(this);
@@ -390,16 +395,27 @@ class StoryPage extends Component {
     this.renderClips = this.renderClips.bind(this);
     this.playClip = this.playClip.bind(this);
     this.openClip = this.openClip.bind(this);
+    this.renderPlayer = this.renderPlayer.bind(this);
+    this.handleVideoProgress = this.handleVideoProgress.bind(this);
+    this.handleDurationChange = this.handleDurationChange.bind(this);
+    this.createMinString = this.createMinString.bind(this);
+    this.playAtValue = this.playAtValue.bind(this);
+    this.handleScrubberMove = this.handleScrubberMove.bind(this);
+    this.closeClip = this.closeClip.bind(this);
+    this.renderPlayPauseReplay = this.renderPlayPauseReplay.bind(this);
+    this.pauseClip = this.pauseClip.bind(this);
+    this.resumeClip = this.resumeClip.bind(this);
+    this.replayClip = this.replayClip.bind(this);
+    this.openShareModal = this.openShareModal.bind(this);
+    this.closeShareModal = this.closeShareModal.bind(this);
+    this.renderClipToolTip = this.renderClipToolTip.bind(this);
+    this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
+    this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
   }
 
   handleStoryClick(story) {
     if (wavesurfer != null) {
       if (!wavesurfer.isPlaying()) {
-        for (var i = 0; i < this.state.wavesurfers.length; i++) {
-          if (this.state.wavesurfers[i] != null) {
-            this.state.wavesurfers[i].pause();
-          }
-        }
         this.setState({
           isPlaying: true,
         });
@@ -698,7 +714,7 @@ class StoryPage extends Component {
     } else {
       return (
         <div>
-          <Row style={commentStyle}>
+          <Row>
             <TextField
               label="Write a comment"
               className={classNames(classes.margin, classes.textField)}
@@ -730,6 +746,50 @@ class StoryPage extends Component {
         <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
       );
     }
+  }
+
+  renderPlayPauseReplay() {
+    if (!this.state.isPlayingClip) {
+      return (
+        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.resumeClip()}>
+          <img
+            style={{ marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+            src='../../../../../images/play_simple.png'
+            />
+        </div>
+      );
+    } else {
+      if (this.state.clipValue == this.state.clipDuration) {
+        <img
+          style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+          src='../../../../../images/replay.png'
+          onClick={() => this.replayClip()}/>
+      }
+      return (
+        <div style={{marginLeft: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.pauseClip()}>
+          <img
+            style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+            src='../../../../../images/pause_simple.png'
+            />
+        </div>
+      );
+    }
+  }
+
+  pauseClip() {
+    this.setState({
+      isPlayingClip: false,
+    });
+  }
+
+  resumeClip() {
+    this.setState({
+      isPlayingClip: true,
+    });
+  }
+
+  replayClip() {
+
   }
 
   getPercentage() {
@@ -776,7 +836,23 @@ class StoryPage extends Component {
     this.props.handleEmoteClick(this.state.currentStory.id, this.state.currentTime);
   }
 
+  createMinString(seconds) {
+    var minutes = Math.floor(seconds/60);
+    var remainingSeconds = Math.floor(seconds - minutes * 60);
+    if (remainingSeconds < 10) {
+      return minutes + ":0" + remainingSeconds;
+    } else {
+      return minutes + ":" + remainingSeconds;
+    }
+  }
+
+
   playClip(index) {
+    console.log(this.state.clips[index]);
+    this.setState({
+      currentClip: this.state.clips[index],
+      isPlayingClip: true,
+    });
     if (wavesurfer != null) {
       if (wavesurfer.isPlaying()) {
         this.setState({
@@ -785,24 +861,109 @@ class StoryPage extends Component {
         wavesurfer.pause();
       }
     }
-    for (var i = 0; i < this.state.wavesurfers.length; i++) {
-      if (this.state.wavesurfers[i] != null && i != index) {
-        this.state.wavesurfers[i].pause();
-      }
+    if (this.playerRef != null) {
+      window.scrollTo(0, this.playerRef.current.offsetTop);
     }
-    if (this.state.wavesurfers[index] != null) {
-      if (this.state.wavesurfers[index].isPlaying()) {
-        this.state.wavesurfers[index].pause();
-        this.setState({
-          currentClip: -1,
-        });
-      } else {
-        this.state.wavesurfers[index].play();
-        this.setState({
-          currentClip: index,
-        });
-      }
+  }
+
+  handleVideoProgress(state) {
+    var seconds = state.played * this.player.getDuration();
+    if (this.state.scrubberShouldMove) {
+      this.setState({
+        clipValue: seconds,
+      });
     }
+    console.log(seconds);
+    console.log(this.state.clipDuration);
+  }
+
+  handleDurationChange(duration) {
+    this.setState({
+      clipDuration: duration,
+    });
+  }
+
+  renderPlayer() {
+    if (this.state.currentClip != null) {
+      return (
+        <Card style={{marginLeft: 20, marginRight: 20}}>
+          <div style={{backgroundColor: '#0F0D12', paddingBottom: 30}}>
+            <img src='../../../../../images/cancel.png' style={{marginLeft: 20, marginTop:20, width: 40, height: 40, cursor: 'pointer'}} onClick={() => this.closeClip()} />
+            <div style={clip}>
+              <ReactPlayer
+                ref={this.ref}
+                url={this.state.currentClip.url}
+                onProgress={this.handleVideoProgress}
+                onDuration={this.handleDurationChange}
+                playing={this.state.isPlayingClip} />
+            </div>
+            <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
+              <InputRange
+                draggableTrack
+                maxValue={this.state.clipDuration}
+                minValue={0}
+                formatLabel={value => this.createMinString(value)}
+                onChange={value => this.handleScrubberMove(value)}
+                onChangeComplete={value => this.playAtValue(value)}
+                value={this.state.clipValue} />
+              {this.renderPlayPauseReplay()}
+            </div>
+          </div>
+          <Row>
+            <Col>
+              <Typography style={textStyleBig}>
+                {this.state.currentClip.title}
+              </Typography>
+              <Typography style={textStyleSmall}>
+                {"Clipped by " + this.state.currentClip.first_name}
+              </Typography>
+            </Col>
+            <button className='button-rounded' style={{ marginTop: 20, marginRight: 30 }} data-tip data-for='share_clip' data-event='click'>Share</button>
+            <ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
+              <Row style={{marginLeft: 20}}>
+                <TwitterLogin
+                  style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
+                  loginUrl="http://localhost:8080/pp/auth/twitter"
+                  onFailure={this.onTwitterAuthFailure}
+                  onSuccess={this.onTwitterAuthSuccess}
+                  requestTokenUrl="http://localhost:8080/pp/auth/twitter/reverse"
+                >
+                  <img style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
+                </TwitterLogin>
+                <div style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}}>
+                  <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
+                </div>
+              </Row>
+              <input type='text' value={'https://theopenmic.fm/clips/' + this.state.currentClip.id} style={{width: 100, marginTop: 10}} />
+            </ReactTooltip>
+          </Row>
+        </Card>
+      );
+    }
+  }
+
+  onTwitterAuthFailure(error) {
+    alert(error);
+  }
+
+  onTwitterAuthSuccess(response) {
+    response.json().then(body => {
+      localStorage.setItem('oauth_token', body.data.oauth_token);
+      localStorage.setItem('oauth_token_secret', body.data.oauth_token_secret);
+      localStorage.setItem('screen_name', body.data.screen_name);
+      if (this.props.clip) {
+        localStorage.setItem('clip_url', this.props.clip.url);
+        localStorage.setItem('clip_title', this.props.clip_title);
+      }
+      window.open('/share/t');
+    });
+  }
+
+  closeClip() {
+    this.setState({
+      isPlayingClip: false,
+      currentClip: null,
+    });
   }
 
   openClip() {
@@ -821,10 +982,60 @@ class StoryPage extends Component {
     }
   }
 
+  handleScrubberMove(value) {
+    this.setState({
+      scrubberShouldMove: false,
+      clipValue: value,
+      isPlayingClip: false,
+    });
+  }
+
+  playAtValue(value) {
+    this.setState({
+      scrubberShouldMove: true,
+      isPlayingClip: true,
+    });
+    this.player.seekTo(parseFloat(value));
+  }
+
+  ref = player => {
+    this.player = player
+  }
+
+  openShareModal() {
+    this.setState({
+      isShareModalOpen: true,
+    });
+  }
+
+  closeShareModal() {
+    this.setState({
+      isShareModalOpen: false,
+    });
+  }
+
+  renderClipToolTip() {
+    if (wavesurfer != null) {
+      return (
+        <ReactTooltip id="clip" place="bottom" type="dark" effect="float">
+          <span>{"Create clip at " + this.createMinString(this.state.currentTime)}</span>
+        </ReactTooltip>
+      );
+    }
+  }
+
   render() {
     const classes = useStyles();
 		return (
       <div>
+        <Modal
+          isOpen={this.state.isShareModalOpen}
+          onRequestClose={this.closeShareModal}
+          style={customStyles}
+          contentLabel="Share"
+        >
+          <ShareModal clip={this.state.currentClip}/>
+        </Modal>
         <CardActionArea style={storyContainerStyle} onClick={() => this.handleStoryClick(this.props.currentStory)}>
           <Paper style={storyPaperStyle}>
             <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
@@ -845,15 +1056,26 @@ class StoryPage extends Component {
         <Divider style={{margin: 10}}/>
         <p style={{fontSize: 20, textAlign: 'center'}}>{"Clips"}</p>
         {this.renderDonateTextField()}
-        <div style={commentStyle}>
+        <div ref={this.playerRef}>
+          {this.renderPlayer()}
+        </div>
+        <div style={{marginLeft: 50, marginRight: 50}}>
           {this.renderClips()}
         </div>
-        <div style={{position: 'fixed', bottom: 0, zIndex: 10, width: '100%'}}>
-          <Avatar className='footer-clip'
-            style={{cursor: 'pointer', width: 100, height: 100, boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)'}}
+          <Avatar data-tip data-for='clip'
+            style={{
+              position: 'fixed',
+              bottom: 25,
+              zIndex: 10,
+              left: '93%',
+              cursor: 'pointer',
+              width: 75,
+              height: 75,
+              boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)'}}
             src='../../../../../images/clip.png'
             onClick={() => this.openClip()}/>
-        </div>
+          {this.renderClipToolTip()}
+
       </div>
     )
   }

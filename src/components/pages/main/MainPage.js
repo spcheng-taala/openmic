@@ -43,6 +43,8 @@ import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
 import ClipAudioPage from '../story/ClipAudioPage.js';
 import TranscribePage from '../story/TranscribePage.js';
+import ClipPage from '../clip/ClipPage.js';
+import TwitterSharePage from '../clip/TwitterSharePage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
@@ -1126,7 +1128,7 @@ class MainPage extends React.Component {
 		});
   }
 
-	uploadFile(file, title, minutes, seconds) {
+	uploadFile(file, title, seconds) {
     if (this.state.isLoggedIn) {
       if (file != null) {
         this.openLoadingModal();
@@ -1141,14 +1143,13 @@ class MainPage extends React.Component {
         }).then(data => {
     			this.closeLoadingModal();
     			if (data.data.success) {
-    				var duration = (minutes*60) + seconds;
     				var storyUrl = url + data.data.title.split(' ').join('+');
     				BackendManager.makeQuery('stories/create', JSON.stringify({
     					title: title,
     					url: storyUrl,
     					public: 1,
     					user_id: UserManager.id,
-    					duration: duration,
+    					duration: seconds,
     				}))
     				.then(data => {
     					if (data.success) {
@@ -1433,6 +1434,7 @@ class MainPage extends React.Component {
                   />
                   <Route path="/about" component={AboutPage}/>
                   <Route path="/download" component={DownloadPage}/>
+									<Route path="/share/t" component={TwitterSharePage}/>
                   <Route
                     exact path='/payment/setup'
                     render={(props) =>
@@ -1448,9 +1450,10 @@ class MainPage extends React.Component {
 										render={(props) =>
 											<ClipAudioPage {...props}
 												currentStory={this.state.currentStory}
+												showToast={this.showToast}
 											/>}
 									/>
-									<Route path="/transcribe" component={TranscribePage}/>									
+									<Route path="/transcribe" component={TranscribePage}/>
 									<Route
                     exact path='/donations'
                     render={(props) =>
@@ -1480,6 +1483,11 @@ class MainPage extends React.Component {
                         fetchMessages={this.fetchMessages}
                         openMessageModal={this.openMessageModal}
                       />}
+                  />
+									<Route
+                    path="/clips/:id"
+                    render={(props) =>
+                      <ClipPage {...props}/>}
                   />
                   <Route
                     path="/story/:id"

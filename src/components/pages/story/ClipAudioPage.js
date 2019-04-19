@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import ReactTooltip from 'react-tooltip'
+import ReactTooltip from 'react-tooltip';
 import WaveSurfer from 'wavesurfer.js';
 import Ciseaux from 'ciseaux/browser';
 import toWav from 'audiobuffer-to-wav';
@@ -87,6 +87,7 @@ const removeStyle = {
 };
 
 const validGif = {
+  margin: 0,
   borderRadius: 5,
   paddingLeft: 2,
   color: 'white',
@@ -94,6 +95,7 @@ const validGif = {
 }
 
 const invalidGif = {
+  margin: 0,
   borderRadius: 5,
   color: 'white',
   backgroundColor: '#DD7DA5',
@@ -127,7 +129,9 @@ class ClipAudioPage extends Component {
   static defaultProps = {
     isDraggable: true,
     isResizable: true,
-    rowHeight: 20,
+    compactType: 'horizontal',
+    // verticalCompact: false,
+    rowHeight: 30,
     cols: 100,
     onLayoutChange: function() {},
   };
@@ -226,9 +230,7 @@ class ClipAudioPage extends Component {
           wavesurfer.play();
         });
         wavesurfer.on('seek', function (progress) {
-          if (self.state.stage == STAGE_CLIPPED) {
-
-          } else {
+          if (self.state.stage != STAGE_CLIPPED) {
             if (progress < self.state.value.min/length) {
               wavesurfer.seekTo(self.state.value.min/length);
             } else if (progress > self.state.value.max/length) {
@@ -239,11 +241,15 @@ class ClipAudioPage extends Component {
         wavesurfer.on('audioprocess', function(progress) {
           if (self.state.stage == STAGE_CLIPPED) {
             for (var i = 0; i < self.state.frames.length; i++) {
-              if ((progress/wavesurfer.getDuration()) > parseFloat(self.state.frames[i].grid.x)/100 &&
-              (progress/wavesurfer.getDuration()) <= (parseFloat(self.state.frames[i].grid.x + self.state.frames[i].grid.w)/100)) {
-                self.setState({
-                  currentGif: self.state.frames[i],
-                });
+              if (self.state.frames[i] != null) {
+                if ((progress/wavesurfer.getDuration()) > parseFloat(self.state.frames[i].grid.x)/100 &&
+                (progress/wavesurfer.getDuration()) <= (parseFloat(self.state.frames[i].grid.x + self.state.frames[i].grid.w)/100)) {
+                  if (!self.state.isSelectingGif) {
+                    self.setState({
+                      currentGif: self.state.frames[i],
+                    });
+                  }
+                }
               }
             }
           } else {
@@ -255,6 +261,8 @@ class ClipAudioPage extends Component {
           }
         });
       });
+    } else {
+      this.props.history.push('/');
     }
   }
 
@@ -277,14 +285,12 @@ class ClipAudioPage extends Component {
       videoUrl: "https://openmic-test.s3.us-west-2.amazonaws.com/undefined_1554937267665.mp4",
       stage: STAGE_CLIP,
       progress: 18,
-      interimText: '',
-      finalisedText: [],
-      error: '',
       gifs: [],
       currentGif: null,
       searchQuery: "",
       buttonType: 0,
       frames: [],
+      isSelectingGif: false,
     };
 
     this.handleTitleChange = this.handleTitleChange.bind(this);
@@ -319,28 +325,32 @@ class ClipAudioPage extends Component {
   }
 
   createAudioClip() {
-    Ciseaux.context = new AudioContext();
-    if (this.state.url != null) {
-      Ciseaux.from(this.state.url).then((tape) => {
-        // edit tape
-        tape = Ciseaux.concat([ tape.slice(this.state.value.min, (this.state.value.max - this.state.value.min)) ]);
-        // render the tape to an AudioBuffer
-        return tape.render();
-      }).then((audioBuffer) => {
-        var wavFile = toWav(audioBuffer);
-        var blob = new window.Blob([ new DataView(wavFile) ], {
-          type: 'audio/wav'
+    if (this.state.clipTitle == "") {
+      this.props.showToast("Don't forget to add a title!");
+    } else {
+      Ciseaux.context = new AudioContext();
+      if (this.state.url != null) {
+        Ciseaux.from(this.state.url).then((tape) => {
+          // edit tape
+          tape = Ciseaux.concat([ tape.slice(this.state.value.min, (this.state.value.max - this.state.value.min)) ]);
+          // render the tape to an AudioBuffer
+          return tape.render();
+        }).then((audioBuffer) => {
+          var wavFile = toWav(audioBuffer);
+          var blob = new window.Blob([ new DataView(wavFile) ], {
+            type: 'audio/wav'
+          });
+          var file = new File([blob], UserManager.id + "_" + Date.now().toString() + ".mp3");
+          var url = window.URL.createObjectURL(blob);
+          wavesurfer.empty();
+          wavesurfer.load(url);
+          wavesurfer.play();
+          this.setState({
+            stage: STAGE_CLIPPING,
+          });
+          this.uploadClip(file);
         });
-        var file = new File([blob], UserManager.id + "_" + Date.now().toString() + ".mp3");
-        var url = window.URL.createObjectURL(blob);
-        wavesurfer.empty();
-        wavesurfer.load(url);
-        wavesurfer.play();
-        this.setState({
-          stage: STAGE_CLIPPING,
-        });
-        this.uploadClip(file);
-      });
+      }
     }
   }
 
@@ -363,6 +373,7 @@ class ClipAudioPage extends Component {
       this.setState({
         stage: STAGE_CLIPPED,
         audioUrl: audioUrl,
+        progress: 18,
       });
       wavesurfer.empty();
       wavesurfer.load(audioUrl);
@@ -420,6 +431,9 @@ class ClipAudioPage extends Component {
   playAtValue(value) {
     if (wavesurfer != null) {
       wavesurfer.play(value.min, value.max);
+      this.setState({
+        isPlaying: true,
+      });
     }
   }
 
@@ -474,22 +488,34 @@ class ClipAudioPage extends Component {
   onResize(layout, oldLayoutItem, layoutItem, placeholder) {
     // `oldLayoutItem` contains the state of the item before the resize.
     // You can modify `layoutItem` to enforce constraints.
+    this.setState({
+      isSelectingGif: false,
+    });
     layoutItem.h = 2;
     placeholder.h = 2;
-    var hasOverlap = false;
-    var difference = 0;
+    // var hasOverlap = false;
+    // var difference = 0;
+    // for (var i = 0; i < layout.length; i++) {
+    //   if (layout[i].i != layoutItem.i) {
+    //     if (layoutItem.x < layout[i].x && (layoutItem.x + layoutItem.w) > layout[i].x) {
+    //       hasOverlap = true;
+    //       difference = layout[i].x - layoutItem.x;
+    //     }
+    //   }
+    // }
+
+    var size = 0;
     for (var i = 0; i < layout.length; i++) {
-      if (layout[i].i != layoutItem.i) {
-        if (layoutItem.x < layout[i].x && (layoutItem.x + layoutItem.w) > layout[i].x) {
-          hasOverlap = true;
-          difference = layout[i].x - layoutItem.x;
-        }
-      }
+      size += layout[i].w;
     }
 
-    if (hasOverlap) {
-      layoutItem.w = difference;
+    if (size > 100) {
+      layoutItem.w = layoutItem.w - (size - 100);
     }
+
+    // if (hasOverlap) {
+    //   layoutItem.w = difference;
+    // }
 
     wavesurfer.seekTo(layoutItem.x/100);
     wavesurfer.play();
@@ -503,6 +529,7 @@ class ClipAudioPage extends Component {
 
     if (gif != null) {
       var newGif = {
+        index: gif.index,
         i: layoutItem.i,
         id: gif.id,
         grid: {
@@ -517,7 +544,7 @@ class ClipAudioPage extends Component {
       }
 
       var frames = this.state.frames;
-      frames[layoutItem.i - 1] = newGif;
+      frames[gif.index] = newGif;
 
       this.setState({
         frames: frames,
@@ -526,6 +553,9 @@ class ClipAudioPage extends Component {
   }
 
   onDragStop(layout, oldLayoutItem, layoutItem, placeholder) {
+    this.setState({
+      isSelectingGif: false,
+    });
     var hasOverlap = false;
     for (var i = 0; i < layout.length; i++) {
       if (layout[i].i != layoutItem.i) {
@@ -556,6 +586,7 @@ class ClipAudioPage extends Component {
 
     if (gif != null) {
       var newGif = {
+        index: gif.index,
         i: layoutItem.i,
         id: gif.id,
         grid: {
@@ -570,7 +601,7 @@ class ClipAudioPage extends Component {
       }
 
       var frames = this.state.frames;
-      frames[layoutItem.i - 1] = newGif;
+      frames[gif.index] = newGif;
 
       this.setState({
         frames: frames,
@@ -609,20 +640,25 @@ class ClipAudioPage extends Component {
     }
   }
 
-  onRemoveItem(i) {
-    console.log("removing", i);
+  onRemoveItem(id) {
+    console.log("removing", id);
     var frames = this.state.frames;
-    for (var j = 0; j < frames.length; j++) {
-      if (frames[j].i == i) {
-        frames.splice(j, 1);
+    var removedIndex = 0;
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].i == id) {
+        removedIndex = i;
+        frames.splice(i, 1);
         break;
       }
     }
+
+    for (var i = removedIndex; i < frames.length; i++) {
+      frames[i].index -= 1;
+    }
+
     this.setState({
       frames: frames
     });
-    console.log(frames);
-    // this.setState({ frames: _.reject(this.state.frames, { i: i }) });
   }
 
   renderGifsText() {
@@ -678,6 +714,7 @@ class ClipAudioPage extends Component {
     this.setState({
       currentGif: gif,
       buttonType: 1,
+      isSelectingGif: true,
     });
     window.scrollTo(0, 0);
   }
@@ -691,10 +728,14 @@ class ClipAudioPage extends Component {
   }
 
   addGif() {
+    this.setState({
+      isSelectingGif: false,
+    });
     uniqueCounter += 1;
+    console.log('adding ' + uniqueCounter);
     var title = this.state.searchQuery;
-    var self = this;
     var gif = {
+      index: this.state.frames.length,
       i: uniqueCounter,
       id: this.state.currentGif.id,
       grid: {
@@ -707,48 +748,60 @@ class ClipAudioPage extends Component {
       url: this.state.currentGif.url,
       duration: this.state.currentGif.duration,
     }
-    if (this.state.frames.length > 0) {
-      gif.grid.y = 2;
+
+    var size = 0;
+    for (var i = 0; i < this.state.frames.length; i++) {
+      if (this.state.frames[i].grid.y == 0) {
+        size += this.state.frames[i].grid.w;
+      }
     }
 
-    var gifs = self.state.frames;
-    BackendManager.makeQuery('gifs', JSON.stringify({
-      gif_id: this.state.currentGif.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        gif.url = data.url;
-        gifs.push(gif);
-        self.setState({
-          frames: gifs,
-        });
-      } else {
-        BackendManager.makeQuery('resize', JSON.stringify({
-          gif_id: self.state.currentGif.id,
-          url: self.state.currentGif.url
-        }))
-        .then(data => {
-          if (data.success) {
-            var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
-            gif.url = url + data.title;
-            gifs.push(gif);
-            self.setState({
-              frames: gifs,
-            });
-            BackendManager.makeQuery('gifs/create', JSON.stringify({
-              gif_id: self.state.currentGif.id,
-              url: url + data.title,
-            }));
-          }
-        });
+    if (size < 100) {
+      console.log(size);
+      gif.grid.x = size;
+      if (100 - size < 10) {
+        gif.grid.w = 100 - size;
       }
-    });
-
-    window.scrollTo(0, 0);
+      var gifs = this.state.frames;
+      var self = this;
+      BackendManager.makeQuery('gifs', JSON.stringify({
+        gif_id: this.state.currentGif.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          gif.url = data.url;
+          gifs.push(gif);
+          self.setState({
+            frames: gifs,
+          });
+          console.log(gifs);
+        } else {
+          BackendManager.makeQuery('resize', JSON.stringify({
+            gif_id: self.state.currentGif.id,
+            url: self.state.currentGif.url
+          }))
+          .then(data => {
+            if (data.success) {
+              var url = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+              gif.url = url + data.title;
+              gifs.push(gif);
+              self.setState({
+                frames: gifs,
+              });
+              console.log(gifs);
+              BackendManager.makeQuery('gifs/create', JSON.stringify({
+                gif_id: self.state.currentGif.id,
+                url: url + data.title,
+              }));
+            }
+          });
+        }
+      });
+    }
   }
 
   renderAddButton() {
-    if (this.state.buttonType == 1) {
+    if (this.state.buttonType == 1 && this.state.stage == STAGE_CLIPPED) {
       return (
         <div style={buttonRoot}>
           <button className='button-green' onClick={() => this.addGif()}>
@@ -791,7 +844,7 @@ class ClipAudioPage extends Component {
     });
 
     wavesurfer.stop();
-    
+
     BackendManager.makeQuery('clip', JSON.stringify({
       audio_url: this.state.audioUrl,
       frames: totalGifs,
@@ -810,12 +863,9 @@ class ClipAudioPage extends Component {
           url: videoUrl
         }))
         .then(data => {
-          var clip = {
-            id: this.state.id,
-            url: videoUrl,
-          };
-          localStorage.setItem('clip', clip);
-          this.props.history.push('/transcribe')
+          localStorage.setItem('clip_id', this.state.id);
+          localStorage.setItem('clip_url', videoUrl);
+          this.props.history.push('/transcribe');
         });
       }
     });
@@ -863,7 +913,7 @@ class ClipAudioPage extends Component {
               onChange={this.handleTitleChange}/>
           </div>
           <button className='button-rounded' onClick={() => this.createAudioClip()}>
-            {"Clip"}
+            {"Next"}
           </button>
         </div>
       );
@@ -884,19 +934,16 @@ class ClipAudioPage extends Component {
       return (
         <div>
           <div style={{position: 'relative'}}>
-            <div style={{marginLeft: 50, marginRight: 50, marginTop: 15, marginBottom: 5,
+            <div style={{marginLeft: 49, marginRight: 49, marginTop: 15,
               height: '60px', border: '2px solid grey', borderRadius: '5px', borderStyle: 'dotted'}}>
               <h3 style={{color: 'grey', textAlign: 'center'}}>GIFs go here</h3>
-            </div>
-            <div style={{marginLeft: 50, marginRight: 50,
-              height: '60px', border: '2px solid grey', borderRadius: '5px', borderStyle: 'dotted'}}>
-              <h3 style={{color: 'grey', textAlign: 'center'}}>Drag GIFs up from here</h3>
             </div>
             <ReactGridLayout
               onLayoutChange={this.onLayoutChange}
               onResize={this.onResize}
               onDragStop={this.onDragStop}
-              style={{marginLeft: 50, marginRight: 50, position: 'absolute', top: 0, width: '100%'}}
+              margin={[0,1]}
+              style={{marginTop: 2, marginLeft: 50, marginRight: 50, position: 'absolute', top: 0, left: 0, right: 0}}
               {...this.props}
             >
               {_.map(this.state.frames, item => this.renderFrameItem(item))}
@@ -936,14 +983,13 @@ class ClipAudioPage extends Component {
     } else if (this.state.stage == STAGE_PUBLISHING) {
       return (
         <div>
-
           <div style={sliderStyle}>
-            <LinearProgress colorPrimary="#3abcbc" colorSecondary="#83d9d9" variant="determinate" value={this.state.progress} />
+            <LinearProgress variant="determinate" value={this.state.progress} />
           </div>
           <div style={animationRoot}>
             <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
           </div>
-          <p style={{color: 'grey', textAlign: 'center'}}>{"Snip snip! We'll be done shortly!"}</p>
+          <p style={{color: 'grey', textAlign: 'center'}}>{"Publishing your clip!"}</p>
         </div>
       );
     }
