@@ -44,6 +44,7 @@ import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
 import ClipAudioPage from '../story/ClipAudioPage.js';
 import TranscribePage from '../story/TranscribePage.js';
 import ClipPage from '../clip/ClipPage.js';
+import EditClipPage from '../story/EditClipPage.js';
 import TwitterSharePage from '../clip/TwitterSharePage.js';
 
 import SignUpModal from './components/SignUpModal.js';
@@ -716,6 +717,8 @@ class MainPage extends React.Component {
 	}
 
   handleStoryClick(storyId) {
+		const { soundCloudAudio } = this.props;
+		soundCloudAudio.stop();
 		this.fetchStory(storyId);
   }
 
@@ -1136,14 +1139,13 @@ class MainPage extends React.Component {
     		if (ext == "m4a") {
     			ext = "mp4";
     		}
-    		var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
         const formData = new FormData();
         formData.append('file', file);
         axios.post(`https://api.mypokadot.com/pp/upload/`, formData, {
         }).then(data => {
     			this.closeLoadingModal();
     			if (data.data.success) {
-    				var storyUrl = url + data.data.title.split(' ').join('+');
+    				var storyUrl = BackendManager.fileUrl + data.data.title.split(' ').join('+');
     				BackendManager.makeQuery('stories/create', JSON.stringify({
     					title: title,
     					url: storyUrl,
@@ -1434,7 +1436,12 @@ class MainPage extends React.Component {
                   />
                   <Route path="/about" component={AboutPage}/>
                   <Route path="/download" component={DownloadPage}/>
-									<Route path="/share/t" component={TwitterSharePage}/>
+									<Route path="/share/t"
+										render={(props) =>
+											<TwitterSharePage {...props}
+												showToast={this.showToast}
+											/>}
+									/>
                   <Route
                     exact path='/payment/setup'
                     render={(props) =>
@@ -1452,6 +1459,13 @@ class MainPage extends React.Component {
 												currentStory={this.state.currentStory}
 												showToast={this.showToast}
 											/>}
+									/>
+									<Route
+										exact path='/editor/:id'
+										render={(props) =>
+											<EditClipPage {...props}
+												showToast={this.showToast}/>
+										}
 									/>
 									<Route path="/transcribe" component={TranscribePage}/>
 									<Route
@@ -1487,7 +1501,7 @@ class MainPage extends React.Component {
 									<Route
                     path="/clips/:id"
                     render={(props) =>
-                      <ClipPage {...props}/>}
+                      <ClipPage {...props} showToast={this.showToast}/>}
                   />
                   <Route
                     path="/story/:id"

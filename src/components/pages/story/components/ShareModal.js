@@ -38,10 +38,10 @@ class ShareModal extends Component {
 		return (
       <div>
         <TwitterLogin
-          loginUrl="http://localhost:8080/pp/auth/twitter"
+          loginUrl="https://api.mypokadot.com/pp/auth/twitter"
           onFailure={this.onFailure}
           onSuccess={this.onSuccess}
-          requestTokenUrl="http://localhost:8080/pp/auth/twitter/reverse"
+          requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
         />
       </div>
     )

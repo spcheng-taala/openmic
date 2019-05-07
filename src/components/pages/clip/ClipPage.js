@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import './assets/index.scss';
 import "react-input-range/lib/css/index.css";
 import InputRange from 'react-input-range';
+import ReactTooltip from 'react-tooltip';
+import TwitterLogin from './components/TwitterLogin.js';
 import ReactPlayer from 'react-player';
 import { Container, Row, Col } from 'react-grid-system';
 import Card from '@material-ui/core/Card';
@@ -140,12 +142,14 @@ class ClipPage extends Component {
 
   constructor(props) {
     super(props);
+    this.copyRef = React.createRef();
     this.state = {
       clip: null,
       isPlaying: true,
       value: 0,
       duration: 0,
       scrubberShouldMove: true,
+      isFinished: false,
     };
 
     this.createMinString = this.createMinString.bind(this);
@@ -156,6 +160,19 @@ class ClipPage extends Component {
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
     this.renderView = this.renderView.bind(this);
+    this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
+    this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
+    this.copyToClipboard = this.copyToClipboard.bind(this);
+    this.replay = this.replay.bind(this);
+    this.renderMainScreen = this.renderMainScreen.bind(this);
+  }
+
+  replay() {
+    this.setState({
+      isFinished: false,
+      isPlaying: true,
+    });
+    this.playAtValue(0);
   }
 
   togglePlayPause() {
@@ -166,24 +183,35 @@ class ClipPage extends Component {
   }
 
   renderPlayPause() {
-    if (this.state.isPlaying) {
+    if (this.state.isFinished) {
       return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.togglePlayPause()}>
+        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.replay()}>
           <img
             style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/pause_simple.png'
+            src='../../../../../images/replay.png'
             />
         </div>
       );
     } else {
-      return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.togglePlayPause()}>
-          <img
-            style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/play_simple.png'
-            />
-        </div>
-      );
+      if (this.state.isPlaying) {
+        return (
+          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.togglePlayPause()}>
+            <img
+              style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+              src='../../../../../images/pause_simple.png'
+              />
+          </div>
+        );
+      } else {
+        return (
+          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.togglePlayPause()}>
+            <img
+              style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+              src='../../../../../images/play_simple.png'
+              />
+          </div>
+        );
+      }
     }
   }
 
@@ -202,6 +230,14 @@ class ClipPage extends Component {
     if (this.state.scrubberShouldMove) {
       this.setState({
         value: seconds,
+      });
+    }
+
+    if (seconds == this.state.duration) {
+      this.setState({
+        isPlaying: false,
+        isFinished: true,
+        value: 0,
       });
     }
   }
@@ -230,6 +266,33 @@ class ClipPage extends Component {
       isPlaying: true,
     });
     this.player.seekTo(parseFloat(value));
+  }
+
+  renderMainScreen() {
+    if (this.state.isFinished) {
+      <div style={{background: 'rgba(45, 45, 49, 0.8)'}}>
+        <Row>
+          <img
+            style={{width: 70, cursor: 'pointer', top: '50%'}}
+            src='../../../../../images/share_circle.png'
+            />
+          <img
+            style={{width: 70, cursor: 'pointer', top: '50%'}}
+            src='../../../../../images/replay_circle.png'
+            />
+        </Row>
+      </div>
+    } else {
+      return (
+        <ReactPlayer
+          ref={this.ref}
+          style={{marginTop: 20}}
+          url={this.state.clip.url}
+          onProgress={this.handleVideoProgress}
+          onDuration={this.handleDurationChange}
+          playing={this.state.isPlaying} />
+      );
+    }
   }
 
   renderView() {
@@ -268,7 +331,34 @@ class ClipPage extends Component {
                   {"Clipped by " + this.state.clip.first_name}
                 </Typography>
               </Col>
-              <button className='button-rounded' style={{ marginTop: 20, marginRight: 30 }}>Share</button>
+              <button className='button-rounded' style={{ marginTop: 20, marginRight: 30 }} data-tip data-for='share_clip' data-event='click'>Share</button>
+              <ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
+                <Row style={{marginLeft: 20}}>
+                  <TwitterLogin
+                    style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
+                    loginUrl="https://api.mypokadot.com/pp/auth/twitter"
+                    onFailure={this.onTwitterAuthFailure}
+                    onSuccess={this.onTwitterAuthSuccess}
+                    forceLogin={true}
+                    requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
+                  >
+                    <img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
+                  </TwitterLogin>
+                  <ReactTooltip id="twitterTT" place="top" type="light" effect="float">
+                    <span>Twitter</span>
+                  </ReactTooltip>
+                  <div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
+                    <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
+                  </div>
+                  <ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
+                    <span>Copy to clipboard</span>
+                  </ReactTooltip>
+                </Row>
+                {
+                  document.queryCommandSupported('copy') &&
+                  <input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.clip.id} style={{width: 100, marginTop: 10}} />
+                }
+              </ReactTooltip>
             </Row>
           </Card>
           <Card className='floating' style={{marginTop: 20, paddingTop: 20, paddingBottom: 20}}>
@@ -289,6 +379,34 @@ class ClipPage extends Component {
         </div>
       );
     }
+  }
+
+  copyToClipboard() {
+    this.copyRef.current.select();
+    document.execCommand('copy');
+    this.props.showToast('Copied!');
+    // This is just personal preference.
+    // I prefer to not show the the whole text area selected.
+    // e.target.focus();
+    // setCopySuccess('Copied!');
+  }
+
+  onTwitterAuthFailure(error) {
+    alert(error);
+  }
+
+  onTwitterAuthSuccess(response) {
+    response.json().then(body => {
+      localStorage.setItem('oauth_token', body.data.oauth_token);
+      localStorage.setItem('oauth_token_secret', body.data.oauth_token_secret);
+      localStorage.setItem('screen_name', body.data.screen_name);
+      if (this.state.clip != null) {
+        localStorage.setItem('clip_url', this.state.clip.url);
+        localStorage.setItem('clip_title', this.state.clip.title);
+        localStorage.setItem('clip_id', this.state.clip.id);
+      }
+      window.open('/share/t');
+    });
   }
 
   render() {

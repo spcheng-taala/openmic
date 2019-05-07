@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import ReactTooltip from 'react-tooltip';
 import TwitterLogin from 'react-twitter-auth';
-import './assets/index.scss';
+import '../assets/index.scss';
 import "react-input-range/lib/css/index.css";
 import { Ghost } from 'react-kawaii';
 import InputRange from 'react-input-range';
@@ -21,9 +21,8 @@ import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import TextField from '@material-ui/core/TextField';
 import Divider from '@material-ui/core/Divider';
-import axios from 'axios';
-import UserManager from '../../singletons/UserManager.js';
-import BackendManager from '../../singletons/BackendManager.js';
+import UserManager from '../../../singletons/UserManager.js';
+import BackendManager from '../../../singletons/BackendManager.js';
 
 const STAGE_TRANSCRIBING = 0;
 const STAGE_PUBLISHING = 1;
@@ -109,24 +108,32 @@ const timeTextFiledFontStyle = {
   fontSize: 14,
 }
 
-class TranscribePage extends Component {
+class TranscriptionEditor extends Component {
 
   componentDidMount() {
-    var id = localStorage.getItem('clip_id');
-    console.log(id);
-    if (id != null) {
-      var url = localStorage.getItem('clip_url');
-      this.setState({
-        id: id,
-        url: url,
-      });
-      this.parseTranscription(id);
-      localStorage.removeItem('clip_id');
-      localStorage.removeItem('clip_url');
-    } else {
-      // this.parseTranscription(this.state.id);
-      this.props.history.push('/');
-    }
+    BackendManager.makeQuery('clips/transcription', JSON.stringify({
+      clip_id: this.props.id,
+    }))
+    .then(data => {
+      console.log(data);
+      if (data.success) {
+        this.setState({
+          id: this.props.id,
+          transcription: data.transcription,
+        });
+      }
+    });
+    BackendManager.makeQuery('clips/', JSON.stringify({
+      clip_id: this.props.id,
+    }))
+    .then(data => {
+      console.log(data);
+      if (data.success) {
+        this.setState({
+          url: data.clip.video_url,
+        });
+      }
+    });
   }
 
   constructor(props) {
@@ -136,6 +143,7 @@ class TranscribePage extends Component {
       stage: STAGE_TRANSCRIBING,
       isPlaying: true,
       url: "",
+      transcriptionsToDelete: [],
       transcription: [],
       transcribedValue: 0,
       transcribedDuration: 0,
@@ -309,6 +317,7 @@ class TranscribePage extends Component {
       if (i < transcription.length - 2) {
         if (transcription[i + 1].start_time - transcription[i].end_time > 0) {
           var line = {
+            id: 0,
             start_time: transcription[i].end_time + 0.01,
             end_time: transcription[i + 1].start_time - 0.01,
             line: '',
@@ -318,6 +327,7 @@ class TranscribePage extends Component {
       } else {
         if (transcription[i].end_time < this.state.transcribedDuration) {
           var line = {
+            id: 0,
             start_time: transcription[i].end_time + 0.01,
             end_time: this.state.transcribedDuration,
             line: '',
@@ -328,6 +338,7 @@ class TranscribePage extends Component {
     } else {
       if (transcription[i + 1].start_time > 0) {
         var line = {
+          id: 0,
           start_time: 0,
           end_time: transcription[i + 1].start_time - 0.01,
           line: '',
@@ -343,8 +354,11 @@ class TranscribePage extends Component {
 
   handleRemoveLine(i) {
     var transcription = this.state.transcription;
+    var transcriptionsToDelete = this.state.transcriptionsToDelete;
+    var transcriptionToDelete = {id: transcription.id};
     transcription.splice(i, 1);
     this.setState({
+      transcriptionsToDelete: transcriptionsToDelete,
       transcription: transcription,
     });
   }
@@ -420,22 +434,50 @@ class TranscribePage extends Component {
     });
     interval = setInterval(() => this.updateInterval(), 100);
     var captions = this.state.transcription;
-    var transcriptions = [];
+    var newTranscriptions = [];
+    var existingTranscriptions = [];
     for (var i = 0; i < captions.length; i++) {
       var caption = {
-        clip_id: this.state.id,
+        clip_id: this.props.id,
         start_time: captions[i].start_time,
         end_time: captions[i].end_time,
         transcription: captions[i].line,
       }
-      transcriptions.push(caption);
+      if (captions[i].id > 0) {
+        caption.id = captions[i].id;
+        existingTranscriptions.push(caption);
+      } else {
+        newTranscriptions.push(caption);
+      }
     }
-    BackendManager.makeQuery('clips/transcription/create', JSON.stringify({
-      transcriptions: transcriptions,
-    }))
-    .then(data => {
-      console.log(data);
-    });
+
+    if (this.state.transcriptionsToDelete.length > 0) {
+      BackendManager.makeQuery('clips/transcription/delete', JSON.stringify({
+        ids: this.state.transcriptionsToDelete,
+      }))
+      .then(data => {
+        console.log(data);
+      });
+    }
+
+    if (existingTranscriptions.length > 0) {
+      BackendManager.makeQuery('clips/transcription/update', JSON.stringify({
+        transcriptions: existingTranscriptions,
+      }))
+      .then(data => {
+        console.log(data);
+      });
+    }
+
+    if (newTranscriptions.length > 0) {
+      BackendManager.makeQuery('clips/transcription/create', JSON.stringify({
+        transcriptions: newTranscriptions,
+      }))
+      .then(data => {
+        console.log(data);
+      });
+    }
+
     BackendManager.makeQuery('caption', JSON.stringify({
       transcription: this.state.transcription,
       url: this.state.url,
@@ -451,7 +493,7 @@ class TranscribePage extends Component {
         }))
         .then(data => {
           if (data.success) {
-            this.props.history.push('/clips/' + this.state.id);
+            this.props.goToNewClip();
           }
         });
       }
@@ -598,4 +640,4 @@ class TranscribePage extends Component {
   }
 }
 
-export default TranscribePage;
+export default TranscriptionEditor;

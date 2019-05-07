@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useRef } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import WaveSurfer from 'wavesurfer.js';
 import ReactTooltip from 'react-tooltip';
@@ -352,7 +352,7 @@ class StoryPage extends Component {
     super(props);
 
     this.playerRef = React.createRef();
-
+    this.copyRef = React.createRef();
     this.state = {
       currentTime: 0,
       duration: 0,
@@ -367,6 +367,7 @@ class StoryPage extends Component {
       currentClip: null,
       isPlaying: false,
       isPlayingClip: false,
+      isFinishedClip: false,
       currentTime: 0,
       clipDuration: 0,
       clipValue: 0,
@@ -411,6 +412,7 @@ class StoryPage extends Component {
     this.renderClipToolTip = this.renderClipToolTip.bind(this);
     this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
     this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
+    this.copyToClipboard = this.copyToClipboard.bind(this);
   }
 
   handleStoryClick(story) {
@@ -749,30 +751,35 @@ class StoryPage extends Component {
   }
 
   renderPlayPauseReplay() {
-    if (!this.state.isPlayingClip) {
+    if (this.state.isFinishedClip) {
       return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.resumeClip()}>
+        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.replayClip()}>
           <img
             style={{ marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/play_simple.png'
+            src='../../../../../images/replay.png'
             />
         </div>
       );
     } else {
-      if (this.state.clipValue == this.state.clipDuration) {
-        <img
-          style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-          src='../../../../../images/replay.png'
-          onClick={() => this.replayClip()}/>
+      if (!this.state.isPlayingClip) {
+        return (
+          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.resumeClip()}>
+            <img
+              style={{ marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+              src='../../../../../images/play_simple.png'
+              />
+          </div>
+        );
+      } else {
+        return (
+          <div style={{marginLeft: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.pauseClip()}>
+            <img
+              style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+              src='../../../../../images/pause_simple.png'
+              />
+          </div>
+        );
       }
-      return (
-        <div style={{marginLeft: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.pauseClip()}>
-          <img
-            style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/pause_simple.png'
-            />
-        </div>
-      );
     }
   }
 
@@ -789,7 +796,11 @@ class StoryPage extends Component {
   }
 
   replayClip() {
-
+    this.setState({
+      isFinishedClip: false,
+      isPlaying: true,
+    });
+    this.playAtValue(0);
   }
 
   getPercentage() {
@@ -848,7 +859,6 @@ class StoryPage extends Component {
 
 
   playClip(index) {
-    console.log(this.state.clips[index]);
     this.setState({
       currentClip: this.state.clips[index],
       isPlayingClip: true,
@@ -873,8 +883,14 @@ class StoryPage extends Component {
         clipValue: seconds,
       });
     }
-    console.log(seconds);
-    console.log(this.state.clipDuration);
+
+    if (this.state.clipDuration == seconds) {
+      this.setState({
+        isFinishedClip: true,
+        isPlaying: false,
+        clipValue: 0,
+      });
+    }
   }
 
   handleDurationChange(duration) {
@@ -923,23 +939,43 @@ class StoryPage extends Component {
               <Row style={{marginLeft: 20}}>
                 <TwitterLogin
                   style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
-                  loginUrl="http://localhost:8080/pp/auth/twitter"
+                  loginUrl="https://api.mypokadot.com/pp/auth/twitter"
                   onFailure={this.onTwitterAuthFailure}
                   onSuccess={this.onTwitterAuthSuccess}
-                  requestTokenUrl="http://localhost:8080/pp/auth/twitter/reverse"
+                  forceLogin={true}
+                  requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
                 >
-                  <img style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
+                  <img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
                 </TwitterLogin>
-                <div style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}}>
+                <ReactTooltip id="twitterTT" place="top" type="light" effect="float">
+                  <span>Twitter</span>
+                </ReactTooltip>
+                <div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
                   <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
                 </div>
+                <ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
+                  <span>Copy to clipboard</span>
+                </ReactTooltip>
               </Row>
-              <input type='text' value={'https://theopenmic.fm/clips/' + this.state.currentClip.id} style={{width: 100, marginTop: 10}} />
+              {
+                document.queryCommandSupported('copy') &&
+                <input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.currentClip.id} style={{width: 100, marginTop: 10}} />
+              }
             </ReactTooltip>
           </Row>
         </Card>
       );
     }
+  }
+
+  copyToClipboard() {
+    this.copyRef.current.select();
+    document.execCommand('copy');
+    this.props.showToast('Copied!');
+    // This is just personal preference.
+    // I prefer to not show the the whole text area selected.
+    // e.target.focus();
+    // setCopySuccess('Copied!');
   }
 
   onTwitterAuthFailure(error) {
@@ -951,9 +987,10 @@ class StoryPage extends Component {
       localStorage.setItem('oauth_token', body.data.oauth_token);
       localStorage.setItem('oauth_token_secret', body.data.oauth_token_secret);
       localStorage.setItem('screen_name', body.data.screen_name);
-      if (this.props.clip) {
-        localStorage.setItem('clip_url', this.props.clip.url);
-        localStorage.setItem('clip_title', this.props.clip_title);
+      if (this.state.currentClip != null) {
+        localStorage.setItem('clip_url', this.state.currentClip.url);
+        localStorage.setItem('clip_title', this.state.currentClip.title);
+        localStorage.setItem('clip_id', this.state.currentClip.id);
       }
       window.open('/share/t');
     });
@@ -1067,10 +1104,10 @@ class StoryPage extends Component {
               position: 'fixed',
               bottom: 25,
               zIndex: 10,
-              left: '93%',
+              left: '90%',
               cursor: 'pointer',
-              width: 75,
-              height: 75,
+              width: 100,
+              height: 100,
               boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)'}}
             src='../../../../../images/clip.png'
             onClick={() => this.openClip()}/>

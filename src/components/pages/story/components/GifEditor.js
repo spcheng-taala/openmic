@@ -3,17 +3,16 @@ import ReactTooltip from 'react-tooltip';
 import WaveSurfer from 'wavesurfer.js';
 import toWav from 'audiobuffer-to-wav';
 import Modal from 'react-modal';
-import './assets/index.scss';
+import '../assets/index.scss';
 import "react-input-range/lib/css/index.css";
 import { Planet } from 'react-kawaii';
-import InputRange from 'react-input-range';
 import ReactPlayer from 'react-player';
 import GridLayout from 'react-grid-layout';
 import RGL, { WidthProvider } from "react-grid-layout";
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import _ from "lodash";
-import LoadingModal from './components/LoadingModal.js';
+import LoadingModal from './LoadingModal.js';
 import { Container, Row, Col } from 'react-grid-system';
 import { withStyles } from '@material-ui/core/styles';
 import GridList from '@material-ui/core/GridList';
@@ -24,14 +23,12 @@ import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import TextField from '@material-ui/core/TextField';
 import Divider from '@material-ui/core/Divider';
-import axios from 'axios';
-import UserManager from '../../singletons/UserManager.js';
-import BackendManager from '../../singletons/BackendManager.js';
+import UserManager from '../../../singletons/UserManager.js';
+import BackendManager from '../../../singletons/BackendManager.js';
 
-const STAGE_CLIP = 0;
-const STAGE_CLIPPING = 1;
-const STAGE_CLIPPED = 2;
-const STAGE_PUBLISHING = 3;
+const STAGE_VERIFYING = 0;
+const STAGE_GIF = 1;
+const STAGE_PUBLISHING = 2;
 
 var uniqueCounter = 0;
 
@@ -61,6 +58,13 @@ const customStyles = {
     transform: 'translate(-50%, -50%)'
   },
 };
+
+const gridList = {
+	marginLeft: 20,
+	marginTop: 20,
+  width: 220,
+  height: 70,
+}
 
 const waveformStyle = {
   marginLeft: 50,
@@ -146,9 +150,21 @@ const timeTextFiledFontStyle = {
   fontSize: 14,
 }
 
+var active = {
+  color: '#CF5085',
+  fontWeight: 'bold',
+	cursor: 'pointer',
+}
+
+var inactive = {
+  color: 'grey',
+  fontWeight: 'normal',
+	cursor: 'pointer',
+}
+
 var wavesurfer = null;
 
-class ClipAudioPage extends Component {
+class GifEditor extends Component {
 
   static defaultProps = {
     isDraggable: true,
@@ -161,174 +177,146 @@ class ClipAudioPage extends Component {
   };
 
   componentDidMount() {
-    var url = localStorage.getItem('url');
-
-    if (url != null) {
-      this.openTrimAudioModal();
-      var clipTime = localStorage.getItem('clip_time');
-      var duration = localStorage.getItem('duration');
-      var storyId = localStorage.getItem('story_id');
-
-      this.setState({
-        storyId: storyId,
-      });
-
-      var startTime = clipTime - 150;
-      if (startTime < 0) {
-        startTime = 0;
-      }
-
-      var length = 180;
-      if (length > duration) {
-        length = duration;
-      }
-
-      length = Math.floor(length);
-
-      this.setState({
-        clipMax: length,
-      });
-
-      var min = 90;
-      if (clipTime - 60 < 0) {
-        min = 0;
-      }
-
-      var max = min + 60;
-      if (max > duration) {
-        max = duration;
-      }
-
-      this.setState({
-        value: {
-          min: min,
-          max: max,
-        }
-      });
-
-      localStorage.removeItem('url');
-      localStorage.removeItem('clip_time');
-      localStorage.removeItem('duration');
-      localStorage.removeItem('story_id');
-      var ctx = document.createElement('canvas').getContext('2d');
-      var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
-      linGrad.addColorStop(0.5, 'rgba(223, 131, 170, 1.000)');
-      linGrad.addColorStop(0.5, 'rgba(237, 185, 207, 1.000)');
-      var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
-      progressGrad.addColorStop(0.5, 'rgba(119, 31, 68, 1.000)');
-      progressGrad.addColorStop(0.5, 'rgba(209, 77, 133, 1.000)');
-      wavesurfer = WaveSurfer.create({
-        container: '#waveform',
-        waveColor: linGrad,
-        progressColor: progressGrad,
-        scrollParent: false,
-        barWidth: 3,
-      });
-      var self = this;
-      var AudioContext = window.AudioContext || window.webkitAudioContext;
-      BackendManager.makeQuery('trim', JSON.stringify({
-        url: url,
-        start_time: startTime,
-        total_length: length,
-        user_id: UserManager.id,
+    var self = this;
+    BackendManager.refreshToken = localStorage.getItem('refresh_token');
+    BackendManager.updateToken().then(data => {
+      BackendManager.makeQuery('clips/check', JSON.stringify({
+        clip_id: this.props.id,
       }))
       .then(data => {
-        console.log(data);
         if (data.success) {
-          this.closeTrimAudioModal();
-          var clipUrl = BackendManager.fileUrl + data.title;
-          console.log(clipUrl);
-          this.setState({
-            url: clipUrl,
-          });
-          wavesurfer.load(clipUrl);
-          wavesurfer.on('ready', function() {
-            if (self.state.stage == STAGE_CLIPPED) {
-
-            } else {
-              wavesurfer.seekTo((clipTime - 60)/duration);
-            }
-            self.setState({
-              isPlaying: true,
+          if (data.user_id == UserManager.id) {
+            this.setState({
+              stage: STAGE_GIF,
             });
-            wavesurfer.play();
-          });
-          wavesurfer.on('seek', function (progress) {
-            if (self.state.stage != STAGE_CLIPPED) {
-              if (progress < self.state.value.min/length) {
-                wavesurfer.seekTo(self.state.value.min/length);
-              } else if (progress > self.state.value.max/length) {
-                wavesurfer.seekTo(self.state.value.max/length);
-              }
-            }
-          });
-          wavesurfer.on('audioprocess', function(progress) {
-            if (self.state.stage == STAGE_CLIPPED) {
-              for (var i = 0; i < self.state.frames.length; i++) {
-                if (self.state.frames[i] != null) {
-                  if ((progress/wavesurfer.getDuration()) > parseFloat(self.state.frames[i].grid.x)/100 &&
-                  (progress/wavesurfer.getDuration()) <= (parseFloat(self.state.frames[i].grid.x + self.state.frames[i].grid.w)/100)) {
-                    if (!self.state.isSelectingGif) {
-                      if (self.state.frames[i].id != self.state.currentGif.id) {
-                        self.setState({
-                          currentGif: self.state.frames[i],
-                        });
+            var ctx = document.createElement('canvas').getContext('2d');
+            var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+            linGrad.addColorStop(0.5, 'rgba(223, 131, 170, 1.000)');
+            linGrad.addColorStop(0.5, 'rgba(237, 185, 207, 1.000)');
+            var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+            progressGrad.addColorStop(0.5, 'rgba(119, 31, 68, 1.000)');
+            progressGrad.addColorStop(0.5, 'rgba(209, 77, 133, 1.000)');
+            wavesurfer = WaveSurfer.create({
+              container: '#waveform',
+              waveColor: linGrad,
+              progressColor: progressGrad,
+              scrollParent: false,
+              barWidth: 3,
+            });
+
+            var self = this;
+
+            BackendManager.makeQuery('clips/', JSON.stringify({
+              clip_id: this.props.id,
+            }))
+            .then(data => {
+							console.log('clips');
+              console.log(data);
+              if (data.success) {
+                self.setState({
+                  url: data.clip.audio_url,
+                });
+                wavesurfer.load(data.clip.audio_url);
+                wavesurfer.on('ready', function() {
+                  self.setState({
+                    isPlaying: true,
+                  });
+                  wavesurfer.play();
+                });
+                wavesurfer.on('audioprocess', function(progress) {
+                  if (self.state.stage == STAGE_GIF) {
+                    for (var i = 0; i < self.state.frames.length; i++) {
+                      if (self.state.frames[i] != null) {
+                        if ((progress/wavesurfer.getDuration()) > parseFloat(self.state.frames[i].grid.x)/100 &&
+                        (progress/wavesurfer.getDuration()) <= (parseFloat(self.state.frames[i].grid.x + self.state.frames[i].grid.w)/100)) {
+                          if (!self.state.isSelectingGif) {
+                            if (self.state.currentGif == null || self.state.frames[i].id != self.state.currentGif.id) {
+                              self.setState({
+                                currentGif: self.state.frames[i],
+                              });
+                            }
+                          }
+                        }
                       }
                     }
                   }
+                });
+              }
+            });
+
+            BackendManager.makeQuery('clips/gifs', JSON.stringify({
+              clip_id: this.props.id,
+            }))
+            .then(data => {
+              console.log(data);
+              if (data.success) {
+                var gifs = [];
+                for (var i = 0; i < data.gifs.length; i++) {
+                  var gif = {
+                    uid: data.gifs[i].id,
+                    index: i,
+                    i: i,
+                    id: data.gifs[i].gif_id,
+                    grid: {
+                      x: data.gifs[i].x,
+                      y: 0,
+                      w: data.gifs[i].w,
+                      h: 2,
+                    },
+                    title: data.gifs[i].title,
+                    url: data.gifs[i].url,
+                    duration: 1,
+                  }
+                  gifs.push(gif);
                 }
+                uniqueCounter = data.gifs.length;
+                self.setState({
+                  frames: gifs,
+                });
               }
-            } else {
-              if (progress >= self.state.value.max) {
-                wavesurfer.pause();
-                wavesurfer.seekTo(self.state.value.min/length);
-                wavesurfer.play();
-              }
-            }
-          });
+            });
+          }
         }
       });
-    } else {
-      this.props.history.push('/');
+    });
+  }
+
+  componentWillUnmount() {
+    if (wavesurfer != null) {
+      wavesurfer.stop();
     }
   }
+
+	handleTypeClick(index) {
+		if (index == 0) {
+			this.setState({type: index})
+		} else if (index == 1) {
+			this.setState({type: index});
+		}
+	}
 
   constructor(props) {
     super(props);
     this.state = {
       id: 12,
-      storyId: 0,
       isPlaying: false,
       clipTitle: "",
-      clipMax: 180,
-      value: {
-        min: 0,
-        max: 60,
-      },
-      prevMin: 0,
-      prevMax: 60,
       url: "",
-      audioUrl: "",
-      videoUrl: "",
-      stage: STAGE_CLIP,
+      stage: STAGE_GIF,
       progress: 18,
       gifs: [],
       currentGif: null,
       searchQuery: "",
       buttonType: 0,
       frames: [],
+      gifsToDelete: [],
       isSelectingGif: false,
       showAddGifModal: false,
-      showTrimAudioModal: false,
     };
 
     this.handleTitleChange = this.handleTitleChange.bind(this);
-    this.createAudioClip = this.createAudioClip.bind(this);
-    this.uploadClip = this.uploadClip.bind(this);
-    this.checkValue = this.checkValue.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
     this.createMinString = this.createMinString.bind(this);
-    this.renderBottomView = this.renderBottomView.bind(this);
     this.updateInterval = this.updateInterval.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
@@ -347,9 +335,8 @@ class ClipAudioPage extends Component {
     this.renderWavesurfer = this.renderWavesurfer.bind(this);
     this.openAddGifModal = this.openAddGifModal.bind(this);
     this.closeAddGifModal = this.closeAddGifModal.bind(this);
-    this.openTrimAudioModal = this.openTrimAudioModal.bind(this);
-    this.closeTrimAudioModal = this.closeTrimAudioModal.bind(this);
     this.moveArrayItem = this.moveArrayItem.bind(this);
+    this.renderView = this.renderView.bind(this);
   }
 
   handleTitleChange(e) {
@@ -358,133 +345,10 @@ class ClipAudioPage extends Component {
     });
   }
 
-  createAudioClip() {
-    if (this.state.clipTitle == "") {
-      this.props.showToast("Don't forget to add a title!");
-    } else {
-      // var AudioContext = window.AudioContext || window.webkitAudioContext;
-      // Ciseaux.context = new AudioContext();
-      var self = this;
-      if (this.state.url != null) {
-        this.setState({
-          stage: STAGE_CLIPPING,
-        });
-        interval = setInterval(() => this.updateInterval(), 100);
-        BackendManager.makeQuery('trim', JSON.stringify({
-          url: this.state.url,
-          start_time: this.state.value.min,
-          total_length: this.state.value.max - this.state.value.min,
-          user_id: UserManager.id,
-        }))
-        .then(data => {
-          if (data.success) {
-            var audioUrl = BackendManager.fileUrl + data.title;
-            this.setState({
-              stage: STAGE_CLIPPED,
-              audioUrl: audioUrl,
-              progress: 18,
-            });
-            wavesurfer.empty();
-            wavesurfer.load(audioUrl);
-            BackendManager.makeQuery('clips/create', JSON.stringify({
-              title: self.state.clipTitle,
-              audio_url: audioUrl,
-              story_id: self.state.storyId,
-              user_id: UserManager.id,
-              duration: self.state.value.max - self.state.value.min,
-            }))
-            .then(data => {
-              console.log(data);
-              if (data.success) {
-                self.setState({
-                  id: data.id,
-                });
-                BackendManager.makeQuery('transcribe', JSON.stringify({
-                  url: audioUrl,
-                  id: data.id,
-                }))
-                .then(data => {
-                  console.log(data);
-                });
-              }
-            });
-          }
-        });
-      }
-    }
-  }
-
   updateInterval() {
     if (this.state.progress < 99) {
       this.setState({ progress: this.state.progress + 0.1 });
     }
-  }
-
-  uploadClip(file) {
-    const formData = new FormData();
-		formData.append('file', file);
-    interval = setInterval(() => this.updateInterval(), 100);
-    var self = this;
-		axios.post(`https://api.mypokadot.com/pp/upload/`, formData, {
-		}).then(data => {
-			var audioUrl = BackendManager.fileUrl + data.data.title.split(' ').join('+');
-      console.log(audioUrl);
-      this.setState({
-        stage: STAGE_CLIPPED,
-        audioUrl: audioUrl,
-        progress: 18,
-      });
-      wavesurfer.empty();
-      wavesurfer.load(audioUrl);
-      BackendManager.makeQuery('clips/create', JSON.stringify({
-        title: self.state.clipTitle,
-        audio_url: audioUrl,
-        story_id: self.state.storyId,
-        user_id: UserManager.id,
-        duration: self.state.value.max - self.state.value.min,
-      }))
-      .then(data => {
-        console.log(data);
-        if (data.success) {
-          self.setState({
-            id: data.id,
-          });
-          BackendManager.makeQuery('transcribe', JSON.stringify({
-            url: audioUrl,
-            id: data.id,
-          }))
-          .then(data => {
-            console.log(data);
-          });
-        }
-      });
-		}).catch(error => {
-			// handle your error
-		});
-  }
-
-  checkValue(value) {
-    if (value.min < 0) {
-      value.min = 0;
-    }
-    if (value.max > 180) {
-      value.max = 180;
-    }
-    if (value.min == 180) {
-      value.min = 170;
-    }
-    if (value.max - value.min > 120) {
-      if (this.state.prevMax != value.max) {
-        value.max = value.min + 120;
-      } else if (this.state.prevMin != value.min) {
-        value.min = value.max - 120;
-      }
-    }
-    this.setState({
-      value: value,
-      prevMin: value.min,
-      prevMax: value.max,
-    });
   }
 
   playAtValue(value) {
@@ -535,7 +399,7 @@ class ClipAudioPage extends Component {
   }
 
   renderVideoPlayer() {
-    if (this.state.currentGif != null && this.state.stage == STAGE_CLIPPED) {
+    if (this.state.currentGif != null && this.state.stage == STAGE_GIF) {
       return (
         <div style={root}>
           <ReactPlayer url={this.state.currentGif.url} playing loop onDuration={this.setGifDuration}/>
@@ -552,16 +416,6 @@ class ClipAudioPage extends Component {
     });
     layoutItem.h = 2;
     placeholder.h = 2;
-    // var hasOverlap = false;
-    // var difference = 0;
-    // for (var i = 0; i < layout.length; i++) {
-    //   if (layout[i].i != layoutItem.i) {
-    //     if (layoutItem.x < layout[i].x && (layoutItem.x + layoutItem.w) > layout[i].x) {
-    //       hasOverlap = true;
-    //       difference = layout[i].x - layoutItem.x;
-    //     }
-    //   }
-    // }
 
     var size = 0;
     for (var i = 0; i < layout.length; i++) {
@@ -571,10 +425,6 @@ class ClipAudioPage extends Component {
     if (size > 100) {
       layoutItem.w = layoutItem.w - (size - 100);
     }
-
-    // if (hasOverlap) {
-    //   layoutItem.w = difference;
-    // }
 
     wavesurfer.seekTo(layoutItem.x/100);
     wavesurfer.play();
@@ -657,7 +507,7 @@ class ClipAudioPage extends Component {
 
     if (gif != null) {
       var newGif = {
-        uid: 0,
+        uid: gif.uid,
         index: gif.index,
         i: layoutItem.i,
         id: gif.id,
@@ -713,11 +563,15 @@ class ClipAudioPage extends Component {
   }
 
   onRemoveItem(id) {
-    console.log("removing", id);
     var frames = this.state.frames;
     var removedIndex = 0;
     for (var i = 0; i < frames.length; i++) {
       if (frames[i].i == id) {
+        if (frames[i].uid > 0) {
+          var gifsToDelete = this.state.gifsToDelete;
+          var gifToDelete = {id: frames[i].uid};
+          gifsToDelete.push(gifToDelete);
+        }
         removedIndex = i;
         frames.splice(i, 1);
         break;
@@ -800,6 +654,9 @@ class ClipAudioPage extends Component {
   }
 
   addGif() {
+    this.setState({
+      isSelectingGif: false,
+    });
     uniqueCounter += 1;
     console.log('adding ' + uniqueCounter);
     var title = this.state.searchQuery;
@@ -839,12 +696,10 @@ class ClipAudioPage extends Component {
       }))
       .then(data => {
         if (data.success) {
-          gif.uid = data.gif.id;
-          gif.url = data.gif.url;
+          gif.url = data.url;
           gifs.push(gif);
           self.setState({
             frames: gifs,
-            isSelectingGif: false,
           });
           console.log(gifs);
         } else {
@@ -856,21 +711,17 @@ class ClipAudioPage extends Component {
           .then(data => {
             if (data.success) {
               this.closeAddGifModal();
-              gif.url = BackendManager.fileUrl + data.title;
+              var url = "https://s3-us-west-2.amazonaws.com/openmic-gifs/";
+              gif.url = url + data.title;
+              gifs.push(gif);
+              self.setState({
+                frames: gifs,
+              });
+              console.log(gifs);
               BackendManager.makeQuery('gifs/create', JSON.stringify({
                 gif_id: self.state.currentGif.id,
-                url: BackendManager.fileUrl + data.title,
-              }))
-              .then(data => {
-                if (data.success) {
-                  gif.uid = data.id;
-                  gifs.push(gif);
-                  self.setState({
-                    frames: gifs,
-                    isSelectingGif: false,
-                  });
-                }
-              });
+                url: url + data.title,
+              }));
             }
           });
         }
@@ -879,7 +730,7 @@ class ClipAudioPage extends Component {
   }
 
   renderAddButton() {
-    if (this.state.buttonType == 1 && this.state.stage == STAGE_CLIPPED) {
+    if (this.state.buttonType == 1 && this.state.stage == STAGE_GIF) {
       return (
         <div style={buttonRoot}>
           <button className='button-green' onClick={() => this.addGif()}>
@@ -922,10 +773,59 @@ class ClipAudioPage extends Component {
       stage: STAGE_PUBLISHING
     });
 
+    interval = setInterval(() => this.updateInterval(), 100);
+
     wavesurfer.stop();
 
+    if (this.state.gifsToDelete.length > 0) {
+      BackendManager.makeQuery('clips/gifs/delete', JSON.stringify({
+        ids: this.state.gifsToDelete,
+      }))
+      .then(data => {
+        console.log(this.state.gifsToDelete);
+        console.log(data);
+      });
+    }
+
+    var existingGifs = [];
+    var newGifs = [];
+    for (var i = 0; i < frames.length; i++) {
+      var gif = {
+        id: frames[i].uid,
+        clip_id: this.state.id,
+        gif_id: frames[i].id,
+        title: frames[i].title,
+        x: frames[i].grid.x,
+        w: frames[i].grid.w,
+      };
+
+      if (frames[i].uid > 0) {
+        existingGifs.push(gif);
+      } else {
+        newGifs.push(gif);
+      }
+    }
+
+    if (existingGifs.length > 0) {
+      BackendManager.makeQuery('clips/gifs/update', JSON.stringify({
+        gifs: existingGifs,
+      }))
+      .then(data => {
+        console.log(data);
+      });
+    }
+
+    if (newGifs.length > 0) {
+      BackendManager.makeQuery('clips/gifs/create', JSON.stringify({
+        gifs: newGifs,
+      }))
+      .then(data => {
+        console.log(data);
+      });
+    }
+
     BackendManager.makeQuery('clip', JSON.stringify({
-      audio_url: this.state.audioUrl,
+      audio_url: this.state.url,
       frames: totalGifs,
       user_id: UserManager.id,
     }))
@@ -933,35 +833,12 @@ class ClipAudioPage extends Component {
       console.log(data);
       if (data.success) {
         var videoUrl = BackendManager.fileUrl + data.title;
-        this.setState({
-          videoUrl: videoUrl,
-        });
-        var gifs = [];
-        for (var i = 0; i < frames.length; i++) {
-          var gif = {
-            clip_id: this.state.id,
-            gif_id: frames[i].uid,
-            x: frames[i].grid.x,
-            w: frames[i].grid.w,
-            title: frames[i].title,
-          };
-          gifs.push(gif);
-        }
-        BackendManager.makeQuery('clips/gifs/create', JSON.stringify({
-          gifs: gifs,
+        BackendManager.makeQuery('clips/update/video', JSON.stringify({
+          id: this.props.id,
+          video_url: videoUrl
         }))
         .then(data => {
-          if (data.success) {
-            BackendManager.makeQuery('clips/update/video', JSON.stringify({
-              id: this.state.id,
-              url: videoUrl
-            }))
-            .then(data => {
-              localStorage.setItem('clip_id', this.state.id);
-              localStorage.setItem('clip_url', videoUrl);
-              this.props.history.push('/transcribe');
-            });
-          }
+          this.props.switchToCaptions();
         });
       }
     });
@@ -975,58 +852,20 @@ class ClipAudioPage extends Component {
     }
   }
 
-  renderBottomView() {
-    if (this.state.stage == STAGE_CLIP) {
-      return (
-        <div>
-          <div style={sliderStyle} data-tip data-for='sliderTT'>
-            <InputRange
-              draggableTrack
-              maxValue={this.state.clipMax}
-              minValue={0}
-              formatLabel={value => this.createMinString(value)}
-              onChange={value => this.checkValue(value)}
-              onChangeComplete={value => this.playAtValue(value)}
-              value={this.state.value} />
-          </div>
-          <ReactTooltip id="sliderTT" place="bottom" type="dark" effect="float">
-            <span>Drag the blue part!</span>
-          </ReactTooltip>
-          <h3 style={{color: 'grey', textAlign: 'center'}}>Drag the left and right blue dots to clip</h3>
-          <p style={{color: 'grey', textAlign: 'center'}}>Clips can be up to 2 minutes long</p>
-          {this.renderPlayPause()}
-          <div style={{margin: 50}}>
-            <TextField
-              label="Title"
-              placeholder="Title"
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              InputLabelProps={{
-                shrink: true,
-              }}
-              value={this.state.clipTitle}
-              onChange={this.handleTitleChange}/>
-          </div>
-          <button className='button-rounded' onClick={() => this.createAudioClip()}>
-            {"Next"}
-          </button>
-        </div>
-      );
-    } else if (this.state.stage == STAGE_CLIPPING) {
-      return (
-        <div>
-          {this.renderPlayPause()}
-          <div style={sliderStyle}>
-            <LinearProgress colorPrimary="#3abcbc" colorSecondary="#83d9d9" variant="determinate" value={this.state.progress} />
-          </div>
-          <div style={animationRoot}>
-            <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
-          </div>
-          <p style={{color: 'grey', textAlign: 'center'}}>{"Snip snip! We'll be done shortly!"}</p>
-        </div>
-      );
-    } else if (this.state.stage == STAGE_CLIPPED) {
+  openAddGifModal() {
+    this.setState({
+      showAddGifModal: true
+    });
+  }
+
+  closeAddGifModal() {
+    this.setState({
+      showAddGifModal: false
+    });
+  }
+
+  renderView() {
+    if (this.state.stage == STAGE_GIF) {
       return (
         <div>
           <div style={{position: 'relative'}}>
@@ -1075,8 +914,8 @@ class ClipAudioPage extends Component {
             </GridList>
           </div>
         </div>
-      )
-    } else if (this.state.stage == STAGE_PUBLISHING) {
+      );
+    } else {
       return (
         <div>
           <div style={sliderStyle}>
@@ -1091,41 +930,10 @@ class ClipAudioPage extends Component {
     }
   }
 
-  openAddGifModal() {
-    this.setState({
-      showAddGifModal: true
-    });
-  }
-
-  closeAddGifModal() {
-    this.setState({
-      showAddGifModal: false
-    });
-  }
-
-  openTrimAudioModal() {
-    this.setState({
-      showTrimAudioModal: true,
-    });
-  }
-
-  closeTrimAudioModal() {
-    this.setState({
-      showTrimAudioModal: false,
-    });
-  }
-
   render() {
     const { classes } = this.props;
 		return (
       <div>
-        <Modal
-          isOpen={this.state.showTrimAudioModal}
-          contentLabel="Trimming Audio"
-          style={customStyles}
-        >
-          <LoadingModal text={"Trimming audio! Give us one sec..."}/>
-        </Modal>
         <Modal
           isOpen={this.state.showAddGifModal}
           contentLabel="Adding Gif"
@@ -1136,10 +944,10 @@ class ClipAudioPage extends Component {
         {this.renderVideoPlayer()}
         {this.renderAddButton()}
         {this.renderWavesurfer()}
-        {this.renderBottomView()}
+        {this.renderView()}
       </div>
     )
   }
 }
 
-export default ClipAudioPage;
+export default GifEditor;

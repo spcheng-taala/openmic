@@ -2,6 +2,9 @@ class BackendManager {
   constructor() {
     // this.domain = "https://api.mypokadot.com/pp/"
     this.domain = "http://localhost:8080/pp/"
+    // this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-files/"
+    this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/"
+    this.gifUrl = "https://s3-us-west-2.amazonaws.com/openmic-gifs/"
     this.refreshToken = "";
     this.token = "";
   }
