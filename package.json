@@ -10,6 +10,7 @@
     "bootstrap": "^4.3.1",
     "ciseaux": "^0.4.0",
     "classnames": "^2.2.6",
+    "dom-to-image": "^2.6.0",
     "fullcalendar-reactwrapper": "^1.0.7",
     "lil-uuid": "^0.1.1",
     "lodash.merge": "^4.6.1",

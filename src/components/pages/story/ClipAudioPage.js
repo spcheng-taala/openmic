@@ -25,6 +25,7 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import TextField from '@material-ui/core/TextField';
 import Divider from '@material-ui/core/Divider';
 import axios from 'axios';
+import domtoimage from 'dom-to-image';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
 
@@ -161,6 +162,18 @@ class ClipAudioPage extends Component {
   };
 
   componentDidMount() {
+    // domtoimage.toBlob(document.getElementById('title'))
+    // .then(function (blob) {
+    //     blob.lastModifiedDate = new Date();
+    //     blob.name = 'test.png';
+    //     var file = new File([blob], 'test.png');
+    //     const formData = new FormData();
+    // 		formData.append('file', file);
+    // 		axios.post(`http://localhost:8080/pp/upload/`, formData, {
+    // 		}).then(data => {
+    //       console.log(data);
+    //     });
+    // });
     var url = localStorage.getItem('url');
 
     if (url != null) {
@@ -299,7 +312,7 @@ class ClipAudioPage extends Component {
       id: 12,
       storyId: 0,
       isPlaying: false,
-      clipTitle: "",
+      clipTitle: "This is a catchy title!",
       clipMax: 180,
       value: {
         min: 0,
@@ -313,6 +326,7 @@ class ClipAudioPage extends Component {
       stage: STAGE_CLIP,
       progress: 18,
       gifs: [],
+      gifsToDelete: [],
       currentGif: null,
       searchQuery: "",
       buttonType: 0,
@@ -603,6 +617,12 @@ class ClipAudioPage extends Component {
         duration: gif.duration,
       }
 
+      BackendManager.makeQuery('clips/gif/update', JSON.stringify({
+        id: newGif.uid,
+        x: newGif.grid.x,
+        w: newGif.grid.w,
+      }));
+
       var frames = this.state.frames;
       frames[gif.index] = newGif;
 
@@ -657,7 +677,7 @@ class ClipAudioPage extends Component {
 
     if (gif != null) {
       var newGif = {
-        uid: 0,
+        uid: gif.uid,
         index: gif.index,
         i: layoutItem.i,
         id: gif.id,
@@ -679,6 +699,12 @@ class ClipAudioPage extends Component {
         frames: frames,
         buttonType: 2,
       });
+
+      BackendManager.makeQuery('clips/gif/update', JSON.stringify({
+        id: newGif.uid,
+        x: newGif.grid.x,
+        w: newGif.grid.w,
+      }));
     }
   }
 
@@ -718,6 +744,13 @@ class ClipAudioPage extends Component {
     var removedIndex = 0;
     for (var i = 0; i < frames.length; i++) {
       if (frames[i].i == id) {
+        var gifsToDelete = this.state.gifsToDelete;
+        gifsToDelete.push({
+          id: frames[i].uid,
+        });
+        this.setState({
+          gifsToDelete: gifsToDelete,
+        });
         removedIndex = i;
         frames.splice(i, 1);
         break;
@@ -839,14 +872,25 @@ class ClipAudioPage extends Component {
       }))
       .then(data => {
         if (data.success) {
-          gif.uid = data.gif.id;
+          gif.id = data.gif.id;
           gif.url = data.gif.url;
-          gifs.push(gif);
-          self.setState({
-            frames: gifs,
-            isSelectingGif: false,
+          BackendManager.makeQuery('clips/gif/create', JSON.stringify({
+            gif_id: gif.id,
+            clip_id: this.state.id,
+            x: gif.grid.x,
+            w: gif.grid.w,
+            title: gif.title,
+          }))
+          .then(data => {
+            if (data.success) {
+              gif.uid = data.id;
+              gifs.push(gif);
+              self.setState({
+                frames: gifs,
+                isSelectingGif: false,
+              });
+            }
           });
-          console.log(gifs);
         } else {
           this.openAddGifModal();
           BackendManager.makeQuery('resize', JSON.stringify({
@@ -855,19 +899,31 @@ class ClipAudioPage extends Component {
           }))
           .then(data => {
             if (data.success) {
-              this.closeAddGifModal();
-              gif.url = BackendManager.fileUrl + data.title;
+              gif.url = BackendManager.gifUrl + data.title;
               BackendManager.makeQuery('gifs/create', JSON.stringify({
                 gif_id: self.state.currentGif.id,
-                url: BackendManager.fileUrl + data.title,
+                url: gif.url,
               }))
               .then(data => {
                 if (data.success) {
-                  gif.uid = data.id;
-                  gifs.push(gif);
-                  self.setState({
-                    frames: gifs,
-                    isSelectingGif: false,
+                  this.closeAddGifModal();
+                  gif.id = data.id;
+                  BackendManager.makeQuery('clips/gif/create', JSON.stringify({
+                    gif_id: gif.id,
+                    clip_id: this.state.id,
+                    x: gif.grid.x,
+                    w: gif.grid.w,
+                    title: gif.title,
+                  }))
+                  .then(data => {
+                    if (data.success) {
+                      gif.uid = data.id;
+                      gifs.push(gif);
+                      self.setState({
+                        frames: gifs,
+                        isSelectingGif: false,
+                      });
+                    }
                   });
                 }
               });
@@ -891,6 +947,16 @@ class ClipAudioPage extends Component {
   }
 
   createVideo() {
+    if (this.state.gifsToDelete.length > 0) {
+      BackendManager.makeQuery('clips/gifs/delete', JSON.stringify({
+        ids: this.state.gifsToDelete,
+      }))
+      .then(data => {
+        console.log(this.state.gifsToDelete);
+        console.log(data);
+      });
+    }
+
     var totalGifs = [];
     var frames = this.state.frames;
     frames.sort((a,b) => (a.grid.x > b.grid.x) ? 1 : ((b.grid.x > a.grid.x) ? -1 : 0));
@@ -928,6 +994,7 @@ class ClipAudioPage extends Component {
       audio_url: this.state.audioUrl,
       frames: totalGifs,
       user_id: UserManager.id,
+      title: this.state.clipTitle,
     }))
     .then(data => {
       console.log(data);
@@ -947,21 +1014,14 @@ class ClipAudioPage extends Component {
           };
           gifs.push(gif);
         }
-        BackendManager.makeQuery('clips/gifs/create', JSON.stringify({
-          gifs: gifs,
+        BackendManager.makeQuery('clips/update/video', JSON.stringify({
+          id: this.state.id,
+          url: videoUrl
         }))
         .then(data => {
-          if (data.success) {
-            BackendManager.makeQuery('clips/update/video', JSON.stringify({
-              id: this.state.id,
-              url: videoUrl
-            }))
-            .then(data => {
-              localStorage.setItem('clip_id', this.state.id);
-              localStorage.setItem('clip_url', videoUrl);
-              this.props.history.push('/transcribe');
-            });
-          }
+          localStorage.setItem('clip_id', this.state.id);
+          localStorage.setItem('clip_url', videoUrl);
+          this.props.history.push('/transcribe');
         });
       }
     });
@@ -1063,6 +1123,7 @@ class ClipAudioPage extends Component {
               value={this.state.searchQuery}
               onChange={this.handleSearchChange}
               onFocus={this.handleSearchFocus} />
+            <img src='../../../../../images/giphy.png' style={{height: 30}}/>
           </div>
           {this.renderGifsText()}
           <div style={root}>

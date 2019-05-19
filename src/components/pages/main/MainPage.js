@@ -409,6 +409,7 @@ class MainPage extends React.Component {
 		this.renderEditProfileDrawerPanel = this.renderEditProfileDrawerPanel.bind(this);
     this.renderDonationsDrawerPanel = this.renderDonationsDrawerPanel.bind(this);
 		this.renderMessagesDrawerPanel = this.renderMessagesDrawerPanel.bind(this);
+		this.renderMyClipsDrawerPanel = this.renderMyClipsDrawerPanel.bind(this);
     this.renderLogoutDrawerPanel = this.renderLogoutDrawerPanel.bind(this);
     this.handleStoryClick = this.handleStoryClick.bind(this);
 		this.handleUserClick = this.handleUserClick.bind(this);
@@ -685,6 +686,18 @@ class MainPage extends React.Component {
       }
     }
   }
+
+	renderMyClipsDrawerPanel() {
+		if (this.state.isLoggedIn) {
+			return (
+				<div>
+					<ListItem>
+						<NavLink to="/me/clips" style={drawerText}>{"My Clips"}</NavLink>
+					</ListItem>
+				</div>
+			);
+		}
+	}
 
 	renderMessagesDrawerPanel() {
 		if (this.state.isLoggedIn) {
@@ -1402,6 +1415,7 @@ class MainPage extends React.Component {
 		        >
 		          <div className={classes.toolbar} />
 		          <List>
+								{this.renderMyClipsDrawerPanel()}
               	{this.renderEditProfileDrawerPanel()}
                 {this.renderDonationsDrawerPanel()}
 								{this.renderMessagesDrawerPanel()}

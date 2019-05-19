@@ -711,8 +711,7 @@ class GifEditor extends Component {
           .then(data => {
             if (data.success) {
               this.closeAddGifModal();
-              var url = "https://s3-us-west-2.amazonaws.com/openmic-gifs/";
-              gif.url = url + data.title;
+              gif.url = BackendManager.gifUrl + data.title;
               gifs.push(gif);
               self.setState({
                 frames: gifs,
@@ -720,7 +719,7 @@ class GifEditor extends Component {
               console.log(gifs);
               BackendManager.makeQuery('gifs/create', JSON.stringify({
                 gif_id: self.state.currentGif.id,
-                url: url + data.title,
+                url: gif.url,
               }));
             }
           });
@@ -835,7 +834,7 @@ class GifEditor extends Component {
         var videoUrl = BackendManager.fileUrl + data.title;
         BackendManager.makeQuery('clips/update/video', JSON.stringify({
           id: this.props.id,
-          video_url: videoUrl
+          url: videoUrl
         }))
         .then(data => {
           this.props.switchToCaptions();
