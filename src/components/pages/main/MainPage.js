@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, NavLink, BrowserRouter, Link,
   HashRouter, Switch, Redirect } from 'react-router-dom';
 import { withRouter } from "react-router-dom";
-import { Container, Row } from 'react-grid-system';
+import { Container, Row, Col } from 'react-grid-system';
 import PropTypes from 'prop-types';
 import Modal from 'react-modal';
 import axios from 'axios';
@@ -21,6 +21,7 @@ import SvgIcon from '@material-ui/core/SvgIcon';
 import Icon from '@material-ui/core/Icon';
 import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
+import Paper from '@material-ui/core/Paper';
 import { PlayButton, PrevButton, NextButton, Progress, Timer, VolumeControl } from 'react-soundplayer/components';
 import { withCustomAudio } from 'react-soundplayer/addons';
 import SoundPlayer from '../../ui/SoundPlayer.js';
@@ -31,6 +32,7 @@ import UserManager from '../../singletons/UserManager.js';
 
 import FeedPage from '../feed/FeedPage.js';
 import AboutPage from '../about/AboutPage.js';
+import HowItWorksPage from '../about/HowItWorksPage.js';
 import DownloadPage from '../download/DownloadPage.js';
 import StoryPage from '../story/StoryPage.js';
 import ProfilePage from '../profile/ProfilePage.js';
@@ -46,6 +48,7 @@ import TranscribePage from '../story/TranscribePage.js';
 import ClipPage from '../clip/ClipPage.js';
 import EditClipPage from '../story/EditClipPage.js';
 import TwitterSharePage from '../clip/TwitterSharePage.js';
+import StoriesPage from '../stories/StoriesPage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
@@ -86,10 +89,49 @@ const customStyles = {
 };
 
 const drawerText = {
-	color: 'white',
+	color: '#B8B5BF',
 	fontFamily: 'Lato',
 	fontSize: 20,
+	marginLeft: 5,
+  cursor: 'pointer',
+}
+
+const panelTitleText = {
+	color: '#B8B5BF',
+	fontFamily: 'Lato',
+	fontSize: 20,
+	paddingTop: 15,
+	textAlign: 'center',
 	fontWeight: 'bold',
+}
+
+const topClipText = {
+	color: '#B8B5BF',
+	fontFamily: 'Lato',
+	fontSize: 17,
+	marginLeft: 5,
+	marginRight: 5,
+  cursor: 'pointer',
+}
+
+const topClipSubMdText = {
+	color: '#898395',
+	fontFamily: 'Lato',
+	fontSize: 14,
+	marginBottom: 9,
+	marginLeft: 5,
+	marginRight: 5,
+	marginTop: 5,
+  cursor: 'pointer',
+}
+
+const topClipSubText = {
+	color: '#898395',
+	fontFamily: 'Lato',
+	fontSize: 14,
+	marginBottom: 9,
+	marginLeft: 5,
+	marginRight: 5,
   cursor: 'pointer',
 }
 
@@ -156,10 +198,26 @@ const heartFabStyle = {
 	height: 50,
 }
 
+const centerVertical = {
+  margin: 0,
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+}
 
 const heartIconStyle = {
 	width: 50,
 	height: 50,
+}
+
+const followingPodcastStyleSmall = {
+  color: '#868994',
+  fontFamily: 'Lato',
+  fontSize: 17,
+  marginLeft: 10,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 const styles = theme => ({
@@ -320,6 +378,7 @@ class MainPage extends React.Component {
     super(props);
 
     this.state = {
+			hideDrawer: false,
 			firstName: UserManager.firstName,
 			lastName: UserManager.lastName,
 			username: UserManager.username,
@@ -375,8 +434,36 @@ class MainPage extends React.Component {
       currentParentEmail: "",
       commentType: "comment",
       isPlaying: false,
+			topClips: [
+				{
+					id: 1,
+					title: "Jessica Keeps Guests in Check",
+					username: "houstondownes",
+				},
+				{
+					id: 2,
+					title: "Secret Agent Cerny",
+					username: "imacoolpanda",
+				},
+				{
+					id: 3,
+					title: "Don't try to fight Russell Peters",
+					username: "seanpcheng",
+				},
+				{
+					id: 4,
+					title: "Haddish House Hunting Method",
+					username: "shrewdsheeple",
+				},
+				{
+					id: 5,
+					title: "Ask and you will receive",
+					username: "houstondownes",
+				},
+			],
     };
 
+		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
 		this.openUploadModal = this.openUploadModal.bind(this);
@@ -443,7 +530,17 @@ class MainPage extends React.Component {
     this.setCommentType = this.setCommentType.bind(this);
     this.playPauseSound = this.playPauseSound.bind(this);
     this.logout = this.logout.bind(this);
+		this.renderTopLeftPanel = this.renderTopLeftPanel.bind(this);
+		this.renderTopClipImg = this.renderTopClipImg.bind(this);
+		this.renderTopClipListItem = this.renderTopClipListItem.bind(this);
+		this.renderFollowingPodcasts = this.renderFollowingPodcasts.bind(this);
   }
+
+	hideDrawer(t) {
+		this.setState({
+			hideDrawer: t,
+		});
+	}
 
   openModal() {
     this.setState({
@@ -1237,6 +1334,102 @@ class MainPage extends React.Component {
     });
   }
 
+	renderTopClipImg(item, i) {
+		if (i == 0) {
+			return (
+				<Row>
+					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/gold-medal.svg"}/>
+					<Typography style={topClipSubMdText}>
+						{"by " + item.username}
+					</Typography>
+				</Row>
+			);
+		} else if (i == 1) {
+			return (
+				<Row>
+					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/silver-medal.svg"}/>
+					<Typography style={topClipSubMdText}>
+						{"by " + item.username}
+					</Typography>
+				</Row>
+			);
+		} else if (i == 2) {
+			return (
+				<Row>
+					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/bronze-medal.svg"}/>
+					<Typography style={topClipSubMdText}>
+						{"by " + item.username}
+					</Typography>
+				</Row>
+			);
+		} else {
+			return (
+				<Typography style={topClipSubText}>
+					{"by " + item.username}
+				</Typography>
+			);
+		}
+	}
+
+	renderTopClipListItem(item, i) {
+		return (
+			<div>
+				<Typography className="lineClamp" style={topClipText}>
+					{item.title}
+				</Typography>
+				{this.renderTopClipImg(item, i)}
+			</div>
+		);
+	}
+
+	renderFollowingPodcasts(item) {
+		return (
+			<div style={{marginBottom: 10}}>
+				<Row>
+					<Avatar src={item.profile_picture} style={{width: 30, height: 30, marginLeft: 10, display: 'inline-block'}} />
+					<Typography style={followingPodcastStyleSmall}>
+						{item.first_name}
+					</Typography>
+				</Row>
+			</div>
+		);
+	}
+
+	renderTopLeftPanel() {
+		return (
+			<div className='left-panel'>
+				<div style={{margin: 10}}>
+	        <Paper elevation={1} style={{backgroundColor: '#164747'}}>
+	          <div>
+	            <Typography style={panelTitleText}>
+	              {"Weekly Leaderboard"}
+	            </Typography>
+							<div style={{margin: 5, height: 1, backgroundColor: '#1e6161'}}/>
+							<ul style={{marginLeft: 5, padding: 0}}>
+								{this.state.topClips.map((item, i) => {
+									return (this.renderTopClipListItem(item, i))
+								})}
+							</ul>	            
+	            <div style={{paddingBottom: 10}}>
+	            </div>
+	          </div>
+	        </Paper>
+					<div style={{marginTop: 10}}>
+						<Typography style={panelTitleText}>
+							{"Followed Podcasts"}
+						</Typography>
+						<div style={{margin: 5, height: 1, backgroundColor: '#1e6161'}}/>
+						<ul style={{marginLeft: 5, padding: 0}}>
+							{this.state.following.map((item) => {
+								return (this.renderFollowingPodcasts(item))
+							})}
+						</ul>
+					</div>
+	      </div>
+			</div>
+		)
+	}
+
   render() {
     const { classes } = this.props;
 		const { soundCloudAudio } = this.props;
@@ -1406,28 +1599,20 @@ class MainPage extends React.Component {
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
               </Toolbar>
             </AppBar>
-						<Drawer
-							className={classes.drawer}
-		          variant="permanent"
-		          classes={{
-		            paper: classes.drawerPaper,
-		          }}
-		        >
-		          <div className={classes.toolbar} />
-		          <List>
-								{this.renderMyClipsDrawerPanel()}
-              	{this.renderEditProfileDrawerPanel()}
-                {this.renderDonationsDrawerPanel()}
-								{this.renderMessagesDrawerPanel()}
-								<ListItem>
-									<NavLink to="/terms" style={drawerText}>Terms</NavLink>
-								</ListItem>
-								<ListItem>
-									<NavLink to="/privacy" style={drawerText}>Privacy Policy</NavLink>
-								</ListItem>
-                {this.renderLogoutDrawerPanel()}
-		          </List>
-		        </Drawer>
+						{this.state.hideDrawer ?
+							<div/>
+							:
+							<Drawer
+								className={classes.drawer}
+			          variant="permanent"
+			          classes={{
+			            paper: classes.drawerPaper,
+			          }}
+			        >
+			          <div className={classes.toolbar} />
+								{this.renderTopLeftPanel()}
+			        </Drawer>
+						}
             <main className={classes.content}>
               <div className={classes.toolbar} />
                 <div className="content">
@@ -1448,7 +1633,16 @@ class MainPage extends React.Component {
 												fetchMoreFollowingStories={this.fetchMoreFollowingStories}
                       />}
                   />
-                  <Route path="/about" component={AboutPage}/>
+                  <Route path="/about" render={(props) =>
+										<AboutPage {...props}
+											hideDrawer={this.hideDrawer}
+										/>}
+									/>
+									<Route path="/howitworks/clip" render={(props) =>
+										<HowItWorksPage {...props}
+											hideDrawer={this.hideDrawer}
+										/>}
+									/>
                   <Route path="/download" component={DownloadPage}/>
 									<Route path="/share/t"
 										render={(props) =>
@@ -1474,6 +1668,7 @@ class MainPage extends React.Component {
 												showToast={this.showToast}
 											/>}
 									/>
+									<Route path="/podcasts" component={StoriesPage}/>
 									<Route
 										exact path='/editor/:id'
 										render={(props) =>

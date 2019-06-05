@@ -265,6 +265,7 @@ class StoryPage extends Component {
     progressGrad.addColorStop(0.5, 'rgba(98, 120, 221, 1.000)');
     wavesurfer = WaveSurfer.create({
       container: '#waveform',
+      backend: 'MediaElement',
       waveColor: linGrad,
       progressColor: progressGrad,
       scrollParent: false,

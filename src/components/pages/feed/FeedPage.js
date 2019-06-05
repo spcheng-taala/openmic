@@ -15,27 +15,17 @@ import Typography from '@material-ui/core/Typography';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
 import GridListTileBar from '@material-ui/core/GridListTileBar';
+import BackendManager from '../../singletons/BackendManager.js'
 import UserManager from '../../singletons/UserManager.js';
 import CircularProgressbar from 'react-circular-progressbar';
+import ClipItem from './components/ClipItem.js';
 
 // some track meta information
 const trackTitle = 'Immigration and the wall';
 
-const tileData = [
-    {
-      index: 0,
-      img: './images/laugh_emoji.png',
-      title: "Feed",
-    },
-    {
-      index: 1,
-      img: './images/thinking_emoji.png',
-      title: "Following",
-    },
- ];
-
 var listStyle = {
-  paddingRight: 40,
+  width: '50%',
+  margin: '0 auto'
 }
 
 const iconStyle = {
@@ -43,74 +33,28 @@ const iconStyle = {
   cursor: 'pointer',
 }
 
-var active = {
-  color: '#CF5085',
-  fontWeight: 'bold',
-}
-
-var inactive = {
-  color: 'grey',
-  fontWeight: 'normal',
-}
-
 var cardStyle = {
   marginBottom: 30,
 }
 
-var containerStyle = {
-  marginLeft: 20,
-  marginTop: 20,
-  marginBottom: 300,
-}
-
-const bigAvatar = {
-  width: 80,
-  height: 80,
-  marginLeft: 20,
-}
-
-const mediaStyle = {
-  width: '100%',
-  paddingTop: 50,
-  paddingBottom: 50,
-  backgroundColor: '#FFFFFF'
-}
-
-const mediaTextStyle = {
-  paddingLeft: 60,
-  align: 'center',
-  color: '#36454f',
-  fontFamily: "Lato",
-  flex: 1,
-  fontSize: 30,
-}
-
-const mediaTextStyleMobile = {
-  color: '#36454f',
-  fontFamily: "Lato",
-  flex: 1,
-  fontSize: 30,
+const textStyleBig = {
+  color: 'black',
+  fontFamily: 'Lato',
+  fontWeight: 800,
+  fontSize: 19,
+  margin: 5,
   textAlign: 'center',
 }
 
-const mediaTextStyleSmall = {
-  paddingLeft: 60,
-  align: 'center',
-  color: 'grey',
-  fontFamily: "Lato",
-  fontSize: 20,
-}
-
-const mediaTextStyleSmallMobile = {
-  color: 'grey',
-  fontFamily: "Lato",
-  fontSize: 20,
+const textStyleSmall = {
+  color: '#B8B5BF',
+  fontFamily: 'Lato',
+  fontSize: 15,
+  marginTop: 5,
+  marginLeft: 10,
+  marginRight: 10,
   textAlign: 'center',
-}
-
-const gridList = {
-  width: 145,
-  height: 70,
+  paddingBottom: 10,
 }
 
 const root = {
@@ -123,7 +67,29 @@ const root = {
 
 class FeedPage extends Component {
   componentDidMount() {
-    window.addEventListener("resize", this.resize.bind(this));
+    BackendManager.makeQuery('clips/all/count', JSON.stringify({
+    }))
+    .then(data => {
+      console.log(data);
+      if (data.success) {
+        this.setState({
+          clipsCount: data.count,
+        });
+      }
+    });
+
+    BackendManager.makeQuery('clips/all', JSON.stringify({
+    }))
+    .then(data => {
+      console.log(data);
+      if (data.success) {
+        this.setState({
+          clips: data.clips,
+        });
+      }
+    });
+
+    window.addEventListener('resize', this.resize.bind(this));
     window.addEventListener('scroll', this.onScroll, false);
     this.resize();
   }
@@ -134,14 +100,20 @@ class FeedPage extends Component {
 
   onScroll = () => {
     if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 500)) {
-      if (this.state.type == 0) {
-        if (this.props.allStories.length < this.props.allStoriesCount) {
-          this.props.fetchMoreAllStories(this.props.allStories[this.props.allStories.length - 1].score);
-        }
-      } else {
-        if (this.props.followingStories.length < this.props.followingStoriesCount) {
-          this.props.fetchMoreFollowingStories(this.props.followingStories[this.props.followingStories.length - 1].id);
-        }
+      if (this.state.clips.length < this.state.clipsCount) {
+        BackendManager.makeQuery('clips/all/cont', JSON.stringify({
+          clip_id: this.state.clips[this.state.clips.length - 1].id,
+        }))
+        .then(data => {
+          console.log(data);
+          var clips = this.state.clips;
+          clips.push.apply(clips, data.clips);
+          if (data.success) {
+            this.setState({
+              clips: clips,
+            });
+          }
+        });
       }
     }
   }
@@ -162,32 +134,21 @@ class FeedPage extends Component {
     super(props);
 
     this.state = {
+      clips: [],
+      clipsCount: 0,
       isMobile: false,
-      type: 0,
       percentage: 0,
     };
 
-    this.handleTypeClick = this.handleTypeClick.bind(this);
     this.renderFeed = this.renderFeed.bind(this);
-    this.handleStoryClick = this.handleStoryClick.bind(this);
+    this.renderRightPanel = this.renderRightPanel.bind(this);
+    this.renderBottomRightPanel = this.renderBottomRightPanel.bind(this);
+    this.handleClipClick = this.handleClipClick.bind(this);
     this.handlePreviewClick = this.handlePreviewClick.bind(this);
   }
 
-  handleStoryClick(story) {
-    this.props.history.push('/story/' + story.id);
-    this.props.handleStoryClick(story.id);
-  }
-
-  handleTypeClick(index) {
-    if (index == 0) {
-      this.setState({type: index})
-    } else if (index == 1) {
-      if (this.props.isLoggedIn) {
-        this.setState({type: index});
-      } else {
-        this.props.openLoginModal();
-      }
-    }
+  handleClipClick(id) {
+    this.props.history.push('/clips/' + id);
   }
 
   handlePreviewClick(e, story) {
@@ -199,103 +160,90 @@ class FeedPage extends Component {
     if (this.state.isMobile) {
       return (
         <div style={cardStyle}>
-          <CardActionArea onClick={() => this.handleStoryClick(item)}>
-            <Paper style={mediaStyle} elevation={1}>
-              <div>
-                <Container>
-                  <div style={{width: '100%', textAlign: 'center'}}>
-                    <img className="center-cropped" style={{display: 'inline-block', marginBottom: 20}} src={item.profile_picture}/>
-                  </div>
-                  <div>
-                    <Typography style={mediaTextStyleMobile}>
-                      {item.title}
-                    </Typography>
-                    <Typography style={mediaTextStyleSmallMobile}>
-                      {item.first_name + " " + item.last_name}
-                    </Typography>
-                    <Row>
-                      <button className='button-preview' onClick={(e) => this.handlePreviewClick(e, item)}>
-                        {"Play Preview"}
-                      </button>
-                    </Row>
-                  </div>
-                </Container>
-              </div>
-            </Paper>
-          </CardActionArea>
+          <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
         </div>
       )
     } else {
       return (
         <div style={cardStyle}>
-          <CardActionArea onClick={() => this.handleStoryClick(item)}>
-            <Paper style={mediaStyle} elevation={1}>
-              <div>
-                <Container>
-                  <Row>
-                    <img className="center-cropped" src={item.profile_picture}/>
-                    <Col>
-                      <div>
-                        <Typography style={mediaTextStyle}>
-                          {item.title}
-                        </Typography>
-                        <Typography style={mediaTextStyleSmall}>
-                          {item.first_name + " " + item.last_name}
-                        </Typography>
-                        <Row>
-                          <button className='button-preview' onClick={(e) => this.handlePreviewClick(e, item)}>
-                            {"Play Preview"}
-                          </button>
-                        </Row>
-                      </div>
-                    </Col>
-                  </Row>
-                </Container>
-              </div>
-            </Paper>
-          </CardActionArea>
+          <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
         </div>
       )
     }
   }
 
   renderFeed() {
-    if (this.state.type == 1)  {
-      return (
-        <div>
-          <ul style={listStyle}>
-            {this.props.followingStories.map((item) => {
-              return (this.renderListItem(item))
-            })}
-          </ul>
-        </div>
-      )
-    } else if (this.state.type == 0) {
-      return (
-        <div>
-          <ul style={listStyle}>
-            {this.props.allStories.map((item) => {
-              return (this.renderListItem(item))
-            })}
-          </ul>
-        </div>
-      )
-    }
+    return (
+      <div>
+        <ul>
+          {this.state.clips.map((item) => {
+            return (this.renderListItem(item))
+          })}
+        </ul>
+      </div>
+    )
+  }
+
+  renderRightPanel() {
+    return (
+      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
+        <Paper elevation={1} style={{backgroundColor: 'white'}}>
+          <div>
+            <img style={{margin: 10, width: 230}} src='../../../../../images/community_bg.png'/>
+            <Typography style={textStyleBig}>
+              {"Join the OpenMic community!"}
+            </Typography>
+            <Typography style={textStyleSmall}>
+              {"Discover the best and funniest stories from our content creators!"}
+            </Typography>
+            <button className='button-rounded-green' onClick={() => this.props.history.push('/podcasts')}>
+              {"View Shows!"}
+            </button>
+            <div style={{paddingBottom: 10}}>
+            </div>
+          </div>
+        </Paper>
+      </div>
+    )
+  }
+
+  renderBottomRightPanel() {
+    return (
+      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
+        <Paper elevation={1} style={{backgroundColor: 'white'}}>
+          <div>
+            <img style={{margin: 10, width: 230}} src='../../../../../images/clip_bg.png'/>
+            <Typography style={textStyleBig}>
+              {"Be part of a fanbase!"}
+            </Typography>
+            <Typography style={textStyleSmall}>
+              {"Create your own highlight clips from your favorite podcasts to interact and showcase with our creators and fans!"}
+            </Typography>
+            <button className='button-rounded-purple' onClick={() => this.props.history.push('/howitworks/clip')}>
+              {"Learn More!"}
+            </button>
+            <div style={{paddingBottom: 30}}>
+            </div>
+          </div>
+        </Paper>
+      </div>
+    )
   }
 
   render() {
 		return (
-      <div>
-        <div style={root}>
-          <GridList cellHeight={50} style={gridList} cols={2}>
-            {tileData.map(tile => (
-              <GridListTile key={tile.img} onClick={() => this.handleTypeClick(tile.index)}>
-                <p style={tile.index == this.state.type ? active:inactive}>{tile.title}</p>
-              </GridListTile>
-            ))}
-          </GridList>
-        </div>
-        {this.renderFeed()}
+      <div style={{backgroundColor: '#F4F3F6'}}>
+        <Container>
+          <Row>
+            <Col md={8}>
+              {this.renderFeed()}
+            </Col>
+            <Col md={4}>
+              {this.renderRightPanel()}
+              {this.renderBottomRightPanel()}
+            </Col>
+          </Row>
+        </Container>
       </div>
     )
   }
