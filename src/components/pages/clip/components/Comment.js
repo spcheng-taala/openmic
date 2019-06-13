@@ -48,10 +48,24 @@ const tier1DonationStyle = {
 }
 
 const tier0NameStyle = {
+  marginTop: 10,
+  marginLeft: 30,
+  color: "#525252",
+  fontSize: 13,
+  marginBottom: 5,
+}
+
+const gemTextStyle = {
   fontWeight: 'bold',
-  marginLeft: 0,
-  color: "#222225",
-  fontSize: 17,
+  marginLeft: 10,
+  color: "#FF0081",
+  fontSize: 15,
+}
+
+const contributGemTextStyle = {
+  marginLeft: 5,
+  color: "#FF0081",
+  fontSize: 12,
 }
 
 const commentStyle = {
@@ -95,6 +109,7 @@ class Comment extends React.Component {
     this.handleSendClick = this.handleSendClick.bind(this);
     this.renderSvg = this.renderSvg.bind(this);
     this.handleHeartClick = this.handleHeartClick.bind(this);
+    this.handleViewContributorsClick = this.handleViewContributorsClick.bind(this);
   }
 
   handleReplyClick(isReplying) {
@@ -141,14 +156,18 @@ class Comment extends React.Component {
         );
       } else {
         return (
-          <div style={{marginTop: 10}}>
-            <button onClick={() => this.handleReplyClick(true)}>
+          <div>
+            <button className="button-rounded-purple-no-mar-small" onClick={() => this.handleReplyClick(true)}>
               {"Reply"}
             </button>
           </div>
         );
       }
     }
+  }
+
+  handleViewContributorsClick() {
+    this.props.setContributorsCommentId(this.props.comment.id);
   }
 
   renderSvg(donation) {
@@ -171,47 +190,28 @@ class Comment extends React.Component {
     }
   }
 
-  renderHeart() {
-    var hasLiked = false;    
-    for (var i = 0; i < this.props.likedComments.length; i++) {
-      if (this.props.likedComments[i].comment_id == this.props.comment.id) {
-        hasLiked = true;
-      }
-    }
-
-    if (hasLiked) {
-      return (
-        <img style={{width: 30, height: 30}} src='../../../../../images/heart_purple.png'/>
-      )
-    } else {
-      return (
-        <img style={{width: 30, height: 30}} src='../../../../../images/heart_purple_empty.png'/>
-      );
-    }
-  }
-
   renderComment() {
     var comment = this.props.comment;
     return (
       <div style={tier0Style}>
-        <Row>
-          <Avatar src={comment.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 30, height: 30, display: 'inline-block'}} />
-          <Col>
-            <div style={centerVertical}>
-              <Typography style={tier0NameStyle}>
-                {comment.username}
-              </Typography>
-            </div>
-          </Col>
-        </Row>
-        <p style={{marginLeft: 30, marginTop: 0}}>{comment.comment}</p>
-        <Row>
-          <div style={{marginLeft: 40, marginRight: 10}}>
-            <div style={{width: 30, margin: 0, cursor: 'pointer'}} onClick={() => this.handleHeartClick()}>
-              <img style={{width: 30, height: 30}} src='../../../../../images/heart_purple_empty.png'/>
-              <p style={{margin: 0, fontSize: 10, textAlign: 'center'}}>{comment.sum}</p>
-            </div>
+        <div>
+          <Row>
+            <img src={comment.profile_picture} style={{marginLeft: 40, width: 20, height: 20, display: 'inline-block'}} src='../../../../../images/gem.png'/>
+            <Typography style={gemTextStyle}>
+              {comment.gems + " Contributed"}
+            </Typography>
+          </Row>
+          <div>
+            <p style={{display:'inline-block', fontStyle: 'italic', marginLeft: 30, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045'}}>{"( " + comment.count + " contributors )"}</p>
+            <p style={{display:'inline-block', textDecoration: 'underline', marginLeft: 10, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045', cursor: 'pointer'}} onClick={() => this.handleViewContributorsClick()}>{"View All"}</p>
           </div>
+        </div>
+        <p style={{marginLeft: 30, marginTop: 10, marginBottom: 0, fontWeight: 'bold'}}>{comment.comment}</p>
+        <p style={tier0NameStyle}>
+          {"Posted by: " + comment.username}
+        </p>
+        <Row style={{marginTop: 0}}>
+          <img style={{marginLeft: 40, height: 30, cursor: 'pointer'}} src='../../../../../images/contribute_gems.png' onClick={() => this.props.openContributeGemsModal(comment.id)}/>
           {this.renderReply()}
         </Row>
         <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
@@ -235,7 +235,7 @@ class Comment extends React.Component {
 
   render() {
     return (
-      <div>
+      <div style={{marginBottom: 30}}>
         {this.renderComment()}
       </div>
     );

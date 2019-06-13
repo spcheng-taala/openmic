@@ -30,6 +30,7 @@ class Comments extends React.Component {
               sendReply={self.props.sendReply}
               likedComments={self.props.likedComments}
               handleCommentHeartClick={self.props.handleCommentHeartClick}
+              openContributeGemsModal={self.props.openContributeGemsModal}
               />
           })}
         </div>
@@ -44,6 +45,8 @@ class Comments extends React.Component {
               sendReply={self.props.sendReply}
               likedComments={self.props.likedComments}
               handleCommentHeartClick={self.props.handleCommentHeartClick}
+              openContributeGemsModal={self.props.openContributeGemsModal}
+              setContributorsCommentId={self.props.setContributorsCommentId}
               />
           })}
         </div>

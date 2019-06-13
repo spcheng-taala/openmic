@@ -32,6 +32,7 @@ import UserManager from '../../singletons/UserManager.js';
 
 import FeedPage from '../feed/FeedPage.js';
 import AboutPage from '../about/AboutPage.js';
+import WhatAreGemsPage from '../about/WhatAreGemsPage.js';
 import HowItWorksPage from '../about/HowItWorksPage.js';
 import DownloadPage from '../download/DownloadPage.js';
 import StoryPage from '../story/StoryPage.js';
@@ -41,6 +42,7 @@ import DonationsPage from '../profile/DonationsPage.js';
 import MessagesPage from '../profile/MessagesPage.js';
 import PaymentsPage from '../payment/PaymentsPage.js';
 import CheckoutPage from '../payment/CheckoutPage.js';
+import CheckOutPage from '../checkout/CheckOutPage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
 import ClipAudioPage from '../story/ClipAudioPage.js';
@@ -62,6 +64,7 @@ import MessageModal from './components/MessageModal.js';
 import GoldCommentModal from './components/GoldCommentModal.js';
 import ConfirmEmailModal from './components/ConfirmEmailModal.js';
 import LoadingModal from './components/LoadingModal.js';
+import BuyGemsModal from './components/BuyGemsModal.js';
 
 const drawerWidth = 240;
 
@@ -83,7 +86,7 @@ const customStyles = {
     right: 'auto',
     bottom: 'auto',
     marginRight: '-50%',
-		background: 'rgba(255, 255, 255, 1)',
+		background: '#18161B',
     transform: 'translate(-50%, -50%)'
   },
 };
@@ -396,6 +399,7 @@ class MainPage extends React.Component {
       messageModalIsOpen: false,
       confirmEmailModalIsOpen: false,
       loadingModalIsOpen: false,
+			buyGemsModalIsOpen: false,
       donateType: "dm",
 			uploadedStoryId: 0,
 			uploadedStoryTitle: "",
@@ -488,6 +492,8 @@ class MainPage extends React.Component {
     this.finishConfirmEmailModal = this.finishConfirmEmailModal.bind(this);
     this.openLoadingModal = this.openLoadingModal.bind(this);
     this.closeLoadingModal = this.closeLoadingModal.bind(this);
+		this.openBuyGemsModal = this.openBuyGemsModal.bind(this);
+		this.closeBuyGemsModal = this.closeBuyGemsModal.bind(this);
 		this.renderShareModal = this.renderShareModal.bind(this);
     this.handleAuth = this.handleAuth.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
@@ -695,6 +701,18 @@ class MainPage extends React.Component {
       loadingModalIsOpen: false
     });
   }
+
+	openBuyGemsModal() {
+		this.setState({
+			buyGemsModalIsOpen: true
+		});
+	}
+
+	closeBuyGemsModal() {
+		this.setState({
+			buyGemsModalIsOpen: false
+		});
+	}
 
   finishConfirmEmailModal() {
     this.setState({
@@ -1409,7 +1427,7 @@ class MainPage extends React.Component {
 								{this.state.topClips.map((item, i) => {
 									return (this.renderTopClipListItem(item, i))
 								})}
-							</ul>	            
+							</ul>
 	            <div style={{paddingBottom: 10}}>
 	            </div>
 	          </div>
@@ -1583,6 +1601,14 @@ class MainPage extends React.Component {
           >
             <LoadingModal/>
           </Modal>
+					<Modal
+            isOpen={this.state.buyGemsModalIsOpen}
+						onRequestClose={this.closeBuyGemsModal}
+            style={customStyles}
+            contentLabel="Buy Gems"
+          >
+            <BuyGemsModal/>
+          </Modal>
           <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
@@ -1590,6 +1616,7 @@ class MainPage extends React.Component {
                 <NavLink exact to="/" className={classes.titleText}>OpenMic</NavLink>
                 <NavLink to="/about" className={classes.flex}>About</NavLink>
 								<a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a>
+								<img style={{marginRight: 10, width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} backgroundColor={'transparent'} onClick={() => this.openBuyGemsModal()}/>
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.id}>
@@ -1643,6 +1670,11 @@ class MainPage extends React.Component {
 											hideDrawer={this.hideDrawer}
 										/>}
 									/>
+									<Route path="/howitworks/gems" render={(props) =>
+										<WhatAreGemsPage {...props}
+											hideDrawer={this.hideDrawer}
+										/>}
+									/>
                   <Route path="/download" component={DownloadPage}/>
 									<Route path="/share/t"
 										render={(props) =>
@@ -1659,7 +1691,6 @@ class MainPage extends React.Component {
                   />
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
-									<Route path="/checkout" component={CheckoutPage}/>
 									<Route
 										exact path='/clip'
 										render={(props) =>
@@ -1669,6 +1700,7 @@ class MainPage extends React.Component {
 											/>}
 									/>
 									<Route path="/podcasts" component={StoriesPage}/>
+									<Route path="/checkout" component={CheckOutPage}/>
 									<Route
 										exact path='/editor/:id'
 										render={(props) =>

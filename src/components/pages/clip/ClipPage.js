@@ -5,6 +5,7 @@ import InputRange from 'react-input-range';
 import ReactTooltip from 'react-tooltip';
 import TwitterLogin from './components/TwitterLogin.js';
 import ReactPlayer from 'react-player';
+import Modal from 'react-modal';
 import { Container, Row, Col } from 'react-grid-system';
 import Paper from '@material-ui/core/Paper';
 import Card from '@material-ui/core/Card';
@@ -19,8 +20,33 @@ import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import ClipItem from './components/ClipItem.js';
 import Comments from './components/Comments.js';
+import ContributeGemsModal from './components/ContributeGemsModal.js';
+import ContributorsModal from './components/ContributorsModal.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+
+const customStyles = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		background: '#18161B',
+    transform: 'translate(-50%, -50%)'
+  },
+};
 
 const waveformStyle = {
   marginLeft: 50,
@@ -259,28 +285,7 @@ class ClipPage extends Component {
       }
     });
 
-    BackendManager.makeQuery('clips/comments', JSON.stringify({
-      clip_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        console.log(data.comments);
-        var comments = [];
-        for (var i = 0; i < data.comments.length; i++) {
-          var comment = data.comments[i];
-          comment.children = [];
-          if (comment.sum == null) {
-            comment.sum = 0;
-          }
-          if (comment.id != null) {
-            comments.push(comment);
-          }
-        }
-        this.setState({
-          comments: comments,
-        });
-      }
-    });
+    this.refreshComments();
 
     BackendManager.makeQuery('clips/reactions/pos', JSON.stringify({
       clip_id: this.props.match.params.id,
@@ -345,28 +350,7 @@ class ClipPage extends Component {
         }
       });
 
-      BackendManager.makeQuery('clips/comments', JSON.stringify({
-        clip_id: this.props.match.params.id,
-      }))
-      .then(data => {
-        if (data.success) {
-          console.log(data.comments);
-          var comments = [];
-          for (var i = 0; i < data.comments.length; i++) {
-            var comment = data.comments[i];
-            comment.children = [];
-            if (comment.sum == null) {
-              comment.sum = 0;
-            }
-            if (comment.id != null) {
-              comments.push(comment);
-            }
-          }
-          this.setState({
-            comments: comments,
-          });
-        }
-      });
+      this.refreshComments();
 
       BackendManager.makeQuery('clips/comments/liked', JSON.stringify({
         clip_id: this.props.match.params.id,
@@ -409,6 +393,7 @@ class ClipPage extends Component {
     this.copyRef = React.createRef();
     this.state = {
       isMobile: false,
+      contributeGemsIsOpen: false,
       clip: null,
       isPlaying: true,
       value: 0,
@@ -422,9 +407,14 @@ class ClipPage extends Component {
       hasLiked: false,
       likedComments: [],
       comment: "",
+      currentCommentId: 0,
+      contributorsCommentId: 0,
+      viewContributorsIsOpen: false,
     };
 
     this.createMinString = this.createMinString.bind(this);
+    this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
+		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.togglePlayPause = this.togglePlayPause.bind(this);
     this.handleVideoProgress = this.handleVideoProgress.bind(this);
@@ -451,6 +441,36 @@ class ClipPage extends Component {
     this.handleCommentHeartClick = this.handleCommentHeartClick.bind(this);
     this.handleCommentChange = this.handleCommentChange.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
+    this.createComment = this.createComment.bind(this);
+    this.contributeGems = this.contributeGems.bind(this);
+    this.refreshComments = this.refreshComments.bind(this);
+    this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
+    this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
+  }
+
+  refreshComments() {
+    BackendManager.makeQuery('clips/comments', JSON.stringify({
+      clip_id: this.props.match.params.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        console.log(data.comments);
+        var comments = [];
+        for (var i = 0; i < data.comments.length; i++) {
+          var comment = data.comments[i];
+          comment.children = [];
+          if (comment.sum == null) {
+            comment.sum = 0;
+          }
+          if (comment.id != null) {
+            comments.push(comment);
+          }
+        }
+        this.setState({
+          comments: comments,
+        });
+      }
+    });
   }
 
   resize() {
@@ -463,6 +483,32 @@ class ClipPage extends Component {
         isMobile: false,
       })
     }
+  }
+
+  openContributeGemsModal(commentId) {
+    this.setState({
+      contributeGemsIsOpen: true,
+      currentCommentId: commentId,
+    });
+  }
+
+  closeContributeGemsModal() {
+    this.setState({
+      contributeGemsIsOpen: false,
+    });
+  }
+
+  setContributorsCommentId(id) {
+    this.setState({
+      viewContributorsIsOpen: true,
+      contributorsCommentId: id,
+    });
+  }
+
+  closeViewContributorsModal() {
+    this.setState({
+      viewContributorsIsOpen: false,
+    });
   }
 
   getCountStr(count) {
@@ -701,6 +747,42 @@ class ClipPage extends Component {
     });
   }
 
+  createComment(gems) {
+    BackendManager.makeQuery('clips/comment', JSON.stringify({
+      clip_id: this.props.match.params.id,
+      user_id: UserManager.id,
+      comment: this.state.comment,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.contributeGems(data.id, gems)
+      }
+    });
+  }
+
+  contributeGems(commentId, gems) {
+    this.closeContributeGemsModal();
+    BackendManager.makeQuery('clips/comments/gem/add', JSON.stringify({
+      comment_id: commentId,
+      user_id: UserManager.id,
+      gems: gems,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.refreshComments();
+        BackendManager.makeQuery('gems/user/update', JSON.stringify({
+          gem_count: (-1 * gems),
+          user_id: UserManager.id,
+        }))
+        .then(data => {
+          if (data.success) {
+
+          }
+        });
+      }
+    });
+  }
+
   renderBottomVideoPlayer() {
     if (this.state.isMobile) {
       return (
@@ -909,14 +991,14 @@ class ClipPage extends Component {
               {this.renderVideoPlayer()}
               <Row>
                 <TextField
-                  label="Write a comment"
+                  label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
                   id="outlined-adornment-amount"
-                  placeholder="Comment"
+                  placeholder="What do you want to say?"
                   fullWidth
                   style={textFieldStyle}
                   value={this.state.name}
                   onChange={this.handleCommentChange} />
-                <button className='button-green' onClick={() => this.handleSendClick()}>
+                <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
                   {"Send"}
                 </button>
               </Row>
@@ -926,7 +1008,9 @@ class ClipPage extends Component {
                 sendReply={this.sendReply}
                 likedComments={this.state.likedComments}
                 handleCommentHeartClick={this.handleCommentHeartClick}
-                />
+                openContributeGemsModal={this.openContributeGemsModal}
+                setContributorsCommentId={this.setContributorsCommentId}
+              />
             </Col>
             <Col md={4}>
               {this.renderRightPanel()}
@@ -963,7 +1047,7 @@ class ClipPage extends Component {
               {this.state.otherClips.map((item) => {
                 return (this.renderOtherClipsListItem(item))
               })}
-            </ul>            
+            </ul>
             <div style={{paddingBottom: 10}}>
             </div>
           </div>
@@ -1067,6 +1151,22 @@ class ClipPage extends Component {
     const { classes } = this.props;
 		return (
       <div>
+        <Modal
+          isOpen={this.state.contributeGemsIsOpen}
+          style={customStyles}
+          onRequestClose={this.closeContributeGemsModal}
+          contentLabel="Contribute Gems"
+        >
+          <ContributeGemsModal commentId={this.state.currentCommentId} contributeGems={this.contributeGems} createComment={this.createComment}/>
+        </Modal>
+        <Modal
+          isOpen={this.state.viewContributorsIsOpen}
+          style={customStyles}
+          onRequestClose={this.closeViewContributorsModal}
+          contentLabel="Contribute Gems"
+        >
+          <ContributorsModal commentId={this.state.contributorsCommentId}/>
+        </Modal>
         {this.renderTopView()}
         {this.renderView()}
       </div>
