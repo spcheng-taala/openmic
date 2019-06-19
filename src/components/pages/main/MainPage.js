@@ -68,6 +68,29 @@ import BuyGemsModal from './components/BuyGemsModal.js';
 
 const drawerWidth = 240;
 
+const customStylesLight = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		background: 'rgba(255, 255, 255, 1)',
+    transform: 'translate(-50%, -50%)'
+  },
+};
+
 const customStyles = {
 	overlay: {
     position: 'fixed',
@@ -1460,7 +1483,7 @@ class MainPage extends React.Component {
           <Modal
             isOpen={this.state.modalIsOpen}
             onRequestClose={this.closeModal}
-            style={customStyles}
+            style={customStylesLight}
             contentLabel="Sign Up"
           >
             {this.state.isSignUp ? <SignUpModal handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>
@@ -1626,20 +1649,7 @@ class MainPage extends React.Component {
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
               </Toolbar>
             </AppBar>
-						{this.state.hideDrawer ?
-							<div/>
-							:
-							<Drawer
-								className={classes.drawer}
-			          variant="permanent"
-			          classes={{
-			            paper: classes.drawerPaper,
-			          }}
-			        >
-			          <div className={classes.toolbar} />
-								{this.renderTopLeftPanel()}
-			        </Drawer>
-						}
+
             <main className={classes.content}>
               <div className={classes.toolbar} />
                 <div className="content">
@@ -1762,7 +1772,6 @@ class MainPage extends React.Component {
 												handleFollowClick={this.handleFollowClick}
   											stories={this.state.userStories}
                         user={this.state.user}
-  											fetchUser={this.fetchUser}
                         fetchComments={this.fetchComments}
                         openGoldCommentModal={this.openGoldCommentModal}
                         openConfirmEmailModal={this.openConfirmEmailModal}

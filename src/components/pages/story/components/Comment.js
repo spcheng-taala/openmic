@@ -1,66 +1,110 @@
 // Comment.js
 import React from 'react';
 import Comments from './Comments';
-import { Row } from 'react-grid-system';
+import { Row, Col } from 'react-grid-system';
 import TextField from '@material-ui/core/TextField';
+import Avatar from '@material-ui/core/Avatar';
+import Typography from '@material-ui/core/Typography';
 
-const smallSvgStyle = {
-  width: 60,
-  height: 60,
+const gemIconStyle = {
+  marginLeft: 40,
+  marginRight: 10,
+  width: 20,
+  height: 20,
+  display: 'inline-block',
 }
 
-const mediumSvgStyle = {
-  width: 70,
-  height: 70,
-}
-
-const bigSvgStyle = {
-  width: 80,
-  height: 80,
-}
-
-const superBigSvgStyle = {
-  width: 100,
-  height: 100,
-}
-
-const tier1DivStyle = {
-  margin: 0,
-  marginTop: -20,
-  alignItems: 'center',
-}
-
-const tier1NameStyle = {
+const gemLabelStyle1 = {
   fontWeight: 'bold',
-  marginLeft: 10,
-  color: "#E1BE62",
-  fontSize: 22,
+  color:'#9A9B9C',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
 }
 
-const tier1DonationStyle = {
+const gemLabelStyle2 = {
   fontWeight: 'bold',
-  marginLeft: 10,
-  color: "#E1BE62",
-  marginTop: -20,
-  fontSize: 18,
+  color:'#229CD2',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
+}
+
+const gemLabelStyle3 = {
+  fontWeight: 'bold',
+  color:'#FF0081',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
+}
+
+const gemLabelStyle4 = {
+  fontWeight: 'bold',
+  color:'#974BFF',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
+}
+
+const gemLabelStyle5 = {
+  fontWeight: 'bold',
+  color:'#95D601',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
+}
+
+const gemLabelStyle6 = {
+  fontWeight: 'bold',
+  color:'#FFC842',
+  font: "Lato",
+  textAlign: "left",
+  fontSize: 15,
 }
 
 const tier0NameStyle = {
+  marginTop: 10,
+  marginLeft: 30,
+  color: "#525252",
+  fontSize: 13,
+  marginBottom: 5,
+}
+
+const replyingToStyle = {
+  marginLeft: 10,
+  marginTop: 0,
+  marginRight: 0,
+  marginBottom: 0,
+  fontStyle: 'italic',
+  color: "#525252",
+  fontSize: 13,
+}
+
+const parentTextStyle = {
+  marginLeft: 10,
+  marginTop: 5,
+  marginBottom: 5,
+  fontWeight: 'bold',
+  color: "#36454F",
+  fontSize: 14,
+}
+
+const gemTextStyle = {
   fontWeight: 'bold',
   marginLeft: 10,
-  color: "#222225",
-  fontSize: 17,
+  color: "#FF0081",
+  fontSize: 15,
+}
+
+const contributGemTextStyle = {
+  marginLeft: 5,
+  color: "#FF0081",
+  fontSize: 12,
 }
 
 const commentStyle = {
-  marginLeft: 10,
-  marginTop: 0,
-}
-
-const tier1Style = {
-  color: "#222225",
-  font: "Lato",
-  marginTop: 10,
+  marginLeft: 70,
+  marginTop: 20,
 }
 
 const tier0Style = {
@@ -84,7 +128,77 @@ class Comment extends React.Component {
     this.renderReply = this.renderReply.bind(this);
     this.handleReplyChange = this.handleReplyChange.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
-    this.renderSvg = this.renderSvg.bind(this);
+    this.handleViewContributorsClick = this.handleViewContributorsClick.bind(this);
+    this.convertToCommaString = this.convertToCommaString.bind(this);
+    this.renderGem = this.renderGem.bind(this);
+  }
+
+  renderGem(gems) {
+    if (gems < 100) {
+      return (
+        <Row>
+          <img style={gemIconStyle} src='../../../../../images/gem_1_10x.png'/>
+          <Typography style={gemLabelStyle1}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      )
+    } else if (gems < 1000) {
+      return (
+        <Row>
+          <img
+            style={gemIconStyle}
+            src='../../../../../../images/gem_2_10x.png'/>
+          <Typography style={gemLabelStyle2}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      )
+    } else if (gems < 5000) {
+      return (
+        <Row>
+          <img
+            style={gemIconStyle}
+            src='../../../../../../images/gem_3_10x.png'/>
+          <Typography style={gemLabelStyle3}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      )
+    } else if (gems < 10000) {
+      return (
+        <Row>
+          <img
+            style={gemIconStyle}
+            src='../../../../../../images/gem_4_10x.png'/>
+          <Typography style={gemLabelStyle4}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      )
+    } else if (gems < 25000) {
+      return (
+        <Row>
+          <img
+            style={gemIconStyle}
+            src='../../../../../../images/gem_5_10x.png'/>
+          <Typography style={gemLabelStyle5}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      )
+    } else if (gems >= 25000) {
+      return (
+        <Row>
+          <img
+            style={gemIconStyle}
+            src='../../../../../../images/gem_6_10x.png'/>
+          <Typography style={gemLabelStyle6}>
+            {this.convertToCommaString(gems) + " Contributed"}
+          </Typography>
+        </Row>
+      );
+    }
   }
 
   handleReplyClick(isReplying) {
@@ -94,86 +208,75 @@ class Comment extends React.Component {
   }
 
   renderReply() {
-    if (!this.props.isChild) {
-      if (this.state.isReplying) {
-        return (
-          <div style={commentStyle}>
-            <TextField
-              id="outlined-adornment-amount"
-              label="Reply"
-              value={this.state.reply}
-              onChange={this.handleReplyChange}
-              fullWidth
-            />
-            <Row style={commentStyle}>
-              <button className='button-purple' onClick={() => this.handleReplyClick(false)}>
-                {"Cancel"}
-              </button>
-              <button className='button-green' onClick={() => this.handleSendClick()}>
-                {"Post"}
-              </button>
-            </Row>
-          </div>
-        );
-      } else {
-        return (
-          <div>
-            <button style={commentStyle} onClick={() => this.handleReplyClick(true)}>
-              {"Reply"}
+    if (this.state.isReplying) {
+      return (
+        <div style={commentStyle}>
+          <TextField
+            id="outlined-adornment-amount"
+            label="Reply"
+            value={this.state.reply}
+            onChange={this.handleReplyChange}
+            fullWidth
+          />
+          <Row style={commentStyle}>
+            <button className='button-purple' onClick={() => this.handleReplyClick(false)}>
+              {"Cancel"}
             </button>
-          </div>
-        );
-      }
-    }
-  }
-
-  renderSvg(donation) {
-    if (donation < 100) {
-      return (
-        <img style={smallSvgStyle} src={"../../../../../../images/coin2.svg"}/>
-      )
-    } else if (donation < 1000) {
-      return (
-        <img style={mediumSvgStyle} src={"../../../../../../images/coin1.svg"}/>
-      );
-    } else if (donation < 5000) {
-      return (
-        <img style={bigSvgStyle} src={"../../../../../../images/coin3.svg"}/>
+            <button className='button-green' onClick={() => this.handleSendClick()}>
+              {"Post"}
+            </button>
+          </Row>
+        </div>
       );
     } else {
       return (
-        <img style={superBigSvgStyle} src={"../../../../../../images/ruby.svg"}/>
+        <div>
+          <button className="button-rounded-purple-no-mar-small" onClick={() => this.handleReplyClick(true)}>
+            {"Reply"}
+          </button>
+        </div>
       );
     }
+  }
+
+  handleViewContributorsClick() {
+    this.props.setContributorsCommentId(this.props.comment.id);
   }
 
   renderComment() {
     var comment = this.props.comment;
-    if (this.props.comment.donation > 0) {
-      return (
-        <div>
-          <div style={tier1Style}>
-            <Row style={tier1DivStyle}>
-              <p style={tier1NameStyle}>{comment.name}</p>
-              {this.renderSvg(comment.donation)}
-            </Row>
-            <p style={tier1DonationStyle}>{"(Donated $" + (comment.donation/100).toFixed(2) + ")"}</p>
-            <p style={commentStyle}>{comment.comment}</p>
-            {this.renderReply()}
+    return (
+      <div style={tier0Style}>
+        {!comment.root ? <div>
+          {this.renderGem(comment.gems)}
+          <div>
+            <p style={{display:'inline-block', fontStyle: 'italic', marginLeft: 30, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045'}}>{"( " + comment.count + " contributors )"}</p>
+            <p style={{display:'inline-block', textDecoration: 'underline', marginLeft: 10, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045', cursor: 'pointer'}} onClick={() => this.handleViewContributorsClick()}>{"View All"}</p>
           </div>
-          <Comments isChild={true} comments={comment.children} />
+        </div> :
+        <div style={{backgroundColor: '#DDDDDD', borderRadius: '5px 5px 0px 0px', width: '60%'}}>
+          <p style={replyingToStyle}>
+            {'Replying to: '}
+          </p>
+          <p style={parentTextStyle}>
+            {comment.parent_comment}
+          </p>
         </div>
-      );
-    } else {
-      return (
-        <div style={tier0Style}>
-          <p style={tier0NameStyle}>{comment.name}</p>
-          <p style={commentStyle}>{comment.comment}</p>
-          {this.renderReply()}
-          <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
-        </div>
-      );
-    }
+        }
+        <p style={{marginLeft: 30, marginTop: 10, marginBottom: 0, fontWeight: 'bold'}}>{comment.comment}</p>
+        <p style={tier0NameStyle}>
+          {"Posted by: " + comment.username}
+        </p>
+        {!comment.root ?
+          <Row style={{marginTop: 0}}>
+            <img style={{marginLeft: 40, height: 30, cursor: 'pointer'}} src='../../../../../images/contribute_gems.png' onClick={() => this.props.openContributeGemsModal(comment.id)}/>
+            {this.renderReply()}
+          </Row>
+          :
+          <div style={{marginLeft: 30}}>{this.renderReply()}</div>}
+        <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
+      </div>
+    );
   }
 
   handleReplyChange(e) {
@@ -183,16 +286,28 @@ class Comment extends React.Component {
   }
 
   handleSendClick() {
-    this.props.sendReply(this.state.reply, this.props.comment.id, this.props.comment.email);
+    if (this.props.comment.root) {
+      this.props.sendReply(this.state.reply, this.props.comment.id, this.props.comment.root);
+    } else {
+      this.props.sendReply(this.state.reply, this.props.comment.id, this.props.comment.id);
+    }
     this.setState({
       isReplying: false,
       reply: "",
     });
   }
 
+  convertToCommaString(x) {
+    if (x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } else {
+      return ("0");
+    }
+  }
+
   render() {
     return (
-      <div>
+      <div style={{marginBottom: 30}}>
         {this.renderComment()}
       </div>
     );

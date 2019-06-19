@@ -7,19 +7,35 @@ import Paper from '@material-ui/core/Paper';
 import Card from '@material-ui/core/Card';
 import Typography from '@material-ui/core/Typography';
 
+const row = {
+  width: '100%',
+}
+
+const block = {
+  display: 'inline-block',
+}
+
 const textStyleBig = {
-  color: 'white',
-  fontFamily: "Lato",
-  flex: 1,
-  fontSize: 30,
+  color: '#2A2D34',
+  fontFamily: 'Lato',
+  fontSize: 17,
+  marginLeft: 20,
+  paddingTop: 10,
+}
+
+const textStyleMed = {
+  color: '#2A2D34',
+  fontFamily: 'Lato',
+  fontSize: 15,
   marginLeft: 20,
 }
 
 const textStyleSmall = {
-  color: 'white',
-  fontFamily: "Lato",
-  fontSize: 20,
+  color: '#868994',
+  fontFamily: 'Lato',
+  fontSize: 14,
   marginLeft: 20,
+  marginBottom: 10,
 }
 
 const durationStyle = {
@@ -28,6 +44,14 @@ const durationStyle = {
   fontSize: 16,
   float: 'right',
   marginRight: 30,
+}
+
+const thumbnail = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-around',
+  marginTop: 20,
+  marginLeft: 50,
 }
 
 class ClipItem extends React.Component {
@@ -59,33 +83,31 @@ class ClipItem extends React.Component {
   render() {
     return (
       <div>
-        <CardActionArea onClick={() => this.playPause()}>
-          <Paper elevation={1} style={{backgroundColor:'#5C70D8'}}>
-            <div>
-              <Row style={{marginLeft: 20, marginTop: 20, paddingTop: 20, paddingBottom: 20}}>
-                <div style={{width: 120, height: 80}}>
-                  <VideoThumbnail
-                    videoUrl={this.props.url}
-                    thumbnailHandler={(thumbnail) => console.log(thumbnail)}
-                    width={120}
-                    height={80} />
+        <CardActionArea onClick={() => this.props.handleClipClick(this.props.id)}>
+          <div>
+            <Row>
+              <div>
+                <div style={{marginLeft: 25, paddingBottom: 10, paddingTop: 10}}>
+                  <div style={{height: 75, width: 100}}>
+                    <VideoThumbnail
+                      style={thumbnail}
+                      videoUrl={this.props.url}
+                      width={100}
+                      height={75}
+                      thumbnailHandler={(thumbnail) => console.log(thumbnail)}/>
+                  </div>
                 </div>
-                <Col>
-                  <Typography style={textStyleBig}>
-                    {this.props.title}
-                  </Typography>
-                  <Typography style={textStyleSmall}>
-                    {"Clipped by " + this.props.name}
-                  </Typography>
-                </Col>
-                <div style={{float: 'right'}}>
-                  <Typography style={durationStyle}>
-                    {this.createMinString(this.props.duration)}
-                  </Typography>                  
-                </div>
-              </Row>
-            </div>
-          </Paper>
+              </div>
+              <Col>
+                <Typography className="lineClamp" style={textStyleBig}>
+                  {this.props.title}
+                </Typography>
+                <Typography className="lineClamp" style={textStyleSmall}>
+                  {"clipped by " + this.props.name}
+                </Typography>
+              </Col>
+            </Row>
+          </div>
         </CardActionArea>
       </div>
     );

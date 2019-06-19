@@ -204,7 +204,7 @@ class FeedPage extends Component {
           </div>
         </Paper>
       </div>
-    )
+    );
   }
 
   renderBottomRightPanel() {

@@ -24,7 +24,12 @@ class Comments extends React.Component {
       return (
         <div style={childStyle}>
           {this.props.comments.map(function(comment){
-            return <Comment key={comment.id} comment={comment} isChild={self.props.isChild} sendReply={self.props.sendReply}/>
+            return <Comment key={comment.id}
+              comment={comment}
+              isChild={self.props.isChild}
+              sendReply={self.props.sendReply}              
+              openContributeGemsModal={self.props.openContributeGemsModal}
+              />
           })}
         </div>
       );
@@ -32,7 +37,15 @@ class Comments extends React.Component {
       return (
         <div>
           {this.props.comments.map(function(comment){
-            return <Comment key={comment.id} comment={comment} isChild={self.props.isChild} sendReply={self.props.sendReply}/>
+            return <Comment key={comment.id}
+              comment={comment}
+              isChild={self.props.isChild}
+              sendReply={self.props.sendReply}
+              likedComments={self.props.likedComments}
+              handleCommentHeartClick={self.props.handleCommentHeartClick}
+              openContributeGemsModal={self.props.openContributeGemsModal}
+              setContributorsCommentId={self.props.setContributorsCommentId}
+              />
           })}
         </div>
       );

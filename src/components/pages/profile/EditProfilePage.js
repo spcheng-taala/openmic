@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
+import { Container, Row, Col } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
 import classNames from 'classnames';
 import axios from 'axios';
 import { withStyles } from '@material-ui/core/styles';
 import MidTitle from '../../ui/MidTitle.js';
+import Paper from '@material-ui/core/Paper';
 import Button from '../../ui/Button.js';
 import TextField from '@material-ui/core/TextField';
 import Avatar from '@material-ui/core/Avatar';
@@ -23,7 +25,7 @@ const textFieldStyle = {
 const titleStyle = {
   color: "#222225",
   font: "Lato",
-  textAlign: "center",
+  textAlign: "left",
 }
 
 const termsStyle = {
@@ -34,12 +36,11 @@ const termsStyle = {
 }
 
 const bigAvatar = {
+  marginLeft: 40,
   marginTop: 20,
-  width: 150,
-  height: 150,
-  display: 'block',
-  marginLeft: 'auto',
-  marginRight: 'auto',
+  marginBottom: 20,
+  width: 100,
+  height: 100,
 }
 
 const useStyles = theme => ({
@@ -189,7 +190,7 @@ class EditProfilePage extends Component {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      }).then(data => {  			
+      }).then(data => {
   			if (data.data.success) {
           var imageUrl = url + data.data.title.split(' ').join('+');
           BackendManager.makeQuery('users/profile/update', JSON.stringify({
@@ -237,26 +238,36 @@ class EditProfilePage extends Component {
     const classes = useStyles();
 		return (
       <div style={root}>
-        <h2 style={titleStyle}>Edit your profile</h2>
-        {this.renderBasicInfo()}
-        <TextField
-          id="outlined-adornment-amount"
-          label="Write your bio"
-          multiline
-          fullWidth
-          rows="4"
-          className={classNames(classes.margin, classes.textField)}
-          value={this.state.bio}
-          onChange={this.handleBioChange}
-          margin="normal"
-          variant="outlined"
-        />
-        <label class="custom-file-upload">
-          <input type="file" onChange={this.fileSelectedHandler} accept=".jpg,.png,.jpeg"/>
-          Upload a profile picture
-        </label>
-        {this.renderProfilePicture()}
-        <button className='button-rounded' onClick={() => this.updateProfile()}>Done!</button>
+        <Container>
+          <h2 style={titleStyle}>Edit your profile</h2>
+          <Paper elevation={1} style={{backgroundColor: 'white'}}>
+            <Row>
+              {this.renderProfilePicture()}
+              <label class="custom-file-upload">
+                <input type="file" onChange={this.fileSelectedHandler} accept=".jpg,.png,.jpeg"/>
+                Upload a profile picture
+              </label>
+            </Row>
+          </Paper>
+          <Paper elevation={1} style={{backgroundColor: 'white'}}>
+            {this.renderBasicInfo()}
+            <div style={{marginLeft: 10, marginRight: 10, marginBottom: 20}}>
+              <TextField
+                id="outlined-adornment-amount"
+                label="Write your bio"
+                multiline
+                fullWidth
+                rows="4"
+                className={classNames(classes.margin, classes.textField)}
+                value={this.state.bio}
+                onChange={this.handleBioChange}
+                margin="normal"
+                variant="outlined"
+              />
+            </div>
+          </Paper>
+          <button className='button-rounded' onClick={() => this.updateProfile()}>Done!</button>
+        </Container>
       </div>
     )
   }

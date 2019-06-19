@@ -44,6 +44,7 @@ const customStyles = {
     bottom: 'auto',
     marginRight: '-50%',
 		background: '#18161B',
+    maxHeight: '80%',
     transform: 'translate(-50%, -50%)'
   },
 };
@@ -298,21 +299,6 @@ class ClipPage extends Component {
       }
     });
 
-    BackendManager.makeQuery('clips/comments/liked', JSON.stringify({
-      clip_id: this.props.match.params.id,
-      user_id: UserManager.id,
-    }))
-    .then(data => {
-      console.log(this.props.match.params.id);
-      console.log(UserManager.id);
-      console.log(data);
-      if (data.success) {
-        this.setState({
-          likedComments: data.comments,
-        });
-      }
-    });
-
     BackendManager.makeQuery('clips/reactions/check', JSON.stringify({
       clip_id: this.props.match.params.id,
     }))
@@ -351,18 +337,6 @@ class ClipPage extends Component {
       });
 
       this.refreshComments();
-
-      BackendManager.makeQuery('clips/comments/liked', JSON.stringify({
-        clip_id: this.props.match.params.id,
-        user_id: UserManager.id,
-      }))
-      .then(data => {
-        if (data.success) {
-          this.setState({
-            likedComments: data.comments,
-          });
-        }
-      });
 
       BackendManager.makeQuery('clips/reactions/pos', JSON.stringify({
         clip_id: this.props.match.params.id,
@@ -405,7 +379,6 @@ class ClipPage extends Component {
       hasAboutOpen: false,
       heartCount: 0,
       hasLiked: false,
-      likedComments: [],
       comment: "",
       currentCommentId: 0,
       contributorsCommentId: 0,
@@ -444,6 +417,7 @@ class ClipPage extends Component {
     this.createComment = this.createComment.bind(this);
     this.contributeGems = this.contributeGems.bind(this);
     this.refreshComments = this.refreshComments.bind(this);
+    this.fetchReplies = this.fetchReplies.bind(this);
     this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
   }
@@ -464,6 +438,39 @@ class ClipPage extends Component {
           }
           if (comment.id != null) {
             comments.push(comment);
+            this.fetchReplies(comment.id);
+          }
+        }
+        this.setState({
+          comments: comments,
+        });
+      }
+    });
+  }
+
+  fetchReplies(commentId) {
+    BackendManager.makeQuery('clips/comments/children', JSON.stringify({
+      comment_id: commentId,
+    }))
+    .then(data => {
+      if (data.success) {
+        console.log(data.comments);
+        var comments = this.state.comments;
+        var replies = [];
+        for (var i = 0; i < comments.length; i++) {
+          if (comments[i].id == commentId) {
+            for (var j = 0; j < data.comments.length; j++) {
+              var c = data.comments[j];
+              c.children = [];
+              c.root = commentId;
+              if (c.sum == null) {
+                c.sum = 0;
+              }
+              if (c.id != null) {
+                replies.push(c);
+              }
+            }
+            comments[i].children = replies;
           }
         }
         this.setState({
@@ -1006,8 +1013,6 @@ class ClipPage extends Component {
                 isChild={false}
                 comments={this.state.comments}
                 sendReply={this.sendReply}
-                likedComments={this.state.likedComments}
-                handleCommentHeartClick={this.handleCommentHeartClick}
                 openContributeGemsModal={this.openContributeGemsModal}
                 setContributorsCommentId={this.setContributorsCommentId}
               />
@@ -1114,35 +1119,21 @@ class ClipPage extends Component {
             });
           }
         });
-
-        BackendManager.makeQuery('clips/comments/liked', JSON.stringify({
-          clip_id: this.props.match.params.id,
-          user_id: UserManager.id,
-        }))
-        .then(data => {
-          if (data.success) {
-            this.setState({
-              likedComments: data.comments,
-            });
-          }
-        });
       }
     });
   }
 
-  sendReply(comment, commentId) {
+  sendReply(comment, parentCommentId, rootCommentId) {
     BackendManager.makeQuery('clips/reply', JSON.stringify({
       clip_id: this.props.match.params.id,
       comment: comment,
-      parent_comment_id: commentId,
+      parent_comment_id: parentCommentId,
+      root_comment_id: rootCommentId,
       user_id: UserManager.id,
     }))
     .then(data => {
       if (data.success) {
-        console.log(data.comments);
-        this.setState({
-          comments: data.comments,
-        });
+        this.refreshComments();
       }
     });
   }

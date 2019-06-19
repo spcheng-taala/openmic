@@ -195,6 +195,7 @@ class BuyGemsModal extends Component {
           <img style={gemIconStyle} src={"../../../../../../images/gem_3_10x.png"}/>
           <img style={gemIconStyle} src={"../../../../../../images/gem_4_10x.png"}/>
           <img style={gemIconStyle} src={"../../../../../../images/gem_5_10x.png"}/>
+          <img style={gemIconStyle} src={"../../../../../../images/gem_6_10x.png"}/>
         </Row>
       );
     }

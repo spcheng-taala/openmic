@@ -14,8 +14,8 @@ class Comments extends React.Component {
     this.sendReply = this.sendReply.bind(this);
   }
 
-  sendReply(reply, parentCommentId, parentEmail) {
-    this.props.sendReply(reply, parentCommentId, parentEmail);
+  sendReply(reply, parentCommentId) {
+    this.props.sendReply(reply, parentCommentId);
   }
 
   renderComment() {
@@ -28,8 +28,6 @@ class Comments extends React.Component {
               comment={comment}
               isChild={self.props.isChild}
               sendReply={self.props.sendReply}
-              likedComments={self.props.likedComments}
-              handleCommentHeartClick={self.props.handleCommentHeartClick}
               openContributeGemsModal={self.props.openContributeGemsModal}
               />
           })}

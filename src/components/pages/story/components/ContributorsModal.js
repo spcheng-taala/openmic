@@ -125,7 +125,12 @@ const MenuProps = {
 class ContributorsModal extends Component {
 
   componentDidMount() {
-    BackendManager.makeQuery('clips/comments/gem/contributors', JSON.stringify({
+    var url = 'stories/comments/gem/contributors';
+    if (this.props.isClip) {
+      url = 'clips/comments/gem/contributors'
+    }
+
+    BackendManager.makeQuery(url, JSON.stringify({
       comment_id: this.props.commentId,
     }))
     .then(data => {
@@ -146,7 +151,6 @@ class ContributorsModal extends Component {
     this.renderUserItem = this.renderUserItem.bind(this);
     this.renderGemIcon = this.renderGemIcon.bind(this);
     this.convertToCommaString = this.convertToCommaString.bind(this);
-    this.renderBadge = this.renderBadge.bind(this);
   }
 
   convertToCommaString(x) {

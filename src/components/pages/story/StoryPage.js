@@ -30,6 +30,10 @@ import { withCustomAudio } from 'react-soundplayer/addons';
 import { TwitterShareButton, TwitterIcon, FacebookShareButton, FacebookIcon } from 'react-share';
 import ClipItem from './components/ClipItem.js';
 import ShareModal from './components/ShareModal.js';
+import ContributeGemsModal from './components/ContributeGemsModal.js';
+import ContributorsModal from './components/ContributorsModal.js';
+import ContributeGifAnimationModal from './components/ContributeGifAnimationModal.js';
+
 // some track meta information
 const trackTitle = 'Immigration and the wall';
 var wavesurfer = null;
@@ -54,7 +58,7 @@ const storyContainerStyle = {
   position: "initial",
 }
 
-const customStyles = {
+const customStylesLight = {
 	overlay: {
     position: 'fixed',
     top: 0,
@@ -62,7 +66,9 @@ const customStyles = {
     right: 0,
     bottom: 0,
     zIndex: 5,
-    backgroundColor: 'rgba(19, 18, 24, 0.75)'
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
   },
   content: {
     top: '50%',
@@ -71,8 +77,33 @@ const customStyles = {
     bottom: 'auto',
     marginRight: '-50%',
 		background: 'rgba(255, 255, 255, 1)',
+    maxHeight: '80%',
     transform: 'translate(-50%, -50%)'
-  }
+  },
+};
+
+const customStyles = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		background: '#18161B',
+    maxHeight: '80%',
+    transform: 'translate(-50%, -50%)'
+  },
 };
 
 const useStyles = theme => ({
@@ -179,7 +210,7 @@ const textFieldStyle = {
   font: "Lato",
   marginTop: 10,
   marginLeft: 50,
-  width: 'calc(100% - 400px)',
+  width: 'calc(100% - 200px)',
   marginRight: 20,
 }
 
@@ -250,6 +281,16 @@ const textStyleSmall = {
   marginBottom: 20,
 }
 
+const rightPanelText = {
+  color: '#B8B5BE',
+  fontFamily: 'Lato',
+  textAlign: 'center',
+  fontSize: 17,
+  marginTop: 20,
+  marginBottom: 20,
+  marginRight: 10,
+}
+
 class StoryPage extends Component {
 
   componentDidMount() {
@@ -297,27 +338,6 @@ class StoryPage extends Component {
       self.setState({
         currentTime: Math.floor(progress),
       });
-    //   if (currentTime in self.props.emotes && currentTime > self.state.nextSecond) {
-    //     var emojis = [];
-    //     for (var i = 0; i < self.props.emotes[currentTime].length; i++) {
-    //       if (self.props.emotes[currentTime][i].profile_picture == null) {
-    //         emojis.push({profilePicture: '../../../../../images/heart_emoji.png',
-    //           xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-    //           time: currentTime});
-    //       } else {
-    //         emojis.push({profilePicture: self.props.emotes[currentTime][i].profile_picture,
-    //           xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-    //           time: currentTime});
-    //       }
-    //     }
-    //     var currentEmojis = self.state.currentEmojis;
-    //     currentEmojis.push({emojis: emojis});
-    //     console.log(progress);
-    //     self.setState({
-    //       currentEmojis: currentEmojis,
-    //       nextSecond: currentTime + 1,
-    //     });
-    //   }
     });
     var hasListened = false;
     BackendManager.makeQuery('clips/story', JSON.stringify({
@@ -331,6 +351,8 @@ class StoryPage extends Component {
         });
       }
     });
+
+    this.refreshComments();
   }
 
   componentWillUnmount() {
@@ -358,62 +380,107 @@ class StoryPage extends Component {
       currentTime: 0,
       duration: 0,
       currentStory: this.props.currentStory,
+      contributeGemsIsOpen: false,
       comment: "",
+      comments: [],
       isMobile: false,
       nextSecond: 0,
-      emojis: {},
-      currentEmojis: [],
       isFollowing: false,
       clips: [],
-      currentClip: null,
       isPlaying: false,
-      isPlayingClip: false,
-      isFinishedClip: false,
       currentTime: 0,
-      clipDuration: 0,
-      clipValue: 0,
-      scrubberShouldMove: true,
-      isShareModalOpen: false,
+      contributeGemsIsOpen: false,
+      viewContributorsIsOpen: false,
+      contributeGifAnimationIsOpen: false,
+      gemsContributed: 0,
+      currentCommentId: 0,
+      contributorsCommentId: 0,
     };
 
     this.handleStoryClick = this.handleStoryClick.bind(this);
     this.handleUserClick = this.handleUserClick.bind(this);
-    this.handleFollowClick = this.handleFollowClick.bind(this);
     this.handleCommentChange = this.handleCommentChange.bind(this);
-    this.openGoldCommentModal = this.openGoldCommentModal.bind(this);
-    this.openDonateModal = this.openDonateModal.bind(this);
-    this.renderComments = this.renderComments.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
     this.sendReply = this.sendReply.bind(this);
     this.renderProfile = this.renderProfile.bind(this);
-    this.renderFollowButton = this.renderFollowButton.bind(this);
     this.renderComments = this.renderComments.bind(this);
     this.renderComment = this.renderComment.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.getPercentage = this.getPercentage.bind(this);
-    this.renderEmojis = this.renderEmojis.bind(this);
     this.getDurationStr = this.getDurationStr.bind(this);
-    this.handleHeartClick = this.handleHeartClick.bind(this);
-    this.renderClips = this.renderClips.bind(this);
-    this.playClip = this.playClip.bind(this);
-    this.openClip = this.openClip.bind(this);
-    this.renderPlayer = this.renderPlayer.bind(this);
-    this.handleVideoProgress = this.handleVideoProgress.bind(this);
-    this.handleDurationChange = this.handleDurationChange.bind(this);
     this.createMinString = this.createMinString.bind(this);
-    this.playAtValue = this.playAtValue.bind(this);
-    this.handleScrubberMove = this.handleScrubberMove.bind(this);
-    this.closeClip = this.closeClip.bind(this);
-    this.renderPlayPauseReplay = this.renderPlayPauseReplay.bind(this);
-    this.pauseClip = this.pauseClip.bind(this);
-    this.resumeClip = this.resumeClip.bind(this);
-    this.replayClip = this.replayClip.bind(this);
-    this.openShareModal = this.openShareModal.bind(this);
-    this.closeShareModal = this.closeShareModal.bind(this);
-    this.renderClipToolTip = this.renderClipToolTip.bind(this);
-    this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
-    this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
-    this.copyToClipboard = this.copyToClipboard.bind(this);
+    this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
+		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
+    this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
+    this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
+    this.openContributeGifAnimationModal = this.openContributeGifAnimationModal.bind(this);
+    this.closeContributeGifAnimationModal = this.closeContributeGifAnimationModal.bind(this);
+    this.refreshComments = this.refreshComments.bind(this);
+    this.renderRightPanel = this.renderRightPanel.bind(this);
+    this.renderClipsListItem = this.renderClipsListItem.bind(this);
+    this.handleClipClick = this.handleClipClick.bind(this);
+    this.createComment = this.createComment.bind(this);
+    this.contributeGems = this.contributeGems.bind(this);
+    this.fetchReplies = this.fetchReplies.bind(this);
+    this.openClip = this.openClip.bind(this);
+  }
+
+  refreshComments() {
+    BackendManager.makeQuery('stories/comments', JSON.stringify({
+      story_id: this.props.match.params.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        console.log(data.comments);
+        var comments = [];
+        for (var i = 0; i < data.comments.length; i++) {
+          var comment = data.comments[i];
+          comment.children = [];
+          if (comment.sum == null) {
+            comment.sum = 0;
+          }
+          if (comment.id != null) {
+            comments.push(comment);
+            this.fetchReplies(comment.id);
+          }
+        }
+        this.setState({
+          comments: comments,
+        });
+      }
+    });
+  }
+
+  fetchReplies(commentId) {
+    BackendManager.makeQuery('stories/comments/children', JSON.stringify({
+      comment_id: commentId,
+    }))
+    .then(data => {
+      if (data.success) {
+        console.log(data.comments);
+        var comments = this.state.comments;
+        var replies = [];
+        for (var i = 0; i < comments.length; i++) {
+          if (comments[i].id == commentId) {
+            for (var j = 0; j < data.comments.length; j++) {
+              var c = data.comments[j];
+              c.children = [];
+              c.root = commentId;
+              if (c.sum == null) {
+                c.sum = 0;
+              }
+              if (c.id != null) {
+                replies.push(c);
+              }
+            }
+            comments[i].children = replies;
+          }
+        }
+        this.setState({
+          comments: comments,
+        });
+      }
+    });
   }
 
   handleStoryClick(story) {
@@ -442,58 +509,6 @@ class StoryPage extends Component {
     });
   }
 
-  handleFollowClick() {
-    if (this.props.isLoggedIn) {
-      var status = 1
-      for (var i = 0; i < this.props.following.length; i++) {
-        if (this.props.following[i].id == this.state.currentStory.user_id) {
-          status = -1;
-        }
-      }
-      this.props.handleFollowClick(this.state.currentStory.user_id,
-        this.state.currentStory.profile_picture,
-        this.state.currentStory.first_name,
-        this.state.currentStory.last_name,
-        this.state.currentStory.bio,
-        status,
-      );
-      this.setState({
-        isFollowing: !this.state.isFollowing,
-      });
-    } else {
-      this.props.openLoginModal();
-    }
-  }
-
-  openGoldCommentModal() {
-    this.props.openGoldCommentModal();
-  }
-
-  openDonateModal() {
-    this.props.handleDonateClick();
-  }
-
-  renderDonateTextField() {
-    const classes = useStyles();
-    if (this.state.tier == 1) {
-      return (
-        <TextField
-          id="outlined-adornment-amount"
-          className={classNames(classes.margin, classes.textField)}
-          style={textFieldMargin}
-          label="Amount"
-          value={this.state.amount}
-          type="number"
-          inputProps={{ min: 0.50 }}
-          onChange={this.handleAmountChange}
-          InputProps={{
-            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-          }}
-        />
-      );
-    }
-  }
-
   handleAmountChange(e) {
     var regex = /^[0-9]\d*(((,\d{3}){1})?(\.\d{0,2})?)$/;
     var value = 0;
@@ -508,7 +523,13 @@ class StoryPage extends Component {
 
   renderComments() {
     return (
-      <Comments isChild={false} comments={this.props.comments} sendReply={this.sendReply}/>
+      <Comments
+        isChild={false}
+        comments={this.state.comments}
+        sendReply={this.sendReply}
+        openContributeGemsModal={this.openContributeGemsModal}
+        setContributorsCommentId={this.setContributorsCommentId}
+      />
     );
   }
 
@@ -537,23 +558,18 @@ class StoryPage extends Component {
     }
   }
 
-  sendReply(reply, parentCommentId, parentEmail) {
-    this.props.setParentComment(parentCommentId, parentEmail);
+  sendReply(reply, parentCommentId, rootCommentId) {
     if (this.props.isLoggedIn) {
-      BackendManager.makeQuery('public/comments/reply', JSON.stringify({
-        donation: 0,
-        story_id: this.state.currentStory.id,
-        name: UserManager.firstName + " " + UserManager.lastName,
-        email: UserManager.email,
-        comment: reply,
-        title: this.state.currentStory.title,
+      BackendManager.makeQuery('stories/comments/reply', JSON.stringify({
+        story_id: this.props.match.params.id,
+        user_id: UserManager.id,
         parent_comment_id: parentCommentId,
-        parent_email: parentEmail,
+        root_comment_id: rootCommentId,
+        comment: reply,
       }))
       .then(data => {
         if (data.success) {
-          this.props.showToast("Sent!");
-          this.props.fetchComments(this.state.currentStory.id);
+          this.refreshComments();
         }
       });
     } else {
@@ -601,33 +617,6 @@ class StoryPage extends Component {
     return totalDurationStr;
   }
 
-  renderFollowButton() {
-    var isFollowing = this.state.isFollowing;
-    for (var i = 0; i < this.props.following.length; i++) {
-      if (this.props.following[i].id == this.state.currentStory.user_id) {
-        isFollowing = true;
-      }
-    }
-
-    if (isFollowing) {
-      return (
-        <div>
-          <button className='button-rounded-purple-empty' onClick={() => this.handleFollowClick()} style={{marginTop: 10, marginLeft: 30}}>
-            {"Unfollow"}
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <button className='button-rounded-purple' onClick={() => this.handleFollowClick()} style={{marginTop: 10, marginLeft: 30}}>
-            {"Follow"}
-          </button>
-        </div>
-      );
-    }
-  }
-
   renderProfile() {
     if (this.state.isMobile) {
       return (
@@ -639,17 +628,18 @@ class StoryPage extends Component {
             <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.currentStory.user_id)} activeClassName="active">
               {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
             </a>
-            {this.renderFollowButton()}
-            <button className='button-rounded-gold' onClick={() => this.openDonateModal()} style={{marginTop: 10, marginLeft: 10}}>
-              {"Send a direct message"}
-            </button>
+            <img
+              style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
+              src='../../../../../images/create_clip.png'
+              onClick={() => this.openClip()}
+              />
             <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
           </Container>
         </div>
       );
     } else {
       return (
-        <Container style={{marginBottom: 20}}>
+        <Container style={{marginLeft: 10, marginBottom: 20}}>
           <Row>
             <img style={storyImgStyle} src={this.state.currentStory.profile_picture} backgroundColor={'transparent'}/>
             <Col>
@@ -658,16 +648,13 @@ class StoryPage extends Component {
                   {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
                 </a>
                 <Row>
-                  {this.renderFollowButton()}
-                  <button className='button-rounded-gold' onClick={() => this.openDonateModal()} style={{marginTop: 10, marginLeft: 0}}>
-                    {"Send a direct message"}
-                  </button>
+                  <img
+                    style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
+                    src='../../../../../images/create_clip.png'
+                    onClick={() => this.openClip()}
+                    />
                 </Row>
                 <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
-                <Row>
-                  <img style={{marginTop: 17, marginLeft: 30, width: 20, height: 20}} src='../../../../../images/ear.png'/>
-                  <p style={{color: "#888888"}}>{this.getDurationStr(this.props.totalListenedTo)}</p>
-                </Row>
               </div>
             </Col>
           </Row>
@@ -676,14 +663,31 @@ class StoryPage extends Component {
     }
   }
 
+  openClip() {
+    if (wavesurfer != null) {
+      localStorage.setItem('url', this.state.currentStory.url);
+      localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
+      localStorage.setItem('duration', wavesurfer.getDuration());
+      localStorage.setItem('story_id', this.state.currentStory.id);
+      if (wavesurfer.isPlaying()) {
+        wavesurfer.pause();
+        this.setState({
+          isPlaying: false,
+        });
+      }
+      window.open('/clip');
+    }
+  }
+
+
   renderClips() {
     return (
       <div>
         <ul>
           {this.state.clips.map((item, index) => {
             return (<ClipItem index={index} id={item.id} title={item.title}
-              url={item.url} name={item.first_name} playClip={this.playClip}
-              currentClip={this.state.currentClip} duration={item.duration}/>)
+              url={item.url} name={item.username} playClip={this.playClip}
+              duration={item.duration}/>)
           })}
         </ul>
       </div>
@@ -751,102 +755,12 @@ class StoryPage extends Component {
     }
   }
 
-  renderPlayPauseReplay() {
-    if (this.state.isFinishedClip) {
-      return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.replayClip()}>
-          <img
-            style={{ marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/replay.png'
-            />
-        </div>
-      );
-    } else {
-      if (!this.state.isPlayingClip) {
-        return (
-          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.resumeClip()}>
-            <img
-              style={{ marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-              src='../../../../../images/play_simple.png'
-              />
-          </div>
-        );
-      } else {
-        return (
-          <div style={{marginLeft: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.pauseClip()}>
-            <img
-              style={{marginLeft: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-              src='../../../../../images/pause_simple.png'
-              />
-          </div>
-        );
-      }
-    }
-  }
-
-  pauseClip() {
-    this.setState({
-      isPlayingClip: false,
-    });
-  }
-
-  resumeClip() {
-    this.setState({
-      isPlayingClip: true,
-    });
-  }
-
-  replayClip() {
-    this.setState({
-      isFinishedClip: false,
-      isPlaying: true,
-    });
-    this.playAtValue(0);
-  }
-
   getPercentage() {
     var percent = 100 * this.state.currentTime/this.state.currentStory.duration;
     return percent + "%";
   }
 
-  renderEmojis() {
-    return (
-      <div>
-        <div>
-          {this.state.currentEmojis.map((item) => (
-            <div id="fish" class="fish">
-              {item.emojis.map((emoji) => (
-                <div>
-                  <Avatar src={emoji.profilePicture == null ? '../../../../images/heart_emoji.png':emoji.profilePicture} style={{position: 'absolute', height: 50, width: 50, top: emoji.yPath, left: emoji.xPath}}/>
-                  <Avatar src={emoji.profilePicture != null ? '../../../../images/heart_emoji.png':''} style={{position: 'absolute', height: 20, width: 20, top: emoji.yPath + 35, left: emoji.xPath + 30}}/>
-                </div>
-               ))}
-            </div>
-            ))}
-        </div>
-      </div>
-    );
-  }
 
-  handleHeartClick() {
-    var emotes = this.state.emojis;
-    var emojis = [];
-    if (!this.props.isLoggedIn) {
-      emojis.push({profilePicture: '../../../../../images/heart_emoji.png',
-        xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-        time: this.state.currentTime});
-    } else {
-      emojis.push({profilePicture: UserManager.profilePicture,
-        xPath: Math.floor(Math.random() * 90) * (Math.random() < 0.5 ? -1 : 1), yPath: Math.floor(Math.random() * 90),
-        time: this.state.currentTime});
-    }
-    var currentEmojis = this.state.currentEmojis;
-    currentEmojis.push({emojis: emojis});
-    this.setState({
-      currentEmojis: currentEmojis,
-    });
-    this.props.handleEmoteClick(this.state.currentStory.id, this.state.currentTime);
-  }
 
   createMinString(seconds) {
     var minutes = Math.floor(seconds/60);
@@ -858,262 +772,185 @@ class StoryPage extends Component {
     }
   }
 
-
-  playClip(index) {
+  openContributeGemsModal(commentId) {
     this.setState({
-      currentClip: this.state.clips[index],
-      isPlayingClip: true,
-    });
-    if (wavesurfer != null) {
-      if (wavesurfer.isPlaying()) {
-        this.setState({
-          isPlaying: false,
-        });
-        wavesurfer.pause();
-      }
-    }
-    if (this.playerRef != null) {
-      window.scrollTo(0, this.playerRef.current.offsetTop);
-    }
-  }
-
-  handleVideoProgress(state) {
-    var seconds = state.played * this.player.getDuration();
-    if (this.state.scrubberShouldMove) {
-      this.setState({
-        clipValue: seconds,
-      });
-    }
-
-    if (this.state.clipDuration == seconds) {
-      this.setState({
-        isFinishedClip: true,
-        isPlaying: false,
-        clipValue: 0,
-      });
-    }
-  }
-
-  handleDurationChange(duration) {
-    this.setState({
-      clipDuration: duration,
+      contributeGemsIsOpen: true,
+      currentCommentId: commentId,
     });
   }
 
-  renderPlayer() {
-    if (this.state.currentClip != null) {
-      return (
-        <Card style={{marginLeft: 20, marginRight: 20}}>
-          <div style={{backgroundColor: '#0F0D12', paddingBottom: 30}}>
-            <img src='../../../../../images/cancel.png' style={{marginLeft: 20, marginTop:20, width: 40, height: 40, cursor: 'pointer'}} onClick={() => this.closeClip()} />
-            <div style={clip}>
-              <ReactPlayer
-                ref={this.ref}
-                url={this.state.currentClip.url}
-                onProgress={this.handleVideoProgress}
-                onDuration={this.handleDurationChange}
-                playing={this.state.isPlayingClip} />
-            </div>
-            <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
-              <InputRange
-                draggableTrack
-                maxValue={this.state.clipDuration}
-                minValue={0}
-                formatLabel={value => this.createMinString(value)}
-                onChange={value => this.handleScrubberMove(value)}
-                onChangeComplete={value => this.playAtValue(value)}
-                value={this.state.clipValue} />
-              {this.renderPlayPauseReplay()}
-            </div>
+  closeContributeGemsModal() {
+    this.setState({
+      contributeGemsIsOpen: false,
+    });
+  }
+
+  setContributorsCommentId(id) {
+    this.setState({
+      viewContributorsIsOpen: true,
+      contributorsCommentId: id,
+    });
+  }
+
+  closeViewContributorsModal() {
+    this.setState({
+      viewContributorsIsOpen: false,
+    });
+  }
+
+  openContributeGifAnimationModal(gems) {
+    this.setState({
+      contributeGifAnimationIsOpen: true,
+      gemsContributed: gems,
+    });
+  }
+
+  closeContributeGifAnimationModal() {
+    this.setState({
+      contributeGifAnimationIsOpen: false,
+      gemsContributed: 0
+    });
+  }
+
+  renderRightPanel() {
+    return (
+      <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+        <div>
+          <div style={{height: 5}}/>
+          <Typography style={rightPanelText}>
+            {"Clips!"}
+          </Typography>
+          <ul>
+            {this.state.clips.map((item) => {
+              return (this.renderClipsListItem(item))
+            })}
+          </ul>
+          <div style={{paddingBottom: 10}}>
           </div>
-          <Row>
-            <Col>
-              <Typography style={textStyleBig}>
-                {this.state.currentClip.title}
-              </Typography>
-              <Typography style={textStyleSmall}>
-                {"Clipped by " + this.state.currentClip.first_name}
-              </Typography>
-            </Col>
-            <button className='button-rounded' style={{ marginTop: 20, marginRight: 30 }} data-tip data-for='share_clip' data-event='click'>Share</button>
-            <ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
-              <Row style={{marginLeft: 20}}>
-                <TwitterLogin
-                  style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
-                  loginUrl="https://api.mypokadot.com/pp/auth/twitter"
-                  onFailure={this.onTwitterAuthFailure}
-                  onSuccess={this.onTwitterAuthSuccess}
-                  forceLogin={true}
-                  requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
-                >
-                  <img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
-                </TwitterLogin>
-                <ReactTooltip id="twitterTT" place="top" type="light" effect="float">
-                  <span>Twitter</span>
-                </ReactTooltip>
-                <div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
-                  <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
-                </div>
-                <ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
-                  <span>Copy to clipboard</span>
-                </ReactTooltip>
-              </Row>
-              {
-                document.queryCommandSupported('copy') &&
-                <input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.currentClip.id} style={{width: 100, marginTop: 10}} />
-              }
-            </ReactTooltip>
-          </Row>
-        </Card>
-      );
-    }
+        </div>
+      </div>
+    );
   }
 
-  copyToClipboard() {
-    this.copyRef.current.select();
-    document.execCommand('copy');
-    this.props.showToast('Copied!');
-    // This is just personal preference.
-    // I prefer to not show the the whole text area selected.
-    // e.target.focus();
-    // setCopySuccess('Copied!');
+  renderClipsListItem(item) {
+    return (
+      <div>
+        <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
+        <Divider />
+      </div>
+    );
   }
 
-  onTwitterAuthFailure(error) {
-    alert(error);
+  handleClipClick(id) {
+    this.props.history.push('/clips/' + id);
   }
 
-  onTwitterAuthSuccess(response) {
-    response.json().then(body => {
-      localStorage.setItem('oauth_token', body.data.oauth_token);
-      localStorage.setItem('oauth_token_secret', body.data.oauth_token_secret);
-      localStorage.setItem('screen_name', body.data.screen_name);
-      if (this.state.currentClip != null) {
-        localStorage.setItem('clip_url', this.state.currentClip.url);
-        localStorage.setItem('clip_title', this.state.currentClip.title);
-        localStorage.setItem('clip_id', this.state.currentClip.id);
+  createComment(gems) {
+    BackendManager.makeQuery('stories/comment', JSON.stringify({
+      story_id: this.props.match.params.id,
+      user_id: UserManager.id,
+      comment: this.state.comment,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.contributeGems(data.id, gems)
       }
-      window.open('/share/t');
     });
   }
 
-  closeClip() {
-    this.setState({
-      isPlayingClip: false,
-      currentClip: null,
-    });
-  }
-
-  openClip() {
-    if (wavesurfer != null) {
-      localStorage.setItem('url', this.state.currentStory.url);
-      localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
-      localStorage.setItem('duration', wavesurfer.getDuration());
-      localStorage.setItem('story_id', this.state.currentStory.id);
-      if (wavesurfer.isPlaying()) {
-        wavesurfer.pause();
-        this.setState({
-          isPlaying: false,
+  contributeGems(commentId, gems) {
+    this.closeContributeGemsModal();
+    BackendManager.makeQuery('stories/comments/gem/add', JSON.stringify({
+      comment_id: commentId,
+      user_id: UserManager.id,
+      gems: gems,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.refreshComments();
+        BackendManager.makeQuery('gems/user/update', JSON.stringify({
+          gem_count: (-1 * gems),
+          user_id: UserManager.id,
+        }))
+        .then(data => {
+          if (data.success) {
+          }
         });
       }
-      window.open('/clip');
-    }
-  }
-
-  handleScrubberMove(value) {
-    this.setState({
-      scrubberShouldMove: false,
-      clipValue: value,
-      isPlayingClip: false,
     });
-  }
-
-  playAtValue(value) {
-    this.setState({
-      scrubberShouldMove: true,
-      isPlayingClip: true,
-    });
-    this.player.seekTo(parseFloat(value));
-  }
-
-  ref = player => {
-    this.player = player
-  }
-
-  openShareModal() {
-    this.setState({
-      isShareModalOpen: true,
-    });
-  }
-
-  closeShareModal() {
-    this.setState({
-      isShareModalOpen: false,
-    });
-  }
-
-  renderClipToolTip() {
-    if (wavesurfer != null) {
-      return (
-        <ReactTooltip id="clip" place="bottom" type="dark" effect="float">
-          <span>{"Create clip at " + this.createMinString(this.state.currentTime)}</span>
-        </ReactTooltip>
-      );
-    }
   }
 
   render() {
     const classes = useStyles();
 		return (
-      <div>
+      <div style={{backgroundColor: '#F4F3F6'}}>
         <Modal
-          isOpen={this.state.isShareModalOpen}
-          onRequestClose={this.closeShareModal}
+          isOpen={this.state.contributeGemsIsOpen}
           style={customStyles}
-          contentLabel="Share"
+          onRequestClose={this.closeContributeGemsModal}
+          contentLabel="Contribute Gems"
         >
-          <ShareModal clip={this.state.currentClip}/>
+          <ContributeGemsModal commentId={this.state.currentCommentId} contributeGems={this.contributeGems} createComment={this.createComment}/>
         </Modal>
-        <CardActionArea style={storyContainerStyle} onClick={() => this.handleStoryClick(this.props.currentStory)}>
-          <Paper style={storyPaperStyle}>
-            <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
+        <Modal
+          isOpen={this.state.viewContributorsIsOpen}
+          style={customStyles}
+          onRequestClose={this.closeViewContributorsModal}
+          contentLabel="Contribute Gems"
+        >
+          <ContributorsModal commentId={this.state.contributorsCommentId}/>
+        </Modal>
+        <Modal
+          isOpen={this.state.viewContributorsIsOpen}
+          style={customStylesLight}
+          onRequestClose={this.closeViewContributorsModal}
+          contentLabel="Yay!"
+        >
+          <ContributeGifAnimationModal gem={this.state.gemsContributed}/>
+        </Modal>
+        <div>
+          <Row>
+            <Col sm={8}>
+              <Paper elevation={1} style={{backgroundColor: 'white', marginTop: 20, marginLeft: 20, paddingBottom: 20}}>
+                <CardActionArea style={storyContainerStyle} onClick={() => this.handleStoryClick(this.props.currentStory)}>
+                  <Paper style={storyPaperStyle}>
+                    <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
+                      <Row>
+                        {this.renderPlayPause()}
+                        <div>
+                          <Typography style={storyTitleStyle}>
+                            {this.state.currentStory.title}
+                          </Typography>
+                        </div>
+                      </Row>
+                    </Container>
+                  </Paper>
+                </CardActionArea>
+                <div id="waveform" style={{ margin: 50 }}></div>
+                {this.renderProfile()}
+              </Paper>
               <Row>
-                {this.renderPlayPause()}
-                <div>
-                  <Typography style={storyTitleStyle}>
-                    {this.state.currentStory.title}
-                  </Typography>
-                </div>
+                <TextField
+                  label={"Chat with " + this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
+                  id="outlined-adornment-amount"
+                  placeholder="What do you want to say?"
+                  fullWidth
+                  style={textFieldStyle}
+                  value={this.state.name}
+                  onChange={this.handleCommentChange} />
+                <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
+                  {"Send"}
+                </button>
               </Row>
-            </Container>
-          </Paper>
-        </CardActionArea>
-        <div id="waveform" style={{ margin: 50 }}></div>
-        {this.renderEmojis()}
-        {this.renderProfile()}
-        <Divider style={{margin: 10}}/>
-        <p style={{fontSize: 20, textAlign: 'center'}}>{"Clips"}</p>
-        {this.renderDonateTextField()}
-        <div ref={this.playerRef}>
-          {this.renderPlayer()}
+              {this.renderComments()}
+            </Col>
+            <Col sm={4}>
+              <Paper elevation={1} style={{backgroundColor: 'white', marginRight: 20}}>
+                {this.renderRightPanel()}
+              </Paper>
+            </Col>
+          </Row>
         </div>
-        <div style={{marginLeft: 50, marginRight: 50}}>
-          {this.renderClips()}
-        </div>
-          <Avatar data-tip data-for='clip'
-            style={{
-              position: 'fixed',
-              bottom: 25,
-              zIndex: 10,
-              left: '90%',
-              cursor: 'pointer',
-              width: 100,
-              height: 100,
-              boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)'}}
-            src='../../../../../images/clip.png'
-            onClick={() => this.openClip()}/>
-          {this.renderClipToolTip()}
-
       </div>
     )
   }

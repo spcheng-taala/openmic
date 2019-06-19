@@ -146,7 +146,7 @@ class SignUpModal extends Component {
   render() {
 		return (
       <div>
-        <h2 style={titleStyle}>Sign up and start sharing your stories!</h2>
+        <h2 style={titleStyle}>{"Join OpenMic today"}</h2>
         <div>
           <TextField label="First Name"
             floatingLabelText="First Name"

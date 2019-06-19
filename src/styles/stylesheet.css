@@ -245,6 +245,22 @@ h1, h2, h3, h4, p, span {
   border: none;
 }
 
+.button-rounded-red-no-mar-small-empty {
+  cursor: pointer;
+  position: relative;
+  display: block;
+  height: 30px;
+  padding: 5px 20px;
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0);
+  color: #F0087D;
+  border: 2px solid #F0087D;
+  border-radius: 40px;
+  font-weight: 400;
+  font-size: 15px;
+  font-family: "Lato";  
+}
+
 .button-rounded-green-no-mar-small {
   cursor: pointer;
   position: relative;
@@ -851,8 +867,9 @@ input[type="file"] {
     position: relative;
     margin: auto;
     display: block;
-    margin-top: 30px;
-    padding: 10px 30px;
+    margin-top: 50px;
+    margin-left: 20px;
+    padding: 10px 20px;
     background: #6072E3; /* For browsers that do not support gradients */
     border-radius: 40px;
     color: white;
