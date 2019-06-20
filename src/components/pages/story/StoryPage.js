@@ -1,58 +1,30 @@
 import React, { Component, useRef } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import WaveSurfer from 'wavesurfer.js';
-import ReactTooltip from 'react-tooltip';
-import InputRange from 'react-input-range';
-import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
-import TwitterLogin from './components/TwitterLogin.js';
+import './assets/index.scss';
+import "react-input-range/lib/css/index.css";
+import InputRange from 'react-input-range';
 import classNames from 'classnames';
+import ReactPlayer from 'react-player';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
+import Card from '@material-ui/core/Card';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
 import Avatar from '@material-ui/core/Avatar';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import InputAdornment from '@material-ui/core/InputAdornment';
-import ReactPlayer from 'react-player';
-import Fab from '@material-ui/core/Fab';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
-import SoundPlayerItem from '../../ui/SoundPlayerItem.js';
-import ProfilePage from '../profile/ProfilePage.js';
 import Comments from './components/Comments.js';
-import { PlayButton, PrevButton, NextButton, Progress, Timer, VolumeControl } from 'react-soundplayer/components';
-import { withCustomAudio } from 'react-soundplayer/addons';
-import { TwitterShareButton, TwitterIcon, FacebookShareButton, FacebookIcon } from 'react-share';
 import ClipItem from './components/ClipItem.js';
-import ShareModal from './components/ShareModal.js';
 import ContributeGemsModal from './components/ContributeGemsModal.js';
 import ContributorsModal from './components/ContributorsModal.js';
 import ContributeGifAnimationModal from './components/ContributeGifAnimationModal.js';
 
 // some track meta information
-const trackTitle = 'Immigration and the wall';
 var wavesurfer = null;
-
-const logoContainerStyle = {
-  marginTop: -20,
-  marginLeft: 30,
-}
-
-const logoContainerStyle2 = {
-  marginTop: -20,
-  marginLeft: 10,
-}
-
-const logoStyle = {
-  width: 70,
-  height: 70,
-  cursor: 'pointer',
-}
 
 const storyContainerStyle = {
   position: "initial",
@@ -66,19 +38,21 @@ const customStylesLight = {
     right: 0,
     bottom: 0,
     zIndex: 5,
-    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+    backgroundColor: 'rgba(19, 18, 24, 0)',
 		maxHeight: '100%',
     overflowY: 'auto',
+    border: 'none',
   },
   content: {
-    top: '50%',
+    top: '35%',
     left: '50%',
     right: 'auto',
     bottom: 'auto',
     marginRight: '-50%',
-		background: 'rgba(255, 255, 255, 1)',
+		background: 'rgba(255, 255, 255, 0)',
     maxHeight: '80%',
-    transform: 'translate(-50%, -50%)'
+    transform: 'translate(-50%, -50%)',
+    border: 'none',
   },
 };
 
@@ -120,35 +94,23 @@ const useStyles = theme => ({
   },
 });
 
-var listStyle = {
-  paddingRight: 40,
-}
-
-var cardStyle = {
-  marginBottom: 30,
-}
-
-var containerStyle = {
+const containerStyle = {
   marginLeft: 20,
   marginTop: 20,
   marginBottom: 300,
 }
 
-var storyImgStyle = {
+const storyImgStyle = {
   height: 200,
 }
 
-const textFieldMargin = {
-  margin: 50,
-}
-
-var storyPaperStyle = {
+const storyPaperStyle = {
   width: '100%',
   marginBottom: 10,
   backgroundColor: "#7E8C9B",
 }
 
-var storyTitleStyle = {
+const storyTitleStyle = {
   paddingLeft: 20,
   align: 'center',
   color: '#36454f',
@@ -156,7 +118,7 @@ var storyTitleStyle = {
   fontSize: 40,
 }
 
-var storyTextStyle = {
+const storyTextStyle = {
   paddingLeft: 20,
   align: 'center',
   color: '#36454f',
@@ -165,44 +127,12 @@ var storyTextStyle = {
   textDecoration: "underline",
 }
 
-var mobileStoryTextStyle = {
-  textAlign: 'center',
-  color: '#36454f',
-  fontFamily: "Lato",
-  fontSize: 30,
-  textDecoration: "underline",
-}
-
-const bigAvatar = {
-  width: 80,
-  height: 80,
-}
-
-const mediaStyle = {
-  width: '100%',
-  paddingTop: 50,
-  paddingBottom: 50,
-  backgroundColor: '#FFFFFF'
-}
-
-const mediaTextStyle = {
-  paddingLeft: 60,
-  align: 'center',
-  color: '#36454f',
-  fontFamily: "Lato",
-  fontSize: 30,
-}
-
-const mediaTextStyleSmall = {
-  paddingLeft: 60,
-  align: 'center',
-  color: 'grey',
-  fontFamily: "Lato",
-  fontSize: 20,
-}
-
-const dividerStyle = {
-  textAlign: 'center',
+const root = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-around',
+  overflow: 'hidden',
+  marginTop: 20,
 }
 
 const textFieldStyle = {
@@ -228,59 +158,6 @@ const playPauseButtonStyle = {
   marginBottom: 10,
 }
 
-const heartFabStyle = {
-  backgroundColor: "#D14D85",
-  float: "right",
-  marginRight: 20,
-	width: 50,
-	height: 50,
-}
-
-const heartIconStyle = {
-  width: 40,
-  height: 40,
-}
-
-const iconStyle = {
-	width: 30,
-	height: 30,
-}
-
-const clipStyle = {
-  width: 70,
-  height: 70,
-  display: 'inline-block',
-  marginBottom: 50,
-  left: '50%',
-}
-
-const clip = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  // overflow: 'hidden',
-  marginTop: 20,
-}
-
-const textStyleBig = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 30,
-  marginLeft: 20,
-  marginRight: 50,
-}
-
-const textStyleSmall = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 20,
-  marginLeft: 20,
-  marginRight: 50,
-  marginBottom: 20,
-}
-
 const rightPanelText = {
   color: '#B8B5BE',
   fontFamily: 'Lato',
@@ -297,47 +174,48 @@ class StoryPage extends Component {
     window.scrollTo(0, 0);
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
-    var ctx = document.createElement('canvas').getContext('2d');
-    var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
-    linGrad.addColorStop(0.5, 'rgba(168, 180, 236, 1.000)');
-    linGrad.addColorStop(0.5, 'rgba(224, 228, 248, 1.000)');
-    var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
-    progressGrad.addColorStop(0.5, 'rgba(39, 64, 178, 1.000)');
-    progressGrad.addColorStop(0.5, 'rgba(98, 120, 221, 1.000)');
-    wavesurfer = WaveSurfer.create({
-      container: '#waveform',
-      backend: 'MediaElement',
-      waveColor: linGrad,
-      progressColor: progressGrad,
-      scrollParent: false,
-      cursorWidth: 0,
-      barHeight: 1,
-      barWidth: 2,
-      barGap: 2,
-    });
     BackendManager.makeQuery('public/stories/feed/story', JSON.stringify({
       story_id: this.props.match.params.id,
     }))
     .then(data => {
       if (data.success) {
-        UserManager.currentStory = data.story;
         this.setState({
-          currentStory: UserManager.currentStory
+          story: data.story
         });
-        wavesurfer.load(data.story.url);
+        if (data.story.type == 0) {
+          var ctx = document.createElement('canvas').getContext('2d');
+          var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
+          linGrad.addColorStop(0.5, 'rgba(168, 180, 236, 1.000)');
+          linGrad.addColorStop(0.5, 'rgba(224, 228, 248, 1.000)');
+          var progressGrad = ctx.createLinearGradient(0, 64, 0, 200);
+          progressGrad.addColorStop(0.5, 'rgba(39, 64, 178, 1.000)');
+          progressGrad.addColorStop(0.5, 'rgba(98, 120, 221, 1.000)');
+          wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            backend: 'MediaElement',
+            waveColor: linGrad,
+            progressColor: progressGrad,
+            scrollParent: false,
+            cursorWidth: 0,
+            barHeight: 1,
+            barWidth: 2,
+            barGap: 2,
+          });
+          wavesurfer.load(data.story.url);
+          var self = this;
+          wavesurfer.on('finish', function() {
+            self.setState({
+              isPlaying: false,
+            });
+          });
+          wavesurfer.on('audioprocess', function(progress) {
+            var currentTime = Math.floor(progress);
+            self.setState({
+              currentTime: Math.floor(progress),
+            });
+          });
+        }
       }
-    });
-    var self = this;
-    wavesurfer.on('finish', function() {
-      self.setState({
-        isPlaying: false,
-      });
-    });
-    wavesurfer.on('audioprocess', function(progress) {
-      var currentTime = Math.floor(progress);
-      self.setState({
-        currentTime: Math.floor(progress),
-      });
     });
     var hasListened = false;
     BackendManager.makeQuery('clips/story', JSON.stringify({
@@ -356,7 +234,9 @@ class StoryPage extends Component {
   }
 
   componentWillUnmount() {
-    wavesurfer.stop();
+    if (wavesurfer != null) {
+      wavesurfer.stop();
+    }
   }
 
   resize() {
@@ -377,15 +257,11 @@ class StoryPage extends Component {
     this.playerRef = React.createRef();
     this.copyRef = React.createRef();
     this.state = {
-      currentTime: 0,
       duration: 0,
-      currentStory: this.props.currentStory,
-      contributeGemsIsOpen: false,
+      story: null,
       comment: "",
       comments: [],
       isMobile: false,
-      nextSecond: 0,
-      isFollowing: false,
       clips: [],
       isPlaying: false,
       currentTime: 0,
@@ -395,9 +271,12 @@ class StoryPage extends Component {
       gemsContributed: 0,
       currentCommentId: 0,
       contributorsCommentId: 0,
+      value: 0,
+      scrubberShouldMove: true,
+      isFinished: false,
     };
 
-    this.handleStoryClick = this.handleStoryClick.bind(this);
+    this.togglePlayPause = this.togglePlayPause.bind(this);
     this.handleUserClick = this.handleUserClick.bind(this);
     this.handleCommentChange = this.handleCommentChange.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
@@ -406,9 +285,6 @@ class StoryPage extends Component {
     this.renderComments = this.renderComments.bind(this);
     this.renderComment = this.renderComment.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
-    this.getPercentage = this.getPercentage.bind(this);
-    this.getDurationStr = this.getDurationStr.bind(this);
-    this.createMinString = this.createMinString.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
     this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
@@ -423,6 +299,130 @@ class StoryPage extends Component {
     this.contributeGems = this.contributeGems.bind(this);
     this.fetchReplies = this.fetchReplies.bind(this);
     this.openClip = this.openClip.bind(this);
+    this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
+    this.handleVideoProgress = this.handleVideoProgress.bind(this);
+    this.handleDurationChange = this.handleDurationChange.bind(this);
+    this.handleScrubberMove = this.handleScrubberMove.bind(this);
+    this.playAtValue = this.playAtValue.bind(this);
+    this.createMinString = this.createMinString.bind(this);
+    this.renderPodcastView = this.renderPodcastView.bind(this);
+  }
+
+  ref = player => {
+    this.player = player
+  }
+
+  renderPodcastView() {
+    if (this.state.story) {
+      if (this.state.story.type == 0) {
+        return (
+          <div>
+            <CardActionArea style={storyContainerStyle}>
+              <Paper style={storyPaperStyle}>
+                <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
+                  <Row>
+                    {this.renderPlayPause()}
+                    <div>
+                      {this.state.story ?
+                      <Typography style={storyTitleStyle}>
+                        {this.state.story.title}
+                      </Typography> : <div />}
+                    </div>
+                  </Row>
+                </Container>
+              </Paper>
+            </CardActionArea>
+            <div id="waveform" style={{ margin: 50 }}></div>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            {this.renderVideoPlayer()}
+          </div>
+        );
+      }
+    }
+  }
+
+  renderVideoPlayer() {
+    return (
+      <div>
+        <div style={{margin: 20}}>
+          <div style={{backgroundColor: '#0F0D12'}}>
+            <div style={root}>
+              <ReactPlayer
+                ref={this.ref}
+                style={{marginTop: 20}}
+                url={this.state.story.url}
+                onProgress={this.handleVideoProgress}
+                onDuration={this.handleDurationChange}
+                playing={this.state.isPlaying} />
+            </div>
+            <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
+              <InputRange
+                draggableTrack
+                maxValue={this.state.duration}
+                minValue={0}
+                formatLabel={value => this.createMinString(value)}
+                onChange={value => this.handleScrubberMove(value)}
+                onChangeComplete={value => this.playAtValue(value)}
+                value={this.state.value} />
+              {this.renderPlayPause()}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  createMinString(seconds) {
+    var minutes = Math.floor(seconds/60);
+    var remainingSeconds = Math.floor(seconds - minutes * 60);
+    if (remainingSeconds < 10) {
+      return minutes + ":0" + remainingSeconds;
+    } else {
+      return minutes + ":" + remainingSeconds;
+    }
+  }
+
+  handleVideoProgress(state) {
+    var seconds = state.played * this.player.getDuration();
+    if (this.state.scrubberShouldMove) {
+      this.setState({
+        value: seconds,
+      });
+    }
+
+    if (seconds == this.state.duration) {
+      this.setState({
+        isPlaying: false,
+        isFinished: true,
+        value: 0,
+      });
+    }
+  }
+
+  handleDurationChange(duration) {
+    this.setState({
+      duration: duration,
+    });
+  }
+
+  handleScrubberMove(value) {
+    this.setState({
+      scrubberShouldMove: false,
+      value: value,
+      isPlaying: false,
+    });
+  }
+
+  playAtValue(value) {
+    this.setState({
+      scrubberShouldMove: true,
+      isPlaying: true,
+    });
+    this.player.seekTo(parseFloat(value));
   }
 
   refreshComments() {
@@ -483,18 +483,27 @@ class StoryPage extends Component {
     });
   }
 
-  handleStoryClick(story) {
-    if (wavesurfer != null) {
-      if (!wavesurfer.isPlaying()) {
-        this.setState({
-          isPlaying: true,
-        });
-        wavesurfer.play();
+  togglePlayPause() {
+    if (this.state.story) {
+      if (this.state.story.type == 0) {
+        if (wavesurfer != null) {
+          if (!wavesurfer.isPlaying()) {
+            this.setState({
+              isPlaying: true,
+            });
+            wavesurfer.play();
+          } else {
+            this.setState({
+              isPlaying: false,
+            });
+            wavesurfer.pause();
+          }
+        }
       } else {
+        var isPlaying = !this.state.isPlaying;
         this.setState({
-          isPlaying: false,
+          isPlaying: isPlaying,
         });
-        wavesurfer.pause();
       }
     }
   }
@@ -535,26 +544,25 @@ class StoryPage extends Component {
 
   handleSendClick() {
     if (this.props.isLoggedIn) {
-      BackendManager.makeQuery('public/comments/create', JSON.stringify({
-        donation: 0,
-        story_id: this.state.currentStory.id,
-        name: UserManager.firstName + " " + UserManager.lastName,
-        email: UserManager.email,
-        comment: this.state.comment,
-        title: this.state.currentStory.title,
-      }))
-      .then(data => {
-        if (data.success) {
-          this.props.showToast("Sent!");
-          this.props.fetchComments(this.state.currentStory.id);
-          this.setState({
-            comment: "",
-          });
-        }
-      });
-    } else {
-      this.props.setCommentType("comment");
-      this.props.openConfirmEmailModal(this.state.comment);
+      if (this.state.story) {
+        BackendManager.makeQuery('public/comments/create', JSON.stringify({
+          donation: 0,
+          story_id: this.state.story.id,
+          name: UserManager.firstName + " " + UserManager.lastName,
+          email: UserManager.email,
+          comment: this.state.comment,
+          title: this.state.story.title,
+        }))
+        .then(data => {
+          if (data.success) {
+            this.props.showToast("Sent!");
+            this.props.fetchComments(this.state.story.id);
+            this.setState({
+              comment: "",
+            });
+          }
+        });
+      }
     }
   }
 
@@ -573,102 +581,67 @@ class StoryPage extends Component {
         }
       });
     } else {
-      this.props.setCommentType("reply");
-      this.props.openConfirmEmailModal(reply);
+      this.props.openLoginModal();
     }
-  }
-
-  getDurationStr(totalDuration) {
-    var totalSeconds = totalDuration;
-    var years = Math.floor(totalSeconds/(3600 * 24 * 365));
-    totalSeconds -= (years * 3600 * 24 * 365);
-    var months = Math.floor(totalSeconds/(3600 * 24 * 30));
-    totalSeconds -= (months * 3600 * 24 * 30);
-    let days = Math.floor(totalSeconds/(3600 * 24))
-    totalSeconds -= (days * 3600 * 24);
-    let hours = Math.floor(totalSeconds/3600);
-    totalSeconds -= (hours * 3600);
-    let minutes = Math.floor(totalSeconds/60);
-    totalSeconds -= (minutes * 60);
-    var totalDurationStr = "";
-
-    if (years > 0) {
-        totalDurationStr = String(years) + "y ";
-    }
-
-    if (months > 0) {
-        totalDurationStr += String(months) + "mo ";
-    }
-
-    if (days > 0) {
-        totalDurationStr += String(days) + "d ";
-    }
-
-    if (hours > 0) {
-        totalDurationStr += String(hours) + "h ";
-    }
-
-    if (minutes > 0) {
-        totalDurationStr += String(minutes) + "min ";
-    }
-
-    totalDurationStr += String(totalSeconds) + "s";
-
-    return totalDurationStr;
   }
 
   renderProfile() {
     if (this.state.isMobile) {
-      return (
-        <div>
-          <div style={{width: '100%', textAlign: 'center'}}>
-            <img style={{display: 'inline-block', height: 200, marginBottom: 20}} src={this.state.currentStory.profile_picture} backgroundColor={'transparent'}/>
+      if (this.state.story) {
+        return (
+          <div>
+            <div style={{width: '100%', textAlign: 'center'}}>
+              <img style={{display: 'inline-block', height: 200, marginBottom: 20}} src={this.state.story.profile_picture} backgroundColor={'transparent'}/>
+            </div>
+            <Container>
+              <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.user_id)} activeClassName="active">
+                {this.state.story.first_name + " " + this.state.story.last_name}
+              </a>
+              <img
+                style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
+                src='../../../../../images/create_clip.png'
+                onClick={() => this.openClip()}
+                />
+              <p style={{paddingLeft: 20, flex: 1}}>{this.state.story.bio}</p>
+            </Container>
           </div>
-          <Container>
-            <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.currentStory.user_id)} activeClassName="active">
-              {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
-            </a>
-            <img
-              style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
-              src='../../../../../images/create_clip.png'
-              onClick={() => this.openClip()}
-              />
-            <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
-          </Container>
-        </div>
-      );
+        );
+      }
+
     } else {
-      return (
-        <Container style={{marginLeft: 10, marginBottom: 20}}>
-          <Row>
-            <img style={storyImgStyle} src={this.state.currentStory.profile_picture} backgroundColor={'transparent'}/>
-            <Col>
-              <div>
-                <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.currentStory.user_id)} activeClassName="active">
-                  {this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
-                </a>
-                <Row>
-                  <img
-                    style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
-                    src='../../../../../images/create_clip.png'
-                    onClick={() => this.openClip()}
-                    />
-                </Row>
-                <p style={{paddingLeft: 20, flex: 1}}>{this.state.currentStory.bio}</p>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      );
+      if (this.state.story) {
+        return (
+          <Container style={{marginLeft: 10, marginBottom: 20}}>
+            <Row>
+              <img style={storyImgStyle} src={this.state.story.profile_picture} backgroundColor={'transparent'}/>
+              <Col>
+                <div>
+                  <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.user_id)} activeClassName="active">
+                    {this.state.story.first_name + " " + this.state.story.last_name}
+                  </a>
+                  <Row>
+                    <img
+                      style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
+                      src='../../../../../images/create_clip.png'
+                      onClick={() => this.openClip()}
+                      />
+                  </Row>
+                  <p style={{paddingLeft: 20, flex: 1}}>{this.state.story.bio}</p>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        );
+      }
     }
   }
 
   openClip() {
-    if (wavesurfer != null) {
-      localStorage.setItem('url', this.state.currentStory.url);
+    if (wavesurfer != null && this.state.story) {
+      localStorage.setItem('url', this.state.story.url);
       localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
       localStorage.setItem('duration', wavesurfer.getDuration());
-      localStorage.setItem('story_id', this.state.currentStory.id);
+      localStorage.setItem('story_id', this.state.story.id);
       if (wavesurfer.isPlaying()) {
         wavesurfer.pause();
         this.setState({
@@ -744,39 +717,61 @@ class StoryPage extends Component {
   }
 
   renderPlayPause() {
-    if (this.state.isPlaying) {
-      return (
-        <img style={playPauseButtonStyle} src='../../../../../images/pause.png'/>
-      );
-    } else {
-      return (
-        <img style={playPauseButtonStyle} src='../../../../../images/play.png'/>
-      );
-    }
-  }
-
-  getPercentage() {
-    var percent = 100 * this.state.currentTime/this.state.currentStory.duration;
-    return percent + "%";
-  }
-
-
-
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = Math.floor(seconds - minutes * 60);
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
+    if (this.state.story) {
+      if (this.state.story.type == 0) {
+        if (this.state.isPlaying) {
+          return (
+            <img style={playPauseButtonStyle} src='../../../../../images/pause.png' onClick={() => this.togglePlayPause()}/>
+          );
+        } else {
+          return (
+            <img style={playPauseButtonStyle} src='../../../../../images/play.png' onClick={() => this.togglePlayPause()}/>
+          );
+        }
+      } else {
+        if (this.state.isFinished) {
+          return (
+            <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.replay()}>
+              <img
+                style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+                src='../../../../../images/replay.png'
+                />
+            </div>
+          );
+        } else {
+          if (this.state.isPlaying) {
+            return (
+              <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.togglePlayPause()}>
+                <img
+                  style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+                  src='../../../../../images/pause_simple.png'
+                  />
+              </div>
+            );
+          } else {
+            return (
+              <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.togglePlayPause()}>
+                <img
+                  style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+                  src='../../../../../images/play_simple.png'
+                  />
+              </div>
+            );
+          }
+        }
+      }
     }
   }
 
   openContributeGemsModal(commentId) {
-    this.setState({
-      contributeGemsIsOpen: true,
-      currentCommentId: commentId,
-    });
+    if (this.props.isLoggedIn) {
+      this.setState({
+        contributeGemsIsOpen: true,
+        currentCommentId: commentId,
+      });
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   closeContributeGemsModal() {
@@ -813,23 +808,43 @@ class StoryPage extends Component {
   }
 
   renderRightPanel() {
-    return (
-      <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-        <div>
-          <div style={{height: 5}}/>
-          <Typography style={rightPanelText}>
-            {"Clips!"}
-          </Typography>
-          <ul>
-            {this.state.clips.map((item) => {
-              return (this.renderClipsListItem(item))
-            })}
-          </ul>
-          <div style={{paddingBottom: 10}}>
+    if (this.state.clips.length > 0) {
+      return (
+        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+          <div>
+            <div style={{height: 5}}/>
+            <Typography style={rightPanelText}>
+              {"Clips!"}
+            </Typography>
+            <ul>
+              {this.state.clips.map((item) => {
+                return (this.renderClipsListItem(item))
+              })}
+            </ul>
+            <div style={{paddingBottom: 10}}>
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+          <div>
+            <div style={{height: 5}}/>
+            <Typography style={rightPanelText}>
+              {"Clips!"}
+            </Typography>
+            <img
+              style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
+              src='../../../../../images/create_clip.png'
+              onClick={() => this.openClip()}
+              />
+            <div style={{paddingBottom: 10}}>
+            </div>
+          </div>
+        </div>
+      );
+    }
   }
 
   renderClipsListItem(item) {
@@ -873,8 +888,7 @@ class StoryPage extends Component {
           user_id: UserManager.id,
         }))
         .then(data => {
-          if (data.success) {
-          }
+          this.openContributeGifAnimationModal(gems);
         });
       }
     });
@@ -901,43 +915,30 @@ class StoryPage extends Component {
           <ContributorsModal commentId={this.state.contributorsCommentId}/>
         </Modal>
         <Modal
-          isOpen={this.state.viewContributorsIsOpen}
+          isOpen={this.state.contributeGifAnimationIsOpen}
           style={customStylesLight}
-          onRequestClose={this.closeViewContributorsModal}
+          onRequestClose={this.closeContributeGifAnimationModal}
           contentLabel="Yay!"
         >
-          <ContributeGifAnimationModal gem={this.state.gemsContributed}/>
+          <ContributeGifAnimationModal gems={this.state.gemsContributed}/>
         </Modal>
         <div>
           <Row>
             <Col sm={8}>
               <Paper elevation={1} style={{backgroundColor: 'white', marginTop: 20, marginLeft: 20, paddingBottom: 20}}>
-                <CardActionArea style={storyContainerStyle} onClick={() => this.handleStoryClick(this.props.currentStory)}>
-                  <Paper style={storyPaperStyle}>
-                    <Container style={{marginTop: 10, position: "absolute", zIndex: 1, backgroundColor: "transparent"}}>
-                      <Row>
-                        {this.renderPlayPause()}
-                        <div>
-                          <Typography style={storyTitleStyle}>
-                            {this.state.currentStory.title}
-                          </Typography>
-                        </div>
-                      </Row>
-                    </Container>
-                  </Paper>
-                </CardActionArea>
-                <div id="waveform" style={{ margin: 50 }}></div>
+                {this.renderPodcastView()}
                 {this.renderProfile()}
               </Paper>
               <Row>
-                <TextField
-                  label={"Chat with " + this.state.currentStory.first_name + " " + this.state.currentStory.last_name}
-                  id="outlined-adornment-amount"
-                  placeholder="What do you want to say?"
-                  fullWidth
-                  style={textFieldStyle}
-                  value={this.state.name}
-                  onChange={this.handleCommentChange} />
+                {this.state.story ?
+                  <TextField
+                    label={"Chat with " + this.state.story.first_name + " " + this.state.story.last_name}
+                    id="outlined-adornment-amount"
+                    placeholder="What do you want to say?"
+                    fullWidth
+                    style={textFieldStyle}
+                    value={this.state.name}
+                    onChange={this.handleCommentChange} /> : <div />}
                 <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
                   {"Send"}
                 </button>

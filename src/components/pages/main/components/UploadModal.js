@@ -1,24 +1,11 @@
 import React, { Component } from 'react';
-import Modal from 'react-modal';
 import WaveSurfer from 'wavesurfer.js';
 import { withRouter } from "react-router-dom";
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import Select from '@material-ui/core/Select';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
-import MidTitle from '../../../ui/MidTitle.js';
-import Button from '../../../ui/Button.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
-
-const visibility = [
-  'Anyone',
-  'Only Followers',
-];
 
 const waveformStyle = {
   marginLeft: 50,
@@ -51,33 +38,18 @@ const logoStyle = {
   cursor: 'pointer',
 }
 
-var storyPaperStyle = {
+const storyPaperStyle = {
   marginTop: 10,
   padding: 10,
 }
 
-var storyTitleStyle = {
+const storyTitleStyle = {
   paddingLeft: 10,
   align: 'center',
   color: '#222225',
   fontFamily: "Lato",
   fontSize: 16,
 }
-
-const inputStyle = {
-  visibility: 'hidden',
-}
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 var wavesurfer = null;
 
@@ -190,7 +162,7 @@ class UploadModal extends Component {
             onChange={this.handleTitleChange} />
         </div>
         <div id="upload-waveform" style={waveformStyle}></div>
-        {this.renderDoneButton()}        
+        {this.renderDoneButton()}
       </div>
     )
   }

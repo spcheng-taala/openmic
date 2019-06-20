@@ -1,10 +1,6 @@
 import React, { Component } from 'react';
-import Modal from 'react-modal';
 import { Container, Row, Col } from 'react-grid-system';
 import Typography from '@material-ui/core/Typography';
-import TextField from '@material-ui/core/TextField';
-import MidTitle from '../../../ui/MidTitle.js';
-import Button from '../../../ui/Button.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
 
@@ -39,35 +35,6 @@ const topTextStyle = {
   marginBottom: 10,
 }
 
-var storyPaperStyle = {
-  marginTop: 10,
-  padding: 10,
-}
-
-var storyTitleStyle = {
-  paddingLeft: 10,
-  align: 'center',
-  color: '#222225',
-  fontFamily: "Lato",
-  fontSize: 16,
-}
-
-const inputStyle = {
-  visibility: 'hidden',
-}
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
-
-
 class BuyGemsModal extends Component {
 
   componentDidMount() {
@@ -80,30 +47,32 @@ class BuyGemsModal extends Component {
       }
     });
 
-    BackendManager.makeQuery('gems/user', JSON.stringify({
-      user_id: UserManager.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        if (data.gem_count < 0) {
-          BackendManager.makeQuery('gems/user/create', JSON.stringify({
-            user_id: UserManager.id,
-            gem_count: 0,
-          }))
-          .then(data => {
-            if (data.success) {
-              this.setState({
-                gem_count: 0,
-              });
-            }
-          });
-        } else {
-          this.setState({
-            gem_count: data.gem_count,
-          });
+    if (this.props.isLoggedIn) {
+      BackendManager.makeQuery('gems/user', JSON.stringify({
+        user_id: UserManager.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          if (data.gem_count < 0) {
+            BackendManager.makeQuery('gems/user/create', JSON.stringify({
+              user_id: UserManager.id,
+              gem_count: 0,
+            }))
+            .then(data => {
+              if (data.success) {
+                this.setState({
+                  gem_count: 0,
+                });
+              }
+            });
+          } else {
+            this.setState({
+              gem_count: data.gem_count,
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   constructor(props) {
@@ -116,6 +85,15 @@ class BuyGemsModal extends Component {
     this.convertToDollars = this.convertToDollars.bind(this);
     this.handleBuyGems = this.handleBuyGems.bind(this);
     this.renderGemIcons = this.renderGemIcons.bind(this);
+    this.convertToCommaString = this.convertToCommaString.bind(this);
+  }
+
+  convertToCommaString(x) {
+    if (x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } else {
+      return ("");
+    }
   }
 
   convertToDollars(cents) {
@@ -131,7 +109,7 @@ class BuyGemsModal extends Component {
           <Row>
             <Col>
               <Typography style={titleStyle}>
-                {gem.quantity + " Gems"}
+                {this.convertToCommaString(gem.quantity) + " Gems"}
               </Typography>
               {this.renderGemIcons(gem)}
             </Col>
@@ -202,16 +180,21 @@ class BuyGemsModal extends Component {
   }
 
   handleBuyGems(gem) {
-    localStorage.setItem("gem_id", gem.id);
-    localStorage.setItem("gem_quantity", gem.quantity);
-    localStorage.setItem("gem_price", gem.price);
-    window.open(UserManager.domain + 'checkout', "_blank");
+    if (this.props.isLoggedIn) {
+      localStorage.setItem("gem_id", gem.id);
+      localStorage.setItem("gem_quantity", gem.quantity);
+      localStorage.setItem("gem_price", gem.price);
+      window.open(UserManager.domain + 'checkout', "_blank");
+    } else {
+      this.props.openLoginModal();
+      this.props.closeBuyGemsModal();
+    }
   }
 
   render() {
 		return (
       <div style={{padding: 0, width: 500, backgroundColor: '#18161B'}}>
-        <p style={topTextStyle}>{'You have ' + this.state.gem_count + ' gems'}</p>
+        <p style={topTextStyle}>{'You have ' + this.convertToCommaString(this.state.gem_count) + ' gems'}</p>
         <p style={textStyle}>{'Prices are shown in USD'}</p>
         <ul style={{margin: 0, padding: 0}}>
           {this.state.gems.map((item) => {

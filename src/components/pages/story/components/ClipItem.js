@@ -4,16 +4,7 @@ import VideoThumbnail from 'react-video-thumbnail';
 import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
 import Typography from '@material-ui/core/Typography';
-
-const row = {
-  width: '100%',
-}
-
-const block = {
-  display: 'inline-block',
-}
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -38,14 +29,6 @@ const textStyleSmall = {
   marginBottom: 10,
 }
 
-const durationStyle = {
-  color: 'white',
-  fontFamily: 'Lato',
-  fontSize: 16,
-  float: 'right',
-  marginRight: 30,
-}
-
 const thumbnail = {
   display: 'flex',
   flexWrap: 'wrap',
@@ -55,30 +38,6 @@ const thumbnail = {
 }
 
 class ClipItem extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      progress: 0,
-    };
-
-    this.playPause = this.playPause.bind(this);
-    this.createMinString = this.createMinString.bind(this);
-  }
-
-  playPause() {
-    this.props.playClip(this.props.index);
-  }
-
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = seconds - minutes * 60;
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
-    }
-  }
 
   render() {
     return (

@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
-import { withRouter } from "react-router-dom";
 import classNames from 'classnames';
 import axios from 'axios';
 import { withStyles } from '@material-ui/core/styles';
-import MidTitle from '../../ui/MidTitle.js';
 import Paper from '@material-ui/core/Paper';
-import Button from '../../ui/Button.js';
 import TextField from '@material-ui/core/TextField';
 import Avatar from '@material-ui/core/Avatar';
 import UserManager from '../../singletons/UserManager.js';
@@ -26,13 +23,6 @@ const titleStyle = {
   color: "#222225",
   font: "Lato",
   textAlign: "left",
-}
-
-const termsStyle = {
-  textSize: 14,
-  color: "grey",
-  font: "Lato",
-  textAlign: "center",
 }
 
 const bigAvatar = {
@@ -75,12 +65,12 @@ class EditProfilePage extends Component {
     super(props);
 
     this.state = {
-      firstName: this.props.firstName,
-      lastName: this.props.lastName,
-      username: this.props.username,
-      profilePicture: this.props.profilePicture,
+      firstName: "",
+      lastName: "",
+      username: "",
+      profilePicture: "",
       validUsername: false,
-      bio: UserManager.bio,
+      bio: "",
       selectedFile: null,
       file: null,
     }

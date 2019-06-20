@@ -4,8 +4,6 @@ import { Container, Row, Col } from 'react-grid-system';
 import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
-import MidTitle from '../../../ui/MidTitle.js';
-import Button from '../../../ui/Button.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
 
@@ -22,14 +20,6 @@ const styles = theme => ({
   }
 });
 
-const titleStyle = {
-  fontWeight: 'bold',
-  color: "#DAD8DE",
-  font: "Lato",
-  textAlign: "left",
-  fontSize: 20,
-}
-
 const textStyle = {
   color: "#D4D2D8",
   font: "Lato",
@@ -45,34 +35,6 @@ const topTextStyle = {
   fontSize: 30,
   marginBottom: 10,
 }
-
-var storyPaperStyle = {
-  marginTop: 10,
-  padding: 10,
-}
-
-var storyTitleStyle = {
-  paddingLeft: 10,
-  align: 'center',
-  color: '#222225',
-  fontFamily: "Lato",
-  fontSize: 16,
-}
-
-const inputStyle = {
-  visibility: 'hidden',
-}
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 class ContributeGemsModal extends Component {
 

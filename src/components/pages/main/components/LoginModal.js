@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
-import Modal from 'react-modal';
 import { withRouter } from "react-router-dom";
-import MidTitle from '../../../ui/MidTitle.js';
-import Button from '../../../ui/Button.js';
+import { Container, Row, Col } from 'react-grid-system';
 import TextField from '@material-ui/core/TextField';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
@@ -27,9 +25,16 @@ const errorStyle = {
 }
 
 class LoginModal extends Component {
+
+  componentDidMount() {
+    window.addEventListener("resize", this.resize.bind(this));
+    this.resize();
+  }
+
   constructor(props) {
     super(props);
     this.state = {
+      isMobile: false,
       email: "",
       password: "",
       showError: false,
@@ -39,6 +44,18 @@ class LoginModal extends Component {
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
     this.signUpHandler = this.signUpHandler.bind(this);
     this.renderError = this.renderError.bind(this);
+  }
+
+  resize() {
+    if (window.innerWidth <= 760) {
+      this.setState({
+        isMobile: true,
+      });
+    } else {
+      this.setState({
+        isMobile: false,
+      })
+    }
   }
 
   handleEmailChange(e) {
@@ -103,34 +120,82 @@ class LoginModal extends Component {
     }
   }
 
+  renderView() {
+    if (this.state.isMobile) {
+      return (
+        <div style={{width: '60%'}}>
+          <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
+          <div>
+            <TextField
+              label="Email"
+              floatingLabelText="Email"
+              fullWidth
+              style={textFieldStyle}
+              value={this.state.email}
+              onChange={this.handleEmailChange} />
+            <TextField
+              label="Password"
+              floatingLabelText="Password"
+              type="password"
+              fullWidth
+              style={textFieldStyle}
+              value={this.state.password}
+              onChange={this.handlePasswordChange}
+            />
+            {this.renderError()}
+          </div>
+          <button className='button-rounded' onClick={() => this.signUpHandler()}>
+            Login!
+          </button>
+        </div>
+      );
+    } else {
+      return (
+        <div style={{width: '60%'}}>
+          <Container>
+            <Row>
+              <Col>
+                <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
+                <div>
+                  <TextField
+                    label="Email"
+                    floatingLabelText="Email"
+                    fullWidth
+                    style={textFieldStyle}
+                    value={this.state.email}
+                    onChange={this.handleEmailChange} />
+                  <TextField
+                    label="Password"
+                    floatingLabelText="Password"
+                    type="password"
+                    fullWidth
+                    style={textFieldStyle}
+                    value={this.state.password}
+                    onChange={this.handlePasswordChange}
+                  />
+                  {this.renderError()}
+                </div>
+                <button className='button-rounded' onClick={() => this.signUpHandler()}>
+                  Login!
+                </button>
+              </Col>
+              <Col>
+                <div style={{backgroundColor: '#3ABBBC'}}>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </div>
+      );
+    }
+  }
+
   render() {
 		return (
       <div>
-        <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
-        <div>
-          <TextField
-            label="Email"
-            floatingLabelText="Email"
-            fullWidth
-            style={textFieldStyle}
-            value={this.state.email}
-            onChange={this.handleEmailChange} />
-          <TextField
-            label="Password"
-            floatingLabelText="Password"
-            type="password"
-            fullWidth
-            style={textFieldStyle}
-            value={this.state.password}
-            onChange={this.handlePasswordChange}
-          />
-          {this.renderError()}
-        </div>
-        <button className='button-rounded' onClick={() => this.signUpHandler()}>
-          Login!
-        </button>
+        {this.renderView()}
       </div>
-    )
+    );
   }
 }
 

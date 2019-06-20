@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
 import TextField from '@material-ui/core/TextField';
-import Avatar from '@material-ui/core/Avatar';
 import UserManager from '../../../singletons/UserManager.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 
@@ -22,19 +21,6 @@ const termsStyle = {
   color: "grey",
   font: "Lato",
   textAlign: "center",
-}
-
-const bigAvatar = {
-  marginTop: 20,
-  width: 100,
-  height: 100,
-  display: 'block',
-  marginLeft: 'auto',
-  marginRight: 'auto',
-}
-
-const containerStyle = {
-  overflow: 'scroll',
 }
 
 class SignUpModal extends Component {

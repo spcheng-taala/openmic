@@ -12,9 +12,6 @@ import Card from '@material-ui/core/Card';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Avatar from '@material-ui/core/Avatar';
 import { withStyles } from '@material-ui/core/styles';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import IconButton from '@material-ui/core/IconButton';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import TextField from '@material-ui/core/TextField';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
@@ -49,22 +46,6 @@ const customStyles = {
   },
 };
 
-const waveformStyle = {
-  marginLeft: 50,
-  marginRight: 50,
-}
-
-const sliderStyle = {
-  margin: 50,
-}
-
-const playPauseButtonStyle = {
-  width: 60,
-  height: 60,
-  marginBottom: 10,
-  cursor: 'pointer',
-}
-
 const textFieldStyle = {
   color: "#222225",
   font: "Lato",
@@ -82,83 +63,11 @@ const root = {
   marginTop: 20,
 }
 
-const animationRoot = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  height: 250,
-  justifyContent: 'space-around',
-  overflow: 'hidden',
-  marginTop: 20,
-
-}
-
-const buttonRoot = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  overflow: 'hidden',
-}
-
-const removeStyle = {
-  position: "absolute",
-  right: "2px",
-  top: 0,
-  cursor: "pointer"
-};
-
-const validGif = {
-  borderRadius: 5,
-  paddingLeft: 2,
-  color: 'white',
-  backgroundColor: '#3ABBBC',
-}
-
-const invalidGif = {
-  borderRadius: 5,
-  color: 'white',
-  backgroundColor: '#DD7DA5',
-}
-
-const editorStyle = {
-  height: 100,
-}
-
-const listStyle = {
-  marginTop: 25,
-  width: 400,
-  height: 470,
-  overflow: 'scroll',
-  overflowX: 'hidden',
-}
-
-const timeTextFiledFontStyle = {
-  font: 'Lato',
-  fontSize: 14,
-}
-
 const centerVertical = {
   margin: 0,
   position: 'absolute',
   top: '50%',
   transform: 'translateY(-50%)',
-}
-
-const rightPanelTextBig = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 20,
-  marginTop: 10,
-  marginRight: 10,
-}
-
-const rightPanelTextSmall = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 15,
-  marginBottom: 20,
-  marginRight: 10,
 }
 
 const topPanelText = {
@@ -230,16 +139,6 @@ const textStyleSmallMobile = {
   textAlign: 'left',
   fontSize: 15,
   marginLeft: 10,
-  marginRight: 50,
-  marginBottom: 20,
-}
-
-const textStyleTiny = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 14,
-  marginLeft: 25,
   marginRight: 50,
   marginBottom: 20,
 }
@@ -411,7 +310,6 @@ class ClipPage extends Component {
     this.renderHeart = this.renderHeart.bind(this);
     this.handleHeartClick = this.handleHeartClick.bind(this);
     this.getCountStr = this.getCountStr.bind(this);
-    this.handleCommentHeartClick = this.handleCommentHeartClick.bind(this);
     this.handleCommentChange = this.handleCommentChange.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
     this.createComment = this.createComment.bind(this);
@@ -493,10 +391,14 @@ class ClipPage extends Component {
   }
 
   openContributeGemsModal(commentId) {
-    this.setState({
-      contributeGemsIsOpen: true,
-      currentCommentId: commentId,
-    });
+    if (this.props.isLoggedIn) {
+      this.setState({
+        contributeGemsIsOpen: true,
+        currentCommentId: commentId,
+      });
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   closeContributeGemsModal() {
@@ -728,30 +630,34 @@ class ClipPage extends Component {
   }
 
   handleHeartClick() {
-    var reaction = 1;
-    if (this.state.hasLiked) {
-      reaction = 0;
-    }
-    BackendManager.makeQuery('clips/react', JSON.stringify({
-      clip_id: this.props.match.params.id,
-      user_id: UserManager.id,
-      reaction: reaction,
-    }))
-    .then(data => {
-      if (data.success) {
-        if (reaction == 1) {
-          this.setState({
-            hasLiked: true,
-            heartCount: this.state.heartCount += 1,
-          });
-        } else {
-          this.setState({
-            hasLiked: false,
-            heartCount: this.state.heartCount -= 1,
-          });
-        }
+    if (this.props.isLoggedIn) {
+      var reaction = 1;
+      if (this.state.hasLiked) {
+        reaction = 0;
       }
-    });
+      BackendManager.makeQuery('clips/react', JSON.stringify({
+        clip_id: this.props.match.params.id,
+        user_id: UserManager.id,
+        reaction: reaction,
+      }))
+      .then(data => {
+        if (data.success) {
+          if (reaction == 1) {
+            this.setState({
+              hasLiked: true,
+              heartCount: this.state.heartCount += 1,
+            });
+          } else {
+            this.setState({
+              hasLiked: false,
+              heartCount: this.state.heartCount -= 1,
+            });
+          }
+        }
+      });
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   createComment(gems) {
@@ -910,6 +816,7 @@ class ClipPage extends Component {
                 <img
                   style={{height: 50, width: 50, cursor: 'pointer', marginTop: 10}}
                   src='../../../../../images/create_clip_small.png'
+                  onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}
                   />
               </Col>
             </Row>
@@ -937,6 +844,7 @@ class ClipPage extends Component {
                 <img
                   style={{height: 40, cursor: 'pointer', marginTop: 15}}
                   src='../../../../../images/create_clip.png'
+                  onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}
                   />
               </Col>
             </Row>
@@ -1010,6 +918,8 @@ class ClipPage extends Component {
                 </button>
               </Row>
               <Comments
+                isLoggedIn={this.props.isLoggedIn}
+                openLoginModal={this.props.openLoginModal}
                 isChild={false}
                 comments={this.state.comments}
                 sendReply={this.sendReply}
@@ -1040,25 +950,43 @@ class ClipPage extends Component {
   }
 
   renderRightPanel() {
-    return (
-      <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-        <Paper elevation={1} style={{backgroundColor: 'white'}}>
-          <div>
-            <div style={{height: 5}}/>
-            <Typography style={rightPanelText}>
-              {"Other clips!"}
-            </Typography>
-            <ul>
-              {this.state.otherClips.map((item) => {
-                return (this.renderOtherClipsListItem(item))
-              })}
-            </ul>
-            <div style={{paddingBottom: 10}}>
+    if (this.state.otherClips.length > 0) {
+      return (
+        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+          <Paper elevation={1} style={{backgroundColor: 'white'}}>
+            <div>
+              <div style={{height: 5}}/>
+              <Typography style={rightPanelText}>
+                {"Other clips!"}
+              </Typography>
+              <ul>
+                {this.state.otherClips.map((item) => {
+                  return (this.renderOtherClipsListItem(item))
+                })}
+              </ul>
+              <div style={{paddingBottom: 10}}>
+              </div>
             </div>
-          </div>
-        </Paper>
-      </div>
-    );
+          </Paper>
+        </div>
+      );
+    } else {
+      return (
+        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+          <Paper elevation={1} style={{backgroundColor: 'white'}}>
+            <div>
+              <div style={{height: 5}}/>
+              <Typography style={rightPanelText}>
+                {"Other clips!"}
+              </Typography>
+              <button className='button-rounded-purple-no-mar-small' style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>Listen to full podcast</button>
+              <div style={{paddingBottom: 10}}>
+              </div>
+            </div>
+          </Paper>
+        </div>
+      );
+    }
   }
 
   copyToClipboard() {
@@ -1089,53 +1017,23 @@ class ClipPage extends Component {
     });
   }
 
-  handleCommentHeartClick(commentId, reaction) {
-    BackendManager.makeQuery('clips/comment/react', JSON.stringify({
-      comment_id: commentId,
-      user_id: UserManager.id,
-      reaction: reaction,
-    }))
-    .then(data => {
-      if (data.success) {
-        BackendManager.makeQuery('clips/comments', JSON.stringify({
-          clip_id: this.props.match.params.id,
-        }))
-        .then(data => {
-          if (data.success) {
-            console.log(data.comments);
-            var comments = [];
-            for (var i = 0; i < data.comments.length; i++) {
-              var comment = data.comments[i];
-              comment.children = [];
-              if (comment.sum == null) {
-                comment.sum = 0;
-              }
-              if (comment.id != null) {
-                comments.push(comment);
-              }
-            }
-            this.setState({
-              comments: comments,
-            });
-          }
-        });
-      }
-    });
-  }
-
   sendReply(comment, parentCommentId, rootCommentId) {
-    BackendManager.makeQuery('clips/reply', JSON.stringify({
-      clip_id: this.props.match.params.id,
-      comment: comment,
-      parent_comment_id: parentCommentId,
-      root_comment_id: rootCommentId,
-      user_id: UserManager.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        this.refreshComments();
-      }
-    });
+    if (this.props.isLoggedIn) {
+      BackendManager.makeQuery('clips/reply', JSON.stringify({
+        clip_id: this.props.match.params.id,
+        comment: comment,
+        parent_comment_id: parentCommentId,
+        root_comment_id: rootCommentId,
+        user_id: UserManager.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          this.refreshComments();
+        }
+      });
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   render() {

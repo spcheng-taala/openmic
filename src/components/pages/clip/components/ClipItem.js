@@ -3,17 +3,7 @@ import React from 'react';
 import VideoThumbnail from 'react-video-thumbnail';
 import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
-import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
 import Typography from '@material-ui/core/Typography';
-
-const row = {
-  width: '100%',
-}
-
-const block = {
-  display: 'inline-block',
-}
 
 const textStyleBig = {
   color: '#2A2D34',

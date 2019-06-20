@@ -1,39 +1,12 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
-import CardActionArea from '@material-ui/core/CardActionArea';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
 import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
-import Avatar from '@material-ui/core/Avatar';
-import CardActions from '@material-ui/core/CardActions';
-import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
-import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
-import GridList from '@material-ui/core/GridList';
-import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
 import BackendManager from '../../singletons/BackendManager.js'
-import UserManager from '../../singletons/UserManager.js';
-import CircularProgressbar from 'react-circular-progressbar';
 import ClipItem from './components/ClipItem.js';
 
-// some track meta information
-const trackTitle = 'Immigration and the wall';
-
-var listStyle = {
-  width: '50%',
-  margin: '0 auto'
-}
-
-const iconStyle = {
-  width: 50,
-  cursor: 'pointer',
-}
-
-var cardStyle = {
+const cardStyle = {
   marginBottom: 30,
 }
 
@@ -55,14 +28,6 @@ const textStyleSmall = {
   marginRight: 10,
   textAlign: 'center',
   paddingBottom: 10,
-}
-
-const root = {
-  paddingTop: 30,
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  overflow: 'hidden',
 }
 
 class FeedPage extends Component {
@@ -137,23 +102,16 @@ class FeedPage extends Component {
       clips: [],
       clipsCount: 0,
       isMobile: false,
-      percentage: 0,
     };
 
     this.renderFeed = this.renderFeed.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderBottomRightPanel = this.renderBottomRightPanel.bind(this);
-    this.handleClipClick = this.handleClipClick.bind(this);
-    this.handlePreviewClick = this.handlePreviewClick.bind(this);
+    this.handleClipClick = this.handleClipClick.bind(this);    
   }
 
   handleClipClick(id) {
     this.props.history.push('/clips/' + id);
-  }
-
-  handlePreviewClick(e, story) {
-    e.stopPropagation();
-    this.props.playPreview(story);
   }
 
   renderListItem(item) {

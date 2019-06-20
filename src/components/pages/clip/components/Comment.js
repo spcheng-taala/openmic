@@ -3,7 +3,6 @@ import React from 'react';
 import Comments from './Comments';
 import { Row, Col } from 'react-grid-system';
 import TextField from '@material-ui/core/TextField';
-import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 
 const gemIconStyle = {
