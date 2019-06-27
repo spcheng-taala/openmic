@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const gemIconStyle = {
   marginLeft: 5,
@@ -98,16 +99,7 @@ class ContributorsModal extends Component {
     }
     this.renderUserItem = this.renderUserItem.bind(this);
     this.renderGemIcon = this.renderGemIcon.bind(this);
-    this.convertToCommaString = this.convertToCommaString.bind(this);
     this.renderBadge = this.renderBadge.bind(this);
-  }
-
-  convertToCommaString(x) {
-    if (x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    } else {
-      return ("");
-    }
   }
 
   renderBadge(i) {
@@ -157,7 +149,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle1}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}
@@ -168,7 +160,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle2}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}
@@ -179,7 +171,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle3}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}
@@ -190,7 +182,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle4}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}
@@ -201,7 +193,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle5}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}
@@ -212,7 +204,7 @@ class ContributorsModal extends Component {
       return (
         <Row>
           <Typography style={gemLabelStyle6}>
-            {this.convertToCommaString(gems)}
+            {UtilsManager.convertToCommaString(gems)}
           </Typography>
           <img
             style={gemIconStyle}

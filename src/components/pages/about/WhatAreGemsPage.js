@@ -1,13 +1,6 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
-import Header from '../../ui/Header.js';
-import MidTitle from '../../ui/MidTitle.js';
 import { withStyles } from '@material-ui/core/styles';
-import GridList from '@material-ui/core/GridList';
-import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
@@ -59,25 +52,10 @@ const gemIconStyle = {
    marginTop: 10,
  }
 
- const sectionTitleText = {
-   color: '#2A2D34',
-   fontFamily: 'Lato',
-   fontSize: 20,
- }
-
  const sectionText = {
    color: '#2A2D34',
    fontFamily: 'Lato',
    fontSize: 17,
- }
-
- const gridList = {
-   width: 500,
-   height: 450,
- }
-
- const icon = {
-   color: 'rgba(255, 255, 255, 0.54)'
  }
 
 class WhatAreGemsPage extends Component {
@@ -92,35 +70,38 @@ class WhatAreGemsPage extends Component {
         });
       }
     });
-    if (UserManager.id <= 0) {
-      var id = localStorage.getItem('id');
-      UserManager.id = id;
-    }
-    BackendManager.makeQuery('gems/user', JSON.stringify({
-      user_id: UserManager.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        console.log(data);
-        if (data.gem_count < 0) {
-          BackendManager.makeQuery('gems/user/create', JSON.stringify({
-            user_id: UserManager.id,
-            gem_count: 0,
-          }))
-          .then(data => {
-            if (data.success) {
-              this.setState({
-                gem_count: 0,
-              });
-            }
-          });
-        } else {
-          this.setState({
-            gem_count: data.gem_count,
-          });
-        }
+
+    if (this.props.isLoggedIn) {
+      if (UserManager.id <= 0) {
+        var id = localStorage.getItem('id');
+        UserManager.id = id;
       }
-    });
+      BackendManager.makeQuery('gems/user', JSON.stringify({
+        user_id: UserManager.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          console.log(data);
+          if (data.gem_count < 0) {
+            BackendManager.makeQuery('gems/user/create', JSON.stringify({
+              user_id: UserManager.id,
+              gem_count: 0,
+            }))
+            .then(data => {
+              if (data.success) {
+                this.setState({
+                  gem_count: 0,
+                });
+              }
+            });
+          } else {
+            this.setState({
+              gem_count: data.gem_count,
+            });
+          }
+        }
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -145,10 +126,14 @@ class WhatAreGemsPage extends Component {
   }
 
   handleBuyGems(gem) {
-    localStorage.setItem("gem_id", gem.id);
-    localStorage.setItem("gem_quantity", gem.quantity);
-    localStorage.setItem("gem_price", gem.price);
-    window.open(UserManager.domain + 'checkout', "_blank");
+    if (this.props.isLoggedIn) {
+      localStorage.setItem("gem_id", gem.id);
+      localStorage.setItem("gem_quantity", gem.quantity);
+      localStorage.setItem("gem_price", gem.price);
+      window.open(UserManager.domain + 'checkout', "_blank");
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   renderGemItem(gem) {

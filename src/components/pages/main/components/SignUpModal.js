@@ -1,26 +1,33 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
+import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import UserManager from '../../../singletons/UserManager.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 
+const styles = theme => ({
+  textFieldInputRoot: {
+    fontFamily: 'Lato',
+    color: '#222225',
+  },
+  textFieldLabelRoot: {
+    fontFamily: 'Lato',    
+  }
+});
+
 const textFieldStyle = {
-  color: "#222225",
-  font: "Lato",
   marginTop: 10,
 }
 
 const titleStyle = {
-  color: "#222225",
-  font: "Lato",
-  textAlign: "center",
+  color: '#222225',
+  textAlign: 'center',
 }
 
 const termsStyle = {
   textSize: 14,
-  color: "grey",
-  font: "Lato",
-  textAlign: "center",
+  color: 'grey',
+  textAlign: 'center',
 }
 
 class SignUpModal extends Component {
@@ -76,11 +83,9 @@ class SignUpModal extends Component {
         localStorage.setItem('refresh_token', data.refresh_token);
         localStorage.setItem('expiration', date);
         localStorage.setItem('bio', "Nothing here yet!");
-        if (UserManager.id > 0) {
-          this.props.closeModal();
-          this.props.handleAuth();
-          this.props.history.push('/edit');
-        }
+        this.props.closeModal();
+        this.props.handleAuth();
+        this.props.history.push('/edit');
       }
     });
   }
@@ -130,6 +135,7 @@ class SignUpModal extends Component {
   }
 
   render() {
+    const { classes } = this.props;
 		return (
       <div>
         <h2 style={titleStyle}>{"Join OpenMic today"}</h2>
@@ -139,6 +145,12 @@ class SignUpModal extends Component {
             style={textFieldStyle}
             fullWidth
             value={this.state.firstName}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
             onChange={this.handleFirstNameChange}/>
           <TextField
             label="Last Name"
@@ -146,6 +158,12 @@ class SignUpModal extends Component {
             style={textFieldStyle}
             fullWidth
             value={this.state.lastName}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
             onChange={this.handleLastNameChange}/>
           <TextField
             label="Email"
@@ -153,6 +171,12 @@ class SignUpModal extends Component {
             style={textFieldStyle}
             fullWidth
             value={this.state.email}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
             onChange={this.handleEmailChange}/>
           <TextField
             label="Username"
@@ -160,6 +184,12 @@ class SignUpModal extends Component {
             style={textFieldStyle}
             fullWidth
             value={this.state.username}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
             onChange={this.handleUsernameChange}/>
           <TextField
             label="Password"
@@ -168,6 +198,12 @@ class SignUpModal extends Component {
             type="password"
             fullWidth
             value={this.state.password}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
             onChange={this.handlePasswordChange}
           />
         </div>
@@ -178,4 +214,4 @@ class SignUpModal extends Component {
   }
 }
 
-export default withRouter(SignUpModal);
+export default withRouter(withStyles(styles)(SignUpModal));

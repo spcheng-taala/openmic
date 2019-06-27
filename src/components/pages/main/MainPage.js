@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, NavLink, BrowserRouter, Link,
-  HashRouter, Switch, Redirect } from 'react-router-dom';
+   Switch, Redirect } from 'react-router-dom';
 import { Container, Row, Col } from 'react-grid-system';
 import PropTypes from 'prop-types';
 import Modal from 'react-modal';
@@ -18,6 +18,7 @@ import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 
 import FeedPage from '../feed/FeedPage.js';
+import CommunityPage from '../about/CommunityPage.js';
 import AboutPage from '../about/AboutPage.js';
 import WhatAreGemsPage from '../about/WhatAreGemsPage.js';
 import HowItWorksPage from '../about/HowItWorksPage.js';
@@ -32,7 +33,6 @@ import TranscribePage from '../story/TranscribePage.js';
 import ClipPage from '../clip/ClipPage.js';
 import EditClipPage from '../story/EditClipPage.js';
 import TwitterSharePage from '../clip/TwitterSharePage.js';
-import StoriesPage from '../stories/StoriesPage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
@@ -40,6 +40,7 @@ import UploadModal from './components/UploadModal.js';
 import UploadSuccessModal from './components/UploadSuccessModal.js';
 import LoadingModal from './components/LoadingModal.js';
 import BuyGemsModal from './components/BuyGemsModal.js';
+import ContributeGifAnimationModal from './components/ContributeGifAnimationModal.js';
 
 const drawerWidth = 240;
 
@@ -61,6 +62,31 @@ const customStylesLight = {
     right: 'auto',
     bottom: 'auto',
     marginRight: '-50%',
+		background: 'rgba(255, 255, 255, 1)',
+    transform: 'translate(-50%, -50%)'
+  },
+};
+
+const customStylesSignUp = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		width: '60%',
+		maxHeight: '80%',
 		background: 'rgba(255, 255, 255, 1)',
     transform: 'translate(-50%, -50%)'
   },
@@ -229,7 +255,11 @@ class MainPage extends React.Component {
 			this.setState({
 				isLoggedIn: true,
 			});
+			var profilePicture = localStorage.getItem('profile_picture');
 			UserManager.id = id;
+			this.setState({
+				profilePicture: profilePicture,
+			});
 			BackendManager.refreshToken = localStorage.getItem('refresh_token');
 			BackendManager.updateToken().then(data => {
 				BackendManager.makeQuery('users/basic', JSON.stringify({
@@ -257,6 +287,8 @@ class MainPage extends React.Component {
 			uploadSuccessModalIsOpen: false,
       loadingModalIsOpen: false,
 			buyGemsModalIsOpen: false,
+			gemGifModalIsOpen: false,
+			profilePicture: "",
 			uploadedStoryId: 0,
 			uploadedStoryTitle: "",
       isSignUp: true,
@@ -266,6 +298,9 @@ class MainPage extends React.Component {
 			followers: [],
 			isCreator: false,
 			selectedFile: null,
+			gemsAdded: 0,
+			gemsText: "",
+			seconds: 5,
 			topClips: [
 				{
 					id: 1,
@@ -295,6 +330,8 @@ class MainPage extends React.Component {
 			],
     };
 
+		this.timer = 0;
+
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
@@ -306,6 +343,8 @@ class MainPage extends React.Component {
     this.closeLoadingModal = this.closeLoadingModal.bind(this);
 		this.openBuyGemsModal = this.openBuyGemsModal.bind(this);
 		this.closeBuyGemsModal = this.closeBuyGemsModal.bind(this);
+		this.openGemGifModal = this.openGemGifModal.bind(this);
+		this.countDown = this.countDown.bind(this);
     this.handleAuth = this.handleAuth.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
 		this.renderAudio = this.renderAudio.bind(this);
@@ -388,6 +427,34 @@ class MainPage extends React.Component {
 			buyGemsModalIsOpen: false
 		});
 	}
+
+	openGemGifModal(gems, text) {
+		this.setState({
+			gemsAdded: gems,
+			gemsText: text,
+			gemGifModalIsOpen: true,
+		});
+		if (this.timer == 0 && this.state.seconds > 0) {
+      this.timer = setInterval(this.countDown, 1000);
+    }
+	}
+
+	countDown() {
+    // Remove one second, set state so a re-render happens.
+    let seconds = this.state.seconds - 1;
+    this.setState({
+      seconds: seconds,
+    });
+
+    // Check if we're at zero.
+    if (seconds == 0) {
+      clearInterval(this.timer);
+			this.setState({
+				gemGifModalIsOpen: false,
+				seconds: 5,
+			});
+    }
+  }
 
   handleAuth() {
     this.setState({
@@ -478,8 +545,8 @@ class MainPage extends React.Component {
 
 	}
 
-  showToast(toast) {
-    notify.show(toast);
+  showToast(toast, type) {
+    notify.show(toast, type);
   }
 
   logout() {
@@ -596,7 +663,7 @@ class MainPage extends React.Component {
           <Modal
             isOpen={this.state.modalIsOpen}
             onRequestClose={this.closeModal}
-            style={customStylesLight}
+            style={customStylesSignUp}
             contentLabel="Sign Up"
           >
             {this.state.isSignUp ? <SignUpModal handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>
@@ -641,8 +708,19 @@ class MainPage extends React.Component {
           >
             <BuyGemsModal
 							isLoggedIn={this.state.isLoggedIn}
+							isMobile={this.state.isMobile}
 							openLoginModal={this.openModal}
 							closeBuyGemsModal={this.closeBuyGemsModal}
+						/>
+          </Modal>
+					<Modal
+            isOpen={this.state.gemGifModalIsOpen}
+            style={customStylesLight}
+            contentLabel="Woot!"
+          >
+            <ContributeGifAnimationModal
+							gems={this.state.gemsAdded}
+							text={this.state.gemsText}
 						/>
           </Modal>
           <div className={classes.root}>
@@ -656,7 +734,7 @@ class MainPage extends React.Component {
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.id}>
-											<img style={logoStyle} src={"../../../../../../images/profile.png"} backgroundColor={'transparent'}/>
+											<Avatar style={logoStyle} src={"../../../../../../images/default_profile_picture_7.png"} backgroundColor={'transparent'}/>
 										</NavLink>
 									</div> :
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
@@ -673,10 +751,17 @@ class MainPage extends React.Component {
                       <FeedPage {...props}
 												isLoggedIn={this.state.isLoggedIn}
 												openLoginModal={this.openModal}
+												openGemGifModal={this.openGemGifModal}
+												showToast={this.showToast}
                       />}
                   />
                   <Route path="/about" render={(props) =>
 										<AboutPage {...props}
+											hideDrawer={this.hideDrawer}
+										/>}
+									/>
+									<Route path="/community" render={(props) =>
+										<CommunityPage {...props}
 											hideDrawer={this.hideDrawer}
 										/>}
 									/>
@@ -689,6 +774,7 @@ class MainPage extends React.Component {
 										<WhatAreGemsPage {...props}
 											isLoggedIn={this.state.isLoggedIn}
 											hideDrawer={this.hideDrawer}
+											openLoginModal={this.openModal}
 										/>}
 									/>
 									<Route path="/share/t"
@@ -706,8 +792,15 @@ class MainPage extends React.Component {
 												showToast={this.showToast}
 											/>}
 									/>
-									<Route path="/podcasts" component={StoriesPage}/>
-									<Route path="/checkout" component={CheckOutPage}/>
+									<Route
+										exact path='/checkout'
+										render={(props) =>
+											<CheckOutPage {...props}
+												showToast={this.showToast}
+												openGemGifModal={this.openGemGifModal}
+											/>
+										}
+									/>
 									<Route
 										exact path='/editor/:id'
 										render={(props) =>
@@ -723,6 +816,7 @@ class MainPage extends React.Component {
                       <EditProfilePage {...props}
 												isLoggedIn={this.state.isLoggedIn}
                         showToast={this.showToast}
+												openGemGifModal={this.openGemGifModal}
                       />}
                   />
 									<Route
@@ -732,6 +826,7 @@ class MainPage extends React.Component {
 												isLoggedIn={this.state.isLoggedIn}
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
+												openBuyGemsModal={this.openBuyGemsModal}
 											/>}
                   />
                   <Route
@@ -742,12 +837,14 @@ class MainPage extends React.Component {
                         isLoggedIn={this.state.isLoggedIn}
   											openLoginModal={this.openModal}
                         showToast={this.showToast}
+												openBuyGemsModal={this.openBuyGemsModal}
                       />}
                   />
                   <Route
                     path="/profile/:id"
                     render={(props) => <ProfilePage
                       {...props}
+											logout={this.logout}
                     />}
                   />
 									<Redirect from='*' to='/' />

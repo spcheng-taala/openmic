@@ -3,6 +3,7 @@ import { Container, Row, Col } from 'react-grid-system';
 import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const gemIconStyle = {
   marginLeft: 10,
@@ -72,6 +73,10 @@ class BuyGemsModal extends Component {
           }
         }
       });
+    } else {
+      this.setState({
+        gem_count: 0,
+      });
     }
   }
 
@@ -81,24 +86,10 @@ class BuyGemsModal extends Component {
       gems: [],
       gem_count: 0,
     }
+
     this.renderGemItem = this.renderGemItem.bind(this);
-    this.convertToDollars = this.convertToDollars.bind(this);
     this.handleBuyGems = this.handleBuyGems.bind(this);
     this.renderGemIcons = this.renderGemIcons.bind(this);
-    this.convertToCommaString = this.convertToCommaString.bind(this);
-  }
-
-  convertToCommaString(x) {
-    if (x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    } else {
-      return ("");
-    }
-  }
-
-  convertToDollars(cents) {
-    var dollars = cents / 100;
-    return dollars.toLocaleString("en-US", {style:"currency", currency:"USD"});
   }
 
   renderGemItem(gem) {
@@ -109,12 +100,12 @@ class BuyGemsModal extends Component {
           <Row>
             <Col>
               <Typography style={titleStyle}>
-                {this.convertToCommaString(gem.quantity) + " Gems"}
+                {UtilsManager.convertToCommaString(gem.quantity) + " Gems"}
               </Typography>
               {this.renderGemIcons(gem)}
             </Col>
             <div style={{float: 'right'}}>
-              <button className="button-rounded-green-no-mar-small" onClick={() => this.handleBuyGems(gem)}>{this.convertToDollars(gem.price)}</button>
+              <button className="button-rounded-green-no-mar-small" onClick={() => this.handleBuyGems(gem)}>{UtilsManager.convertToDollars(gem.price)}</button>
             </div>
           </Row>
         </Container>
@@ -193,8 +184,8 @@ class BuyGemsModal extends Component {
 
   render() {
 		return (
-      <div style={{padding: 0, width: 500, backgroundColor: '#18161B'}}>
-        <p style={topTextStyle}>{'You have ' + this.convertToCommaString(this.state.gem_count) + ' gems'}</p>
+      <div style={{padding: 0, width: 400, backgroundColor: '#18161B'}}>
+        <p style={topTextStyle}>{'You have ' + UtilsManager.convertToCommaString(this.state.gem_count) + ' gems'}</p>
         <p style={textStyle}>{'Prices are shown in USD'}</p>
         <ul style={{margin: 0, padding: 0}}>
           {this.state.gems.map((item) => {

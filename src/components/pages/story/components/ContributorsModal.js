@@ -4,6 +4,7 @@ import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const gemIconStyle = {
   marginLeft: 5,
@@ -101,15 +102,6 @@ class ContributorsModal extends Component {
     }
     this.renderUserItem = this.renderUserItem.bind(this);
     this.renderGemIcon = this.renderGemIcon.bind(this);
-    this.convertToCommaString = this.convertToCommaString.bind(this);
-  }
-
-  convertToCommaString(x) {
-    if (x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    } else {
-      return ("");
-    }
   }
 
   renderBadge(i) {
@@ -155,73 +147,38 @@ class ContributorsModal extends Component {
   }
 
   renderGemIcon(gems) {
+    var style = gemLabelStyle1;
+    var src = '../../../../../../images/gem_1_10x.png';
     if (gems < 100) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle1}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_1_10x.png'/>
-        </Row>
-      )
+      style = gemLabelStyle1;
+      src = '../../../../../../images/gem_1_10x.png';
     } else if (gems < 1000) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle2}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_2_10x.png'/>
-        </Row>
-      )
+      style = gemLabelStyle2;
+      src = '../../../../../../images/gem_2_10x.png'
     } else if (gems < 5000) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle3}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_3_10x.png'/>
-        </Row>
-      )
+      style = gemLabelStyle3;
+      src = '../../../../../../images/gem_3_10x.png';
     } else if (gems < 10000) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle4}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_4_10x.png'/>
-        </Row>
-      )
+      style = gemLabelStyle4;
+      src = '../../../../../../images/gem_4_10x.png';
     } else if (gems < 25000) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle5}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_5_10x.png'/>
-        </Row>
-      )
+      style = gemLabelStyle5;
+      src = '../../../../../../images/gem_5_10x.png';
     } else if (gems >= 25000) {
-      return (
-        <Row>
-          <Typography style={gemLabelStyle6}>
-            {this.convertToCommaString(gems)}
-          </Typography>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_6_10x.png'/>
-        </Row>
-      );
+      style = gemLabelStyle6;
+      src = '../../../../../../images/gem_6_10x.png';
     }
+
+    return (
+      <Row>
+        <Typography style={style}>
+          {UtilsManager.convertToCommaString(gems)}
+        </Typography>
+        <img
+          style={gemIconStyle}
+          src={src}/>
+      </Row>
+    );
   }
 
   render() {

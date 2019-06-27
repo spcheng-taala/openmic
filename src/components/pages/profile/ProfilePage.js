@@ -63,8 +63,10 @@ class ProfilePage extends Component {
 
     this.fetchUser = this.fetchUser.bind(this);
     this.renderName = this.renderName.bind(this);
+    this.renderVerified = this.renderVerified.bind(this);
     this.renderMyProfile = this.renderMyProfile.bind(this);
     this.renderLeftPanel = this.renderLeftPanel.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
   fetchUser(userId) {
@@ -80,25 +82,25 @@ class ProfilePage extends Component {
     });
   }
 
+  renderVerified() {
+    if (this.state.user.is_creator) {
+      return (
+        <img
+          style={verifiedStyle}
+          src='../../../../../images/verified.png'
+          />
+      );
+    }
+  }
+
   renderName() {
     if (this.state.user) {
-      if (this.state.user.is_creator) {
-        return (
-          <Row>
-            <h2 style={titleStyle}>{this.state.user.first_name + " " + this.state.user.last_name}</h2>
-            <img
-              style={verifiedStyle}
-              src='../../../../../images/verified.png'
-              />
-          </Row>
-        );
-      } else {
-        return (
-          <Row>
-            <h2 style={titleStyle}>{this.state.user.first_name + " " + this.state.user.last_name}</h2>
-          </Row>
-        );
-      }
+      return (
+        <Row>
+          <h2 style={titleStyle}>{this.state.user.first_name + " " + this.state.user.last_name}</h2>
+          {this.renderVerified()}
+        </Row>
+      );      
     }
   }
 
@@ -107,10 +109,10 @@ class ProfilePage extends Component {
       if (this.state.user.id == UserManager.id) {
         return (
           <Row style={{marginTop: 20}}>
-            <button className='button-rounded-purple-no-mar-small'>
+            <button className='button-rounded-purple-no-mar-small' onClick={() => this.props.history.push('/edit')}>
               {"Edit Profile"}
             </button>
-            <button className='button-rounded-red-no-mar-small-empty'>
+            <button className='button-rounded-red-no-mar-small-empty' onClick={() => this.logout()}>
               {"Logout"}
             </button>
           </Row>
@@ -132,6 +134,11 @@ class ProfilePage extends Component {
         </div>
       );
     }
+  }
+
+  logout() {
+    this.props.logout();
+    this.props.history.push('/');
   }
 
   render() {

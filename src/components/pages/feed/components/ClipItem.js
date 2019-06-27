@@ -46,21 +46,10 @@ class ClipItem extends React.Component {
     };
 
     this.playPause = this.playPause.bind(this);
-    this.createMinString = this.createMinString.bind(this);
   }
 
   playPause() {
     this.props.playClip(this.props.index);
-  }
-
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = seconds - minutes * 60;
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
-    }
   }
 
   render() {

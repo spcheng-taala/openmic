@@ -17,6 +17,7 @@ import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+import UtilsManager from '../../singletons/UtilsManager.js';
 import Comments from './components/Comments.js';
 import ClipItem from './components/ClipItem.js';
 import ContributeGemsModal from './components/ContributeGemsModal.js';
@@ -80,18 +81,13 @@ const customStyles = {
   },
 };
 
-const useStyles = theme => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    margin: 'auto',
+const styles = theme => ({
+  textFieldInputRoot: {
+    fontFamily: "Lato",
   },
-  margin: {
-    margin: 50,
-  },
-  textField: {
-    flexBasis: 200,
-  },
+  textFieldLabelRoot: {
+    fontFamily: "Lato",
+  }
 });
 
 const containerStyle = {
@@ -139,7 +135,7 @@ const textFieldStyle = {
   color: "#222225",
   font: "Lato",
   marginTop: 10,
-  marginLeft: 50,
+  marginLeft: 30,
   width: 'calc(100% - 200px)',
   marginRight: 20,
 }
@@ -283,7 +279,6 @@ class StoryPage extends Component {
     this.sendReply = this.sendReply.bind(this);
     this.renderProfile = this.renderProfile.bind(this);
     this.renderComments = this.renderComments.bind(this);
-    this.renderComment = this.renderComment.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
@@ -292,6 +287,7 @@ class StoryPage extends Component {
     this.openContributeGifAnimationModal = this.openContributeGifAnimationModal.bind(this);
     this.closeContributeGifAnimationModal = this.closeContributeGifAnimationModal.bind(this);
     this.refreshComments = this.refreshComments.bind(this);
+    this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderClipsListItem = this.renderClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
@@ -304,7 +300,6 @@ class StoryPage extends Component {
     this.handleDurationChange = this.handleDurationChange.bind(this);
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
-    this.createMinString = this.createMinString.bind(this);
     this.renderPodcastView = this.renderPodcastView.bind(this);
   }
 
@@ -364,7 +359,7 @@ class StoryPage extends Component {
                 draggableTrack
                 maxValue={this.state.duration}
                 minValue={0}
-                formatLabel={value => this.createMinString(value)}
+                formatLabel={value => UtilsManager.createMinString(value)}
                 onChange={value => this.handleScrubberMove(value)}
                 onChangeComplete={value => this.playAtValue(value)}
                 value={this.state.value} />
@@ -374,16 +369,6 @@ class StoryPage extends Component {
         </div>
       </div>
     );
-  }
-
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = Math.floor(seconds - minutes * 60);
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
-    }
   }
 
   handleVideoProgress(state) {
@@ -607,7 +592,6 @@ class StoryPage extends Component {
           </div>
         );
       }
-
     } else {
       if (this.state.story) {
         return (
@@ -652,7 +636,6 @@ class StoryPage extends Component {
     }
   }
 
-
   renderClips() {
     return (
       <div>
@@ -665,55 +648,6 @@ class StoryPage extends Component {
         </ul>
       </div>
     );
-  }
-
-  renderComment() {
-    const classes = useStyles();
-    if (this.state.isMobile) {
-      return (
-        <div>
-          <TextField
-            label="Write a comment"
-            className={classNames(classes.margin, classes.textField)}
-            id="outlined-adornment-amount"
-            placeholder="Comment"
-            fullWidth
-            style={mobileTextFieldStyle}
-            value={this.state.name}
-            onChange={this.handleCommentChange} />
-          <Row>
-            <button className='button-gold' onClick={() => this.openGoldCommentModal()} style={{marginTop: 30, marginLeft: 20}}>
-              {"Go Gold"}
-            </button>
-            <button className='button-green' onClick={() => this.handleSendClick()}>
-              {"Send"}
-            </button>
-          </Row>
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <Row>
-            <TextField
-              label="Write a comment"
-              className={classNames(classes.margin, classes.textField)}
-              id="outlined-adornment-amount"
-              placeholder="Comment"
-              fullWidth
-              style={textFieldStyle}
-              value={this.state.name}
-              onChange={this.handleCommentChange} />
-            <button className='button-gold' onClick={() => this.openGoldCommentModal()}>
-              {"Go Gold"}
-            </button>
-            <button className='button-green' onClick={() => this.handleSendClick()}>
-              {"Send"}
-            </button>
-          </Row>
-        </div>
-      );
-    }
   }
 
   renderPlayPause() {
@@ -807,44 +741,40 @@ class StoryPage extends Component {
     });
   }
 
-  renderRightPanel() {
-    if (this.state.clips.length > 0) {
+  renderRightPanelContent(hasClips) {
+    if (hasClips) {
       return (
-        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-          <div>
-            <div style={{height: 5}}/>
-            <Typography style={rightPanelText}>
-              {"Clips!"}
-            </Typography>
-            <ul>
-              {this.state.clips.map((item) => {
-                return (this.renderClipsListItem(item))
-              })}
-            </ul>
-            <div style={{paddingBottom: 10}}>
-            </div>
-          </div>
-        </div>
+        <ul>
+          {this.state.clips.map((item) => {
+            return (this.renderClipsListItem(item))
+          })}
+        </ul>
       );
     } else {
       return (
-        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-          <div>
-            <div style={{height: 5}}/>
-            <Typography style={rightPanelText}>
-              {"Clips!"}
-            </Typography>
-            <img
-              style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
-              src='../../../../../images/create_clip.png'
-              onClick={() => this.openClip()}
-              />
-            <div style={{paddingBottom: 10}}>
-            </div>
-          </div>
-        </div>
+        <img
+          style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
+          src='../../../../../images/create_clip.png'
+          onClick={() => this.openClip()}
+          />
       );
     }
+  }
+
+  renderRightPanel() {
+    return (
+      <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+        <div>
+          <div style={{height: 5}}/>
+          <Typography style={rightPanelText}>
+            {"Clips!"}
+          </Typography>
+          {this.renderRightPanelContent(this.state.clips.length > 0)}
+          <div style={{paddingBottom: 10}}>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   renderClipsListItem(item) {
@@ -895,7 +825,7 @@ class StoryPage extends Component {
   }
 
   render() {
-    const classes = useStyles();
+    const { classes } = this.props;
 		return (
       <div style={{backgroundColor: '#F4F3F6'}}>
         <Modal
@@ -904,7 +834,13 @@ class StoryPage extends Component {
           onRequestClose={this.closeContributeGemsModal}
           contentLabel="Contribute Gems"
         >
-          <ContributeGemsModal commentId={this.state.currentCommentId} contributeGems={this.contributeGems} createComment={this.createComment}/>
+          <ContributeGemsModal
+            commentId={this.state.currentCommentId}
+            contributeGems={this.contributeGems}
+            createComment={this.createComment}
+            closeContributeGemsModal={this.closeContributeGemsModal}
+            openBuyGemsModal={this.props.openBuyGemsModal}
+          />
         </Modal>
         <Modal
           isOpen={this.state.viewContributorsIsOpen}
@@ -929,20 +865,28 @@ class StoryPage extends Component {
                 {this.renderPodcastView()}
                 {this.renderProfile()}
               </Paper>
-              <Row>
-                {this.state.story ?
-                  <TextField
-                    label={"Chat with " + this.state.story.first_name + " " + this.state.story.last_name}
-                    id="outlined-adornment-amount"
-                    placeholder="What do you want to say?"
-                    fullWidth
-                    style={textFieldStyle}
-                    value={this.state.name}
-                    onChange={this.handleCommentChange} /> : <div />}
-                <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
-                  {"Send"}
-                </button>
-              </Row>
+              <div style={{width: '100%', border: '2px solid #4E5CD8', marginLeft: 10, marginTop: 10, paddingBottom: 20, borderRadius: 15}}>
+                <Row style={{marginLeft: 5, marginTop: 10}}>
+                  {this.state.story ?
+                    <TextField
+                      label={"Chat with " + this.state.story.first_name + " " + this.state.story.last_name}
+                      id="outlined-adornment-amount"
+                      placeholder="What do you want to say?"
+                      fullWidth
+                      style={textFieldStyle}
+                      value={this.state.name}
+                      InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+  										InputLabelProps={{
+  						          FormLabelClasses: {
+  						            root: classes.textFieldLabelRoot
+  						          }
+  						        }}
+                      onChange={this.handleCommentChange} /> : <div />}
+                  <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
+                    {"Send"}
+                  </button>
+                </Row>
+              </div>
               {this.renderComments()}
             </Col>
             <Col sm={4}>
@@ -957,4 +901,4 @@ class StoryPage extends Component {
   }
 }
 
-export default StoryPage;
+export default withStyles(styles)(StoryPage);

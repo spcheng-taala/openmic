@@ -6,10 +6,9 @@ import ReactTooltip from 'react-tooltip';
 import TwitterLogin from './components/TwitterLogin.js';
 import ReactPlayer from 'react-player';
 import Modal from 'react-modal';
-import { Container, Row, Col } from 'react-grid-system';
+import { Row, Col } from 'react-grid-system';
 import Paper from '@material-ui/core/Paper';
 import Card from '@material-ui/core/Card';
-import CardActionArea from '@material-ui/core/CardActionArea';
 import Avatar from '@material-ui/core/Avatar';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
@@ -21,6 +20,7 @@ import ContributeGemsModal from './components/ContributeGemsModal.js';
 import ContributorsModal from './components/ContributorsModal.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+import UtilsManager from '../../singletons/UtilsManager.js';
 
 const customStyles = {
 	overlay: {
@@ -48,12 +48,20 @@ const customStyles = {
 
 const textFieldStyle = {
   color: "#222225",
-  font: "Lato",
   marginTop: 10,
   marginLeft: 50,
   width: 'calc(100% - 200px)',
   marginRight: 20,
 }
+
+const styles = {
+  textFieldInputRoot: {
+    fontFamily: "Lato",
+  },
+  textFieldLabelRoot: {
+    fontFamily: "Lato",
+  }
+};
 
 const root = {
   display: 'flex',
@@ -74,7 +82,7 @@ const topPanelText = {
   color: '#164747',
   fontFamily: 'Lato',
   textAlign: 'left',
-  fontSize: 17,
+  fontSize: 22,
 }
 
 const rightPanelText = {
@@ -284,7 +292,6 @@ class ClipPage extends Component {
       viewContributorsIsOpen: false,
     };
 
-    this.createMinString = this.createMinString.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
@@ -300,6 +307,7 @@ class ClipPage extends Component {
     this.replay = this.replay.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
     this.renderBottomVideoPlayer = this.renderBottomVideoPlayer.bind(this);
+		this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderOtherClipsListItem = this.renderOtherClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
@@ -484,16 +492,6 @@ class ClipPage extends Component {
     }
   }
 
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = Math.floor(seconds - minutes * 60);
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
-    }
-  }
-
   handleVideoProgress(state) {
     var seconds = state.played * this.player.getDuration();
     if (this.state.scrubberShouldMove) {
@@ -545,25 +543,20 @@ class ClipPage extends Component {
 
   renderAbout() {
     if (this.state.hasAboutOpen) {
+			var style = aboutText;
       if (this.state.isMobile) {
-        return (
-          <div>
-            <Typography style={aboutTextSmall}>
-              {this.state.clip.bio}
-            </Typography>
-            <button className='button-rounded-grey-no-mar-small' style={{ margin: 10 }} onClick={() => this.toggleAbout()}>{'Hide Podcast Details'}</button>
-          </div>
-        );
+				style = aboutTextSmall;
       } else {
-        return (
-          <div>
-            <Typography style={aboutText}>
-              {this.state.clip.bio}
-            </Typography>
-            <button className='button-rounded-grey-no-mar-small' style={{ margin: 10 }} onClick={() => this.toggleAbout()}>{'Hide Podcast Details'}</button>
-          </div>
-        );
+				style = aboutText;
       }
+			return (
+				<div>
+					<Typography style={style}>
+						{this.state.clip.bio}
+					</Typography>
+					<button className='button-rounded-grey-no-mar-small' style={{ margin: 10 }} onClick={() => this.toggleAbout()}>{'Hide Podcast Details'}</button>
+				</div>
+			);
     } else {
       return (
         <button className='button-rounded-grey-no-mar-small' style={{ margin: 10 }} onClick={() => this.toggleAbout()}>{'Show Podcast Details'}</button>
@@ -591,7 +584,7 @@ class ClipPage extends Component {
                   draggableTrack
                   maxValue={this.state.duration}
                   minValue={0}
-                  formatLabel={value => this.createMinString(value)}
+                  formatLabel={value => UtilsManager.createMinString(value)}
                   onChange={value => this.handleScrubberMove(value)}
                   onChangeComplete={value => this.playAtValue(value)}
                   value={this.state.value} />
@@ -606,27 +599,24 @@ class ClipPage extends Component {
   }
 
   renderHeart() {
-    if (this.props.isLoggedIn || !this.state.hasLiked) {
-      if (this.state.isMobile) {
-        return (
-          <img style={{width: 25, height: 25}} src='../../../../../images/heart_purple_empty.png'/>
-        );
-      } else {
-        return (
-          <img style={{width: 40, height: 40}} src='../../../../../images/heart_purple_empty.png'/>
-        );
-      }
+		var size = 40;
+		var src = '../../../../../images/heart_purple_empty.png';
+		if (this.state.isMobile) {
+			size = 25;
+		}
+    if (!this.props.isLoggedIn) {
+			src = '../../../../../images/heart_purple_empty.png';
     } else {
-      if (this.state.isMobile) {
-        return (
-          <img style={{width: 25, height: 25}} src='../../../../../images/heart_purple.png'/>
-        );
+      if (this.state.hasLiked) {
+				src = '../../../../../images/heart_purple.png';
       } else {
-        return (
-          <img style={{width: 40, height: 40}} src='../../../../../images/heart_purple.png'/>
-        );
+				src = '../../../../../images/heart_purple_empty.png';
       }
     }
+
+		return (
+			<img style={{width: size, height: size}} src={src}/>
+		);
   }
 
   handleHeartClick() {
@@ -697,160 +687,89 @@ class ClipPage extends Component {
   }
 
   renderBottomVideoPlayer() {
+		var titleStyle = textStyleBig;
+		var clippedByStyle = textStyleSmall;
+		var fontSize = 15;
+
     if (this.state.isMobile) {
-      return (
-        <div>
-          <Typography style={textStyleBigMobile}>
-            {this.state.clip.title}
-          </Typography>
-          <Typography style={textStyleSmallMobile}>
-            {"Clipped by " + this.state.clip.username}
-          </Typography>
-          <Row style={{marginTop: 10, marginLeft: 20, marginBottom: 20}}>
-            <div style={{marginRight: 15, cursor: 'pointer'}} onClick={() => this.handleHeartClick()}>
-              {this.renderHeart()}
-              <p style={{margin: 0, fontSize: 10, textAlign: 'center'}}>{this.getCountStr(this.state.heartCount)}</p>
-            </div>
-            <button className='button-rounded-green-no-mar-small' style={{ margin: 0 }} data-tip data-for='share_clip' data-event='click'>Share</button>
-            <ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
-              <Row style={{marginLeft: 20}}>
-                <TwitterLogin
-                  style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
-                  loginUrl="https://api.mypokadot.com/pp/auth/twitter"
-                  onFailure={this.onTwitterAuthFailure}
-                  onSuccess={this.onTwitterAuthSuccess}
-                  forceLogin={true}
-                  requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
-                >
-                  <img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
-                </TwitterLogin>
-                <ReactTooltip id="twitterTT" place="top" type="light" effect="float">
-                  <span>Twitter</span>
-                </ReactTooltip>
-                <div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
-                  <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
-                </div>
-                <ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
-                  <span>Copy to clipboard</span>
-                </ReactTooltip>
-              </Row>
-              {
-                document.queryCommandSupported('copy') &&
-                <input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.clip.id} style={{width: 100, marginTop: 10}} />
-              }
-            </ReactTooltip>
-          </Row>
-          {this.renderAbout()}
-        </div>
-      );
+			titleStyle = textStyleBigMobile;
+			clippedByStyle = textStyleSmallMobile;
+			fontSize = 10;
     } else {
-      return (
-        <div>
-          <Typography style={textStyleBig}>
-            {this.state.clip.title}
-          </Typography>
-          <Typography style={textStyleSmall}>
-            {"Clipped by " + this.state.clip.username}
-          </Typography>
-          <Row style={{marginTop: 10, marginLeft: 20, marginBottom: 20}}>
-            <div style={{marginRight: 15, cursor: 'pointer'}} onClick={() => this.handleHeartClick()}>
-              {this.renderHeart()}
-              <p style={{margin: 0, fontSize: 15, textAlign: 'center'}}>{this.getCountStr(this.state.heartCount)}</p>
-            </div>
-            <button className='button-rounded-green-no-mar' style={{ margin: 0 }} data-tip data-for='share_clip' data-event='click'>Share</button>
-            <ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
-              <Row style={{marginLeft: 20}}>
-                <TwitterLogin
-                  style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
-                  loginUrl="https://api.mypokadot.com/pp/auth/twitter"
-                  onFailure={this.onTwitterAuthFailure}
-                  onSuccess={this.onTwitterAuthSuccess}
-                  forceLogin={true}
-                  requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
-                >
-                  <img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
-                </TwitterLogin>
-                <ReactTooltip id="twitterTT" place="top" type="light" effect="float">
-                  <span>Twitter</span>
-                </ReactTooltip>
-                <div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
-                  <img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
-                </div>
-                <ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
-                  <span>Copy to clipboard</span>
-                </ReactTooltip>
-              </Row>
-              {
-                document.queryCommandSupported('copy') &&
-                <input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.clip.id} style={{width: 100, marginTop: 10}} />
-              }
-            </ReactTooltip>
-          </Row>
-          {this.renderAbout()}
-        </div>
-      );
+			titleStyle = textStyleBig;
+			clippedByStyle = textStyleSmall;
+			fontSize = 15;
     }
+
+		return (
+			<div>
+				<Typography style={titleStyle}>
+					{this.state.clip.title}
+				</Typography>
+				<Typography style={clippedByStyle}>
+					{"Clipped by " + this.state.clip.username}
+				</Typography>
+				<Row style={{marginTop: 10, marginLeft: 20, marginBottom: 20}}>
+					<div style={{marginRight: 15, cursor: 'pointer'}} onClick={() => this.handleHeartClick()}>
+						{this.renderHeart()}
+						<p style={{margin: 0, fontSize: fontSize, textAlign: 'center'}}>{this.getCountStr(this.state.heartCount)}</p>
+					</div>
+					<button className='button-rounded-green-no-mar' style={{ margin: 0 }} data-tip data-for='share_clip' data-event='click'>Share</button>
+					<ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
+						<Row style={{marginLeft: 20}}>
+							<TwitterLogin
+								style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
+								loginUrl="https://api.mypokadot.com/pp/auth/twitter"
+								onFailure={this.onTwitterAuthFailure}
+								onSuccess={this.onTwitterAuthSuccess}
+								forceLogin={true}
+								requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
+							>
+								<img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
+							</TwitterLogin>
+							<ReactTooltip id="twitterTT" place="top" type="light" effect="float">
+								<span>Twitter</span>
+							</ReactTooltip>
+							<div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
+								<img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
+							</div>
+							<ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
+								<span>Copy to clipboard</span>
+							</ReactTooltip>
+						</Row>
+						{
+							document.queryCommandSupported('copy') &&
+							<input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.clip.id} style={{width: 100, marginTop: 10}} />
+						}
+					</ReactTooltip>
+				</Row>
+				{this.renderAbout()}
+			</div>
+		);
   }
 
   renderTopView() {
     if (this.state.clip != null) {
-      if (this.state.isMobile) {
-        return (
-          <div style={{width: '100%', height: 70, backgroundColor: '#f2f2f2'}}>
-            <Row>
-              <Col>
-                <div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>
-                  <Row>
-                    <Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
-                    <Col>
-                      <div style={centerVertical}>
-                        <Typography style={topPanelText}>
-                          {"Listen to full Podcast: " + this.state.clip.story_title}
-                        </Typography>
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
-              </Col>
-              <Col>
-                <img
-                  style={{height: 50, width: 50, cursor: 'pointer', marginTop: 10}}
-                  src='../../../../../images/create_clip_small.png'
-                  onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}
-                  />
-              </Col>
-            </Row>
-          </div>
-        );
-      } else {
-        return (
-          <div style={{width: '100%', height: 70, backgroundColor: '#f2f2f2'}}>
-            <Row>
-              <Col md={9}>
-                <div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>
-                  <Row>
-                    <Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
-                    <Col>
-                      <div style={centerVertical}>
-                        <Typography style={topPanelText}>
-                          {"Listen to full Podcast: " + this.state.clip.story_title}
-                        </Typography>
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
-              </Col>
-              <Col md={3}>
-                <img
-                  style={{height: 40, cursor: 'pointer', marginTop: 15}}
-                  src='../../../../../images/create_clip.png'
-                  onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}
-                  />
-              </Col>
-            </Row>
-          </div>
-        );
-      }
+			return (
+				<div style={{width: '100%', height: 70, backgroundColor: '#f2f2f2'}}>
+					<Row>
+						<Col>
+							<div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>
+								<Row>
+									<Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
+									<Col>
+										<div style={centerVertical}>
+											<Typography style={topPanelText}>
+												{"Listen to full Podcast: " + this.state.clip.story_title}
+											</Typography>
+										</div>
+									</Col>
+								</Row>
+							</div>
+						</Col>
+					</Row>
+				</div>
+			);
     }
   }
 
@@ -897,26 +816,34 @@ class ClipPage extends Component {
     });
   }
 
-  renderView() {
+  renderView(classes) {
     if (this.state.clip != null) {
       return (
         <div>
           <Row>
             <Col md={8}>
               {this.renderVideoPlayer()}
-              <Row>
-                <TextField
-                  label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
-                  id="outlined-adornment-amount"
-                  placeholder="What do you want to say?"
-                  fullWidth
-                  style={textFieldStyle}
-                  value={this.state.name}
-                  onChange={this.handleCommentChange} />
-                <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
-                  {"Send"}
-                </button>
-              </Row>
+							<div style={{width: '100%', border: '2px solid #4E5CD8', marginLeft: 10, paddingBottom: 20, borderRadius: 15}}>
+	              <Row>
+	                <TextField
+	                  label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
+	                  id="outlined-adornment-amount"
+	                  placeholder="What do you want to say?"
+	                  fullWidth
+	                  style={textFieldStyle}
+										InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+										InputLabelProps={{
+						          FormLabelClasses: {
+						            root: classes.textFieldLabelRoot
+						          }
+						        }}
+	                  value={this.state.name}
+	                  onChange={this.handleCommentChange} />
+	                <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
+	                  {"Send"}
+	                </button>
+	              </Row>
+							</div>
               <Comments
                 isLoggedIn={this.props.isLoggedIn}
                 openLoginModal={this.props.openLoginModal}
@@ -949,54 +876,44 @@ class ClipPage extends Component {
     );
   }
 
+	renderRightPanelContent(hasClips) {
+		if (hasClips) {
+			return (
+				<ul>
+					{this.state.otherClips.map((item) => {
+						return (this.renderOtherClipsListItem(item))
+					})}
+				</ul>
+			);
+		} else {
+			return (
+				<button className='button-rounded-purple-no-mar-small' style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>Listen to full podcast</button>
+			);
+		}
+	}
+
   renderRightPanel() {
-    if (this.state.otherClips.length > 0) {
-      return (
-        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-          <Paper elevation={1} style={{backgroundColor: 'white'}}>
-            <div>
-              <div style={{height: 5}}/>
-              <Typography style={rightPanelText}>
-                {"Other clips!"}
-              </Typography>
-              <ul>
-                {this.state.otherClips.map((item) => {
-                  return (this.renderOtherClipsListItem(item))
-                })}
-              </ul>
-              <div style={{paddingBottom: 10}}>
-              </div>
-            </div>
-          </Paper>
-        </div>
-      );
-    } else {
-      return (
-        <div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-          <Paper elevation={1} style={{backgroundColor: 'white'}}>
-            <div>
-              <div style={{height: 5}}/>
-              <Typography style={rightPanelText}>
-                {"Other clips!"}
-              </Typography>
-              <button className='button-rounded-purple-no-mar-small' style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>Listen to full podcast</button>
-              <div style={{paddingBottom: 10}}>
-              </div>
-            </div>
-          </Paper>
-        </div>
-      );
-    }
+		return (
+			<div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
+				<Paper elevation={1} style={{backgroundColor: 'white'}}>
+					<div>
+						<div style={{height: 5}}/>
+						<Typography style={rightPanelText}>
+							{"Other clips!"}
+						</Typography>
+						{this.renderRightPanelContent(this.state.otherClips.length > 0)}
+						<div style={{paddingBottom: 10}}>
+						</div>
+					</div>
+				</Paper>
+			</div>
+		);
   }
 
   copyToClipboard() {
     this.copyRef.current.select();
     document.execCommand('copy');
     this.props.showToast('Copied!');
-    // This is just personal preference.
-    // I prefer to not show the the whole text area selected.
-    // e.target.focus();
-    // setCopySuccess('Copied!');
   }
 
   onTwitterAuthFailure(error) {
@@ -1046,7 +963,13 @@ class ClipPage extends Component {
           onRequestClose={this.closeContributeGemsModal}
           contentLabel="Contribute Gems"
         >
-          <ContributeGemsModal commentId={this.state.currentCommentId} contributeGems={this.contributeGems} createComment={this.createComment}/>
+          <ContributeGemsModal
+            commentId={this.state.currentCommentId}
+            contributeGems={this.contributeGems}
+            createComment={this.createComment}
+            closeContributeGemsModal={this.closeContributeGemsModal}
+            openBuyGemsModal={this.props.openBuyGemsModal}
+          />
         </Modal>
         <Modal
           isOpen={this.state.viewContributorsIsOpen}
@@ -1057,10 +980,10 @@ class ClipPage extends Component {
           <ContributorsModal commentId={this.state.contributorsCommentId}/>
         </Modal>
         {this.renderTopView()}
-        {this.renderView()}
+        {this.renderView(classes)}
       </div>
     )
   }
 }
 
-export default ClipPage;
+export default withStyles(styles)(ClipPage);

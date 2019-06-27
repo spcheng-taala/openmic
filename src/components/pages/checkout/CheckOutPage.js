@@ -4,22 +4,32 @@ import MyStoreCheckout from './components/MyStoreCheckout';
 
 class CheckOutPage extends Component {
 
+  componentWillMount() {
+    var id = localStorage.getItem('gem_id');
+    if (id == null) {
+      this.props.history.push('/');
+    }
+  }
+
   constructor(props) {
     super(props);
     this.state = {
       gem: null,
     }
-    this.submit = this.submit.bind(this);
+
+    this.completeTransaction = this.completeTransaction.bind(this);
   }
 
-  async submit(ev) {
-    // User clicked submit
+  completeTransaction(quantity) {
+    this.props.history.push('/');
+    var text = "You just received " + quantity + " Gems!";
+    this.props.openGemGifModal(quantity, text);
   }
 
   render() {
     return (
       <StripeProvider apiKey="pk_test_9XPRUcB7oDZHId8M1DGdZYcn">
-        <MyStoreCheckout />
+        <MyStoreCheckout completeTransaction={this.completeTransaction}/>
       </StripeProvider>
     );
   }

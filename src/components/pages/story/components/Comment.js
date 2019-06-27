@@ -2,9 +2,21 @@
 import React from 'react';
 import Comments from './Comments';
 import { Row, Col } from 'react-grid-system';
+import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
+import UtilsManager from '../../../singletons/UtilsManager.js';
+
+const styles = theme => ({
+  textFieldInputRoot: {
+    fontFamily: 'Lato',
+    color: '#222225',
+  },
+  textFieldLabelRoot: {
+    fontFamily: 'Lato',
+  }
+});
 
 const gemIconStyle = {
   marginLeft: 40,
@@ -17,55 +29,49 @@ const gemIconStyle = {
 const gemLabelStyle1 = {
   fontWeight: 'bold',
   color:'#9A9B9C',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const gemLabelStyle2 = {
   fontWeight: 'bold',
   color:'#229CD2',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const gemLabelStyle3 = {
   fontWeight: 'bold',
   color:'#FF0081',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const gemLabelStyle4 = {
   fontWeight: 'bold',
   color:'#974BFF',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const gemLabelStyle5 = {
   fontWeight: 'bold',
   color:'#95D601',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const gemLabelStyle6 = {
   fontWeight: 'bold',
   color:'#FFC842',
-  font: "Lato",
-  textAlign: "left",
+  textAlign: 'left',
   fontSize: 15,
 }
 
 const tier0NameStyle = {
   marginTop: 10,
   marginLeft: 30,
-  color: "#525252",
+  color: '#525252',
   fontSize: 13,
   marginBottom: 5,
 }
@@ -76,7 +82,7 @@ const replyingToStyle = {
   marginRight: 0,
   marginBottom: 0,
   fontStyle: 'italic',
-  color: "#525252",
+  color: '#525252',
   fontSize: 13,
 }
 
@@ -85,20 +91,20 @@ const parentTextStyle = {
   marginTop: 5,
   marginBottom: 5,
   fontWeight: 'bold',
-  color: "#36454F",
+  color: '#36454F',
   fontSize: 14,
 }
 
 const gemTextStyle = {
   fontWeight: 'bold',
   marginLeft: 10,
-  color: "#FF0081",
+  color: '#FF0081',
   fontSize: 15,
 }
 
 const contributGemTextStyle = {
   marginLeft: 5,
-  color: "#FF0081",
+  color: '#FF0081',
   fontSize: 12,
 }
 
@@ -108,8 +114,7 @@ const commentStyle = {
 }
 
 const tier0Style = {
-  color: "#222225",
-  font: "Lato",
+  color: '#222225',
   marginTop: 10,
   borderWidth: 0,
 }
@@ -129,76 +134,42 @@ class Comment extends React.Component {
     this.handleReplyChange = this.handleReplyChange.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
     this.handleViewContributorsClick = this.handleViewContributorsClick.bind(this);
-    this.convertToCommaString = this.convertToCommaString.bind(this);
     this.renderGem = this.renderGem.bind(this);
   }
 
   renderGem(gems) {
+    var style = gemLabelStyle1;
+    var src = '../../../../../images/gem_1_10x.png';
     if (gems < 100) {
-      return (
-        <Row>
-          <img style={gemIconStyle} src='../../../../../images/gem_1_10x.png'/>
-          <Typography style={gemLabelStyle1}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      )
+      style = gemLabelStyle1;
+      src = '../../../../../images/gem_1_10x.png';      
     } else if (gems < 1000) {
-      return (
-        <Row>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_2_10x.png'/>
-          <Typography style={gemLabelStyle2}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      )
+      style = gemLabelStyle2;
+      src = '../../../../../images/gem_2_10x.png';
     } else if (gems < 5000) {
-      return (
-        <Row>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_3_10x.png'/>
-          <Typography style={gemLabelStyle3}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      )
+      style = gemLabelStyle3;
+      src = '../../../../../images/gem_3_10x.png';
     } else if (gems < 10000) {
-      return (
-        <Row>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_4_10x.png'/>
-          <Typography style={gemLabelStyle4}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      )
+      style = gemLabelStyle4;
+      src = '../../../../../images/gem_4_10x.png';
     } else if (gems < 25000) {
-      return (
-        <Row>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_5_10x.png'/>
-          <Typography style={gemLabelStyle5}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      )
+      style = gemLabelStyle5;
+      src = '../../../../../images/gem_5_10x.png';
     } else if (gems >= 25000) {
-      return (
-        <Row>
-          <img
-            style={gemIconStyle}
-            src='../../../../../../images/gem_6_10x.png'/>
-          <Typography style={gemLabelStyle6}>
-            {this.convertToCommaString(gems) + " Contributed"}
-          </Typography>
-        </Row>
-      );
+      style = gemLabelStyle6;
+      src = '../../../../../images/gem_6_10x.png';
     }
+
+    return (
+      <Row>
+        <img
+          style={gemIconStyle}
+          src={src}/>
+        <Typography style={style}>
+          {UtilsManager.convertToCommaString(gems) + " Added"}
+        </Typography>
+      </Row>
+    );
   }
 
   handleReplyClick(isReplying) {
@@ -207,7 +178,7 @@ class Comment extends React.Component {
     });
   }
 
-  renderReply() {
+  renderReply(classes) {
     if (this.state.isReplying) {
       return (
         <div style={commentStyle}>
@@ -217,6 +188,12 @@ class Comment extends React.Component {
             value={this.state.reply}
             onChange={this.handleReplyChange}
             fullWidth
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
           />
           <Row style={commentStyle}>
             <button className='button-purple' onClick={() => this.handleReplyClick(false)}>
@@ -243,7 +220,7 @@ class Comment extends React.Component {
     this.props.setContributorsCommentId(this.props.comment.id);
   }
 
-  renderComment() {
+  renderComment(classes) {
     var comment = this.props.comment;
     return (
       <div style={tier0Style}>
@@ -270,7 +247,7 @@ class Comment extends React.Component {
         {!comment.root ?
           <Row style={{marginTop: 0}}>
             <img style={{marginLeft: 40, height: 30, cursor: 'pointer'}} src='../../../../../images/contribute_gems.png' onClick={() => this.props.openContributeGemsModal(comment.id)}/>
-            {this.renderReply()}
+            {this.renderReply(classes)}
           </Row>
           :
           <div style={{marginLeft: 30}}>{this.renderReply()}</div>}
@@ -297,21 +274,14 @@ class Comment extends React.Component {
     });
   }
 
-  convertToCommaString(x) {
-    if (x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    } else {
-      return ("0");
-    }
-  }
-
   render() {
+    const { classes } = this.props;
     return (
       <div style={{marginBottom: 30}}>
-        {this.renderComment()}
+        {this.renderComment(classes)}
       </div>
     );
   }
 }
 
-export default Comment;
+export default withStyles(styles)(Comment);

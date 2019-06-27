@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import Modal from 'react-modal';
 import Typography from '@material-ui/core/Typography';
-import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const titleStyle = {
   color: "#222225",
@@ -73,38 +72,71 @@ class ContributeGifAnimationModal extends Component {
   }
 
   renderAnimation(gems) {
-    var style = gemLabelStyle1;
-    var src = '../../../../../images/gem_1_animated.gif';
     if (gems < 100) {
-      style = gemLabelStyle1;
-      src = '../../../../../images/gem_1_animated.gif';      
+      return (
+        <div>
+          <img style={{width: '100%'}} src='../../../../../images/gem_1_animated.gif'/>
+          <Typography style={gemLabelStyle1}>
+            {this.props.text}
+          </Typography>
+        </div>
+      )
     } else if (gems < 1000) {
-      style = gemLabelStyle2;
-      src = '../../../../../images/gem_2_animated.gif';
+      return (
+        <div>
+          <img
+            style={{width: '100%'}}
+            src='../../../../../../images/gem_2_animated.gif'/>
+          <Typography style={gemLabelStyle2}>
+            {this.props.text}
+          </Typography>
+        </div>
+      )
     } else if (gems < 5000) {
-      style = gemLabelStyle3;
-      src = '../../../../../images/gem_3_animated.gif';
+      return (
+        <div>
+          <img
+            style={{width: '100%'}}
+            src='../../../../../../images/gem_3_animated.gif'/>
+          <Typography style={gemLabelStyle3}>
+            {this.props.text}
+          </Typography>
+        </div>
+      )
     } else if (gems < 10000) {
-      style = gemLabelStyle4;
-      src = '../../../../../images/gem_4_animated.gif';
+      return (
+        <div>
+          <img
+            style={{width: '100%'}}
+            src='../../../../../../images/gem_4_animated.gif'/>
+          <Typography style={gemLabelStyle4}>
+            {this.props.text}
+          </Typography>
+        </div>
+      )
     } else if (gems < 25000) {
-      style = gemLabelStyle5;
-      src = '../../../../../images/gem_5_animated.gif';
+      return (
+        <div>
+          <img
+            style={{width: '100%'}}
+            src='../../../../../../images/gem_5_animated.gif'/>
+          <Typography style={gemLabelStyle5}>
+            {this.props.text}
+          </Typography>
+        </div>
+      )
     } else if (gems >= 25000) {
-      style = gemLabelStyle6;
-      src = '../../../../../images/gem_6_animated.gif';
+      return (
+        <div>
+          <img
+            style={{width: '100%'}}
+            src='../../../../../../images/gem_6_animated.gif'/>
+          <Typography style={gemLabelStyle6}>
+            {this.props.text}
+          </Typography>
+        </div>
+      );
     }
-
-    return (
-      <div>
-        <img
-          style={{width: '100%'}}
-          src={src}/>
-        <Typography style={style}>
-          {"You just contributed " + UtilsManager.convertToCommaString(gems) + " Gems!"}
-        </Typography>
-      </div>
-    );
   }
 
   render() {

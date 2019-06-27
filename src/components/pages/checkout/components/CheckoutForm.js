@@ -5,23 +5,26 @@ import { Container, Row, Col } from 'react-grid-system';
 import AddressSection from './AddressSection';
 import CardSection from './CardSection';
 import GemQuantity from './GemQuantity';
+import UserManager from '../../../singletons/UserManager.js';
 import BackendManager from '../../../singletons/BackendManager.js';
 
 class CheckoutForm extends React.Component {
 
-  componentWillMount() {
+  componentDidMount() {
     var id = localStorage.getItem('gem_id');
-    var quantity = localStorage.getItem('gem_quantity');
-    var price = localStorage.getItem('gem_price');
-    this.setState({
-      id: id,
-      quantity: quantity,
-      price: price,
-    });
+    if (id != null) {
+      var quantity = localStorage.getItem('gem_quantity');
+      var price = localStorage.getItem('gem_price');
+      this.setState({
+        id: id,
+        quantity: quantity,
+        price: price,
+      });
 
-    localStorage.removeItem('gem_id');
-    localStorage.removeItem('gem_quantity');
-    localStorage.removeItem('gem_price');
+      localStorage.removeItem('gem_id');
+      localStorage.removeItem('gem_quantity');
+      localStorage.removeItem('gem_price');
+    }
   }
 
   constructor(props) {
@@ -44,6 +47,7 @@ class CheckoutForm extends React.Component {
     this.handleCellChange = this.handleCellChange.bind(this);
     this.handleCityChange = this.handleCityChange.bind(this);
     this.handleStateChange = this.handleStateChange.bind(this);
+    this.handleMultipleChange = this.handleMultipleChange.bind(this);
     this.confirmOrder = this.confirmOrder.bind(this);
   }
 
@@ -83,6 +87,12 @@ class CheckoutForm extends React.Component {
     });
   }
 
+  handleMultipleChange(multiple) {
+    this.setState({
+      multiple: multiple
+    });
+  }
+
   confirmOrder() {
     var description = {
       "name": this.state.name,
@@ -103,7 +113,16 @@ class CheckoutForm extends React.Component {
       }))
       .then(data => {
         if (data.success) {
-          this.setState({token: data.success});
+          BackendManager.makeQuery('gems/user/update', JSON.stringify({
+            gem_count: this.state.quantity * this.state.multiple,
+            user_id: UserManager.id
+          }))
+          .then(data => {
+            if (data.success) {
+              var quantity = this.state.quantity * this.state.multiple;
+              this.props.completeTransaction(quantity);
+            }
+          });
         }
       });
     });
@@ -195,7 +214,7 @@ class CheckoutForm extends React.Component {
               <button className="co-button" onClick={() => this.confirmOrder()}>Confirm order</button>
             </Col>
             <Col>
-              <GemQuantity id={this.state.id} price={this.state.price} quantity={this.state.quantity}/>
+              <GemQuantity id={this.state.id} price={this.state.price} quantity={this.state.quantity} handleMultipleChange={this.handleMultipleChange}/>
             </Col>
           </Row>
         </div>

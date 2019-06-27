@@ -1,26 +1,34 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
+import { withStyles } from '@material-ui/core/styles';
 import { Container, Row, Col } from 'react-grid-system';
 import TextField from '@material-ui/core/TextField';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
 
+const styles = theme => ({
+  textFieldInputRoot: {
+    fontFamily: 'Lato',
+    color: '#222225',
+  },
+  textFieldLabelRoot: {
+    fontFamily: 'Lato',
+  }
+});
+
 const textFieldStyle = {
-  color: "#222225",
-  fontFamily: "Lato",
   marginTop: 10,
 }
 
 const titleStyle = {
-  color: "#222225",
-  fontFamily: "Lato",
-  textAlign: "center",
+  color: '#222225',
+  fontFamily: 'Lato',
+  textAlign: 'center',
 }
 
 const errorStyle = {
-  color: "#D14D85",
-  fontFamily: "Lato",
-  textAlign: "left",
+  color: '#D14D85',
+  textAlign: 'left',
   fontSize: 17,
 }
 
@@ -120,83 +128,48 @@ class LoginModal extends Component {
     }
   }
 
-  renderView() {
-    if (this.state.isMobile) {
-      return (
-        <div style={{width: '60%'}}>
-          <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
-          <div>
-            <TextField
-              label="Email"
-              floatingLabelText="Email"
-              fullWidth
-              style={textFieldStyle}
-              value={this.state.email}
-              onChange={this.handleEmailChange} />
-            <TextField
-              label="Password"
-              floatingLabelText="Password"
-              type="password"
-              fullWidth
-              style={textFieldStyle}
-              value={this.state.password}
-              onChange={this.handlePasswordChange}
-            />
-            {this.renderError()}
-          </div>
-          <button className='button-rounded' onClick={() => this.signUpHandler()}>
-            Login!
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div style={{width: '60%'}}>
-          <Container>
-            <Row>
-              <Col>
-                <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
-                <div>
-                  <TextField
-                    label="Email"
-                    floatingLabelText="Email"
-                    fullWidth
-                    style={textFieldStyle}
-                    value={this.state.email}
-                    onChange={this.handleEmailChange} />
-                  <TextField
-                    label="Password"
-                    floatingLabelText="Password"
-                    type="password"
-                    fullWidth
-                    style={textFieldStyle}
-                    value={this.state.password}
-                    onChange={this.handlePasswordChange}
-                  />
-                  {this.renderError()}
-                </div>
-                <button className='button-rounded' onClick={() => this.signUpHandler()}>
-                  Login!
-                </button>
-              </Col>
-              <Col>
-                <div style={{backgroundColor: '#3ABBBC'}}>
-                </div>
-              </Col>
-            </Row>
-          </Container>
-        </div>
-      );
-    }
-  }
-
   render() {
+    const { classes } = this.props;
 		return (
       <div>
-        {this.renderView()}
+        <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
+        <div>
+          <TextField
+            label="Email"
+            floatingLabelText="Email"
+            fullWidth
+            style={textFieldStyle}
+            value={this.state.email}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
+            onChange={this.handleEmailChange} />
+          <TextField
+            label="Password"
+            floatingLabelText="Password"
+            type="password"
+            fullWidth
+            style={textFieldStyle}
+            value={this.state.password}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
+            onChange={this.handlePasswordChange}
+          />
+          {this.renderError()}
+        </div>
+        <button className='button-rounded' onClick={() => this.signUpHandler()}>
+          Login!
+        </button>
       </div>
     );
   }
 }
 
-export default withRouter(LoginModal);
+export default withRouter(withStyles(styles)(LoginModal));

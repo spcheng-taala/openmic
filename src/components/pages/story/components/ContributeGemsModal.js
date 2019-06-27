@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const styles = theme => ({
 	textField: {
@@ -83,12 +84,13 @@ class ContributeGemsModal extends Component {
     this.renderTitleText = this.renderTitleText.bind(this);
     this.handleGemAmountChange = this.handleGemAmountChange.bind(this);
     this.sendGems = this.sendGems.bind(this);
+		this.renderBuySendGemsButton = this.renderBuySendGemsButton.bind(this);
   }
 
   renderTitleText() {
     if (this.props.commentId > 0) {
       return (
-        <p style={topTextStyle}>{'How many Gems do you want to contribute?'}</p>
+        <p style={topTextStyle}>{'How many Gems do you want to add?'}</p>
       );
     } else {
       return (
@@ -115,12 +117,24 @@ class ContributeGemsModal extends Component {
     }
   }
 
+	renderBuySendGemsButton() {
+		if (this.state.gemCount < this.state.amount) {
+			return (
+				<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.buyGems()}>{"Buy Gems"}</button>
+			);
+		} else {
+			return (
+				<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.sendGems()}>{"Send Gems"}</button>
+			);
+		}
+	}
+
   render() {
     const { classes } = this.props;
 		return (
       <div style={{padding: 0, width: 500, backgroundColor: '#18161B'}}>
         {this.renderTitleText()}
-        <p style={textStyle}>{'You have ' + this.state.gem_count + ' Gems'}</p>
+        <p style={textStyle}>{'You have ' + UtilsManager.convertToCommaString(this.state.gem_count) + ' Gems'}</p>
         <div style={{width: '50%', margin: '0 auto'}}>
           <TextField
             id="outlined-number"
@@ -143,7 +157,7 @@ class ContributeGemsModal extends Component {
           />
         </div>
         <button className="button-rounded-purple" onClick={() => window.open('http://localhost:3000/howitworks/gems', "_blank")}>{"What are Gems?"}</button>
-        <button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.sendGems()}>{"Send Gems"}</button>
+        {this.renderBuySendGemsButton()}
       </div>
     )
   }

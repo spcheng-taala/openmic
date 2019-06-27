@@ -1,10 +1,29 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
+import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
+import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import BackendManager from '../../singletons/BackendManager.js'
+import UserManager from '../../singletons/UserManager.js';
+import BackendManager from '../../singletons/BackendManager.js';
 import ClipItem from './components/ClipItem.js';
+
+const styles = theme => ({
+  textFieldInputRoot: {
+    fontFamily: 'Lato',
+  },
+  textFieldLabelRoot: {
+    fontFamily: 'Lato',
+  }
+});
+
+const textFieldStyle = {
+  color: '#222225',
+  marginTop: 10,
+  marginLeft: 10,
+  marginRight: 10,
+}
 
 const cardStyle = {
   marginBottom: 30,
@@ -66,19 +85,21 @@ class FeedPage extends Component {
   onScroll = () => {
     if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 500)) {
       if (this.state.clips.length < this.state.clipsCount) {
-        BackendManager.makeQuery('clips/all/cont', JSON.stringify({
-          clip_id: this.state.clips[this.state.clips.length - 1].id,
-        }))
-        .then(data => {
-          console.log(data);
-          var clips = this.state.clips;
-          clips.push.apply(clips, data.clips);
-          if (data.success) {
-            this.setState({
-              clips: clips,
-            });
-          }
-        });
+        if (this.state.clips[this.state.clips.length - 1] != null) {
+          BackendManager.makeQuery('clips/all/cont', JSON.stringify({
+            clip_id: this.state.clips[this.state.clips.length - 1].id,
+          }))
+          .then(data => {
+            console.log(data);
+            var clips = this.state.clips;
+            clips.push.apply(clips, data.clips);
+            if (data.success) {
+              this.setState({
+                clips: clips,
+              });
+            }
+          });
+        }
       }
     }
   }
@@ -102,12 +123,16 @@ class FeedPage extends Component {
       clips: [],
       clipsCount: 0,
       isMobile: false,
+      referralCode: "",
     };
 
     this.renderFeed = this.renderFeed.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderBottomRightPanel = this.renderBottomRightPanel.bind(this);
-    this.handleClipClick = this.handleClipClick.bind(this);    
+    this.handleClipClick = this.handleClipClick.bind(this);
+    this.renderFreeGems = this.renderFreeGems.bind(this);
+    this.handleReferralChange = this.handleReferralChange.bind(this);
+    this.handleReferralCodeClick = this.handleReferralCodeClick.bind(this);
   }
 
   handleClipClick(id) {
@@ -152,10 +177,10 @@ class FeedPage extends Component {
               {"Join the OpenMic community!"}
             </Typography>
             <Typography style={textStyleSmall}>
-              {"Discover the best and funniest stories from our content creators!"}
+              {"Interact with your favorite creators and their fans!"}
             </Typography>
-            <button className='button-rounded-green' onClick={() => this.props.history.push('/podcasts')}>
-              {"View Shows!"}
+            <button className='button-rounded-green' onClick={() => this.props.history.push('/community')}>
+              {"Start Now!"}
             </button>
             <div style={{paddingBottom: 10}}>
             </div>
@@ -188,7 +213,110 @@ class FeedPage extends Component {
     )
   }
 
+  handleReferralChange(e) {
+    this.setState({
+      referralCode: e.target.value
+    });
+  }
+
+  handleReferralCodeClick() {
+    if (this.props.isLoggedIn) {
+      BackendManager.makeQuery('codes/check/code', JSON.stringify({
+        name: this.state.referralCode,
+      }))
+      .then(data => {
+        this.setState({
+          referralCode: ""
+        });
+        if (data.success) {
+          var code = data.code;
+          BackendManager.makeQuery('codes/check/user', JSON.stringify({
+            user_id: UserManager.id,
+            code_id: code.id,
+          }))
+          .then(data => {
+            if (data.success) {
+              BackendManager.makeQuery('codes/count', JSON.stringify({
+                code_id: code.id,
+              }))
+              .then(data => {
+                if (data.success) {
+                  if (code.limit > data.count) {
+                    BackendManager.makeQuery('codes/user/add', JSON.stringify({
+                      user_id: UserManager.id,
+                      code_id: code.id
+                    }))
+                    .then(data => {
+                      if (data.success) {
+                        BackendManager.makeQuery('gems/user/update', JSON.stringify({
+                          gem_count: code.amount,
+                          user_id: UserManager.id
+                        }))
+                        .then(data => {
+                          if (data.success) {
+                            var text = "You just received " + code.amount + " Gems!";
+                            this.props.openGemGifModal(code.amount, text);
+                          }
+                        });
+                      }
+                    });
+                  } else {
+                    this.props.showToast("This referral has expired :(", 'error');
+                  }
+                }
+              });
+            } else {
+              this.props.showToast("Oops! Looks like you've already used this referral code", 'error');
+            }
+          });
+        } else {
+          this.props.showToast("Hmm, this referral code doesn't seem to exist", 'error');
+        }
+      });
+    }
+  }
+
+  renderFreeGems(classes) {
+    return (
+      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
+        <Paper elevation={1} style={{backgroundColor: 'white'}}>
+          <div>
+            <div style={{paddingTop: 10}}/>
+            <Typography style={textStyleBig}>
+              {"Enter a referral code!"}
+            </Typography>
+            <Typography style={textStyleSmall}>
+              {"Have a referral code? Enter it here to get free gems!"}
+            </Typography>
+            <div style={{margin: 10}}>
+              <TextField
+                id="outlined-adornment-amount"
+                placeholder="Enter Code"
+                fullWidth
+                inputProps={{min: 0, style: { textAlign: 'center' }}}
+                InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+                InputLabelProps={{
+                  FormLabelClasses: {
+                    root: classes.textFieldLabelRoot
+                  }
+                }}
+                value={this.state.referralCode}
+                onChange={this.handleReferralChange} />
+            </div>
+            <button className='button-rounded-purple' onClick={() => this.handleReferralCodeClick()}>
+              {"Done!"}
+            </button>
+            <div style={{paddingBottom: 10}}>
+            </div>
+          </div>
+        </Paper>
+      </div>
+    )
+  }
+
+
   render() {
+    const { classes } = this.props;
 		return (
       <div style={{backgroundColor: '#F4F3F6'}}>
         <Container>
@@ -197,6 +325,7 @@ class FeedPage extends Component {
               {this.renderFeed()}
             </Col>
             <Col md={4}>
+              {this.renderFreeGems(classes)}
               {this.renderRightPanel()}
               {this.renderBottomRightPanel()}
             </Col>
@@ -207,4 +336,4 @@ class FeedPage extends Component {
   }
 }
 
-export default withRouter(FeedPage);
+export default withRouter(withStyles(styles)(FeedPage));

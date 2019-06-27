@@ -1,13 +1,6 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
-import Header from '../../ui/Header.js';
-import MidTitle from '../../ui/MidTitle.js';
 import { withStyles } from '@material-ui/core/styles';
-import GridList from '@material-ui/core/GridList';
-import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import IconButton from '@material-ui/core/IconButton';
 
  const root = {
    paddingTop: 50,
@@ -51,15 +44,6 @@ import IconButton from '@material-ui/core/IconButton';
    fontFamily: 'Lato',
    fontSize: 17,
    margin: 10,
- }
-
- const gridList = {
-   width: 500,
-   height: 450,
- }
-
- const icon = {
-   color: 'rgba(255, 255, 255, 0.54)'
  }
 
 class AboutPage extends Component {
