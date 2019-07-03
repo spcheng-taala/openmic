@@ -183,7 +183,7 @@ class ContributorsModal extends Component {
 
   render() {
 		return (
-      <div style={{padding: 0, width: 500}}>
+      <div style={{padding: 0}}>
         <ul style={{margin: 0, padding: 0}}>
           {this.state.users.map((item, i) => {
             return (this.renderUserItem(item, i))

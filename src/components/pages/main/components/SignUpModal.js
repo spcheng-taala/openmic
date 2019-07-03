@@ -11,7 +11,7 @@ const styles = theme => ({
     color: '#222225',
   },
   textFieldLabelRoot: {
-    fontFamily: 'Lato',    
+    fontFamily: 'Lato',
   }
 });
 
@@ -53,6 +53,8 @@ class SignUpModal extends Component {
   }
 
   signUpHandler() {
+    var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
+    
     BackendManager.makeQuery('users/create/email', JSON.stringify({
       first_name: this.state.firstName,
       last_name: this.state.lastName,

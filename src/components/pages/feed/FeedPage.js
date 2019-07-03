@@ -140,19 +140,11 @@ class FeedPage extends Component {
   }
 
   renderListItem(item) {
-    if (this.state.isMobile) {
-      return (
-        <div style={cardStyle}>
-          <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
-        </div>
-      )
-    } else {
-      return (
-        <div style={cardStyle}>
-          <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
-        </div>
-      )
-    }
+    return (
+      <div style={cardStyle}>
+        <ClipItem isMobile={this.state.isMobile} id={item.uuid} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
+      </div>
+    );
   }
 
   renderFeed() {

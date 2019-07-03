@@ -21,6 +21,7 @@ import ContributorsModal from './components/ContributorsModal.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
+import BrokenPageSection from '../../sections/BrokenPageSection.js';
 
 const customStyles = {
 	overlay: {
@@ -42,6 +43,32 @@ const customStyles = {
     marginRight: '-50%',
 		background: '#18161B',
     maxHeight: '80%',
+		width: '50%',
+    transform: 'translate(-50%, -50%)'
+  },
+};
+
+const customStylesMobile = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		background: '#18161B',
+    maxHeight: '80%',
+		width: '80%',
     transform: 'translate(-50%, -50%)'
   },
 };
@@ -79,10 +106,11 @@ const centerVertical = {
 }
 
 const topPanelText = {
-  color: '#164747',
+  color: '#FFFFFF',
   fontFamily: 'Lato',
-  textAlign: 'left',
-  fontSize: 22,
+  textAlign: 'center',
+	marginRight: 10,
+  fontSize: 20,
 }
 
 const rightPanelText = {
@@ -117,37 +145,18 @@ const textStyleBig = {
   color: '#2D2D31',
   fontFamily: "Lato",
   textAlign: 'left',
-  fontSize: 30,
+  fontSize: 20,
   marginLeft: 25,
-  marginRight: 50,
+  marginRight: 20,
 }
 
 const textStyleSmall = {
   color: '#2D2D31',
   fontFamily: "Lato",
   textAlign: 'left',
-  fontSize: 20,
-  marginLeft: 25,
-  marginRight: 50,
-  marginBottom: 20,
-}
-
-const textStyleBigMobile = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
-  fontSize: 20,
-  marginLeft: 10,
-  marginRight: 50,
-}
-
-const textStyleSmallMobile = {
-  color: '#2D2D31',
-  fontFamily: "Lato",
-  textAlign: 'left',
   fontSize: 15,
-  marginLeft: 10,
-  marginRight: 50,
+  marginLeft: 25,
+  marginRight: 20,
   marginBottom: 20,
 }
 
@@ -170,102 +179,12 @@ class ClipPage extends Component {
   componentDidMount() {
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
-    BackendManager.makeQuery('clips', JSON.stringify({
-      clip_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-          clip: data.clip,
-        });
-        BackendManager.makeQuery('clips/others', JSON.stringify({
-          clip_id: this.props.match.params.id,
-          story_id: data.clip.story_id,
-        }))
-        .then(data => {
-          if (data.success) {
-            console.log(data.clips);
-            this.setState({
-              otherClips: data.clips,
-            });
-          }
-        });
-      }
-    });
-
-    this.refreshComments();
-
-    BackendManager.makeQuery('clips/reactions/pos', JSON.stringify({
-      clip_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-          heartCount: data.reaction,
-        });
-      }
-    });
-
-    BackendManager.makeQuery('clips/reactions/check', JSON.stringify({
-      clip_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-          hasLiked: data.reaction > 0,
-        });
-      }
-    });
+    this.refreshClip();
   }
 
   componentDidUpdate() {
-    if (this.state.clip == null || this.props.match.params.id != this.state.clip.id) {
-      BackendManager.makeQuery('clips', JSON.stringify({
-        clip_id: this.props.match.params.id,
-      }))
-      .then(data => {
-        if (data.success) {
-          this.setState({
-            clip: data.clip,
-          });
-          BackendManager.makeQuery('clips/others', JSON.stringify({
-            clip_id: this.props.match.params.id,
-            story_id: data.clip.story_id,
-          }))
-          .then(data => {
-            if (data.success) {
-              console.log(data.clips);
-              this.setState({
-                otherClips: data.clips,
-              });
-            }
-          });
-        }
-      });
-
-      this.refreshComments();
-
-      BackendManager.makeQuery('clips/reactions/pos', JSON.stringify({
-        clip_id: this.props.match.params.id,
-      }))
-      .then(data => {
-        if (data.success) {
-          this.setState({
-            heartCount: data.reaction,
-          });
-        }
-      });
-
-      BackendManager.makeQuery('clips/reactions/check', JSON.stringify({
-        clip_id: this.props.match.params.id,
-      }))
-      .then(data => {
-        if (data.success) {
-          this.setState({
-            hasLiked: data.reaction > 0,
-          });
-        }
-      });
+    if (this.state.clip == null || this.props.match.params.id != this.state.clip.uuid) {
+      this.refreshClip();
     }
   }
 
@@ -273,6 +192,7 @@ class ClipPage extends Component {
     super(props);
     this.copyRef = React.createRef();
     this.state = {
+			show404: false,
       isMobile: false,
       contributeGemsIsOpen: false,
       clip: null,
@@ -292,6 +212,9 @@ class ClipPage extends Component {
       viewContributorsIsOpen: false,
     };
 
+		this.refreshClip = this.refreshClip.bind(this);
+    this.refreshComments = this.refreshComments.bind(this);
+    this.fetchReplies = this.fetchReplies.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
@@ -300,18 +223,18 @@ class ClipPage extends Component {
     this.handleDurationChange = this.handleDurationChange.bind(this);
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
-    this.renderView = this.renderView.bind(this);
+    this.renderClipView = this.renderClipView.bind(this);
     this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
     this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
     this.copyToClipboard = this.copyToClipboard.bind(this);
     this.replay = this.replay.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
     this.renderBottomVideoPlayer = this.renderBottomVideoPlayer.bind(this);
+		this.renderShareButton = this.renderShareButton.bind(this);
 		this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderOtherClipsListItem = this.renderOtherClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
-    this.renderTopView = this.renderTopView.bind(this);
     this.sendReply = this.sendReply.bind(this);
     this.toggleAbout = this.toggleAbout.bind(this);
     this.renderAbount = this.renderAbout.bind(this);
@@ -322,15 +245,68 @@ class ClipPage extends Component {
     this.handleSendClick = this.handleSendClick.bind(this);
     this.createComment = this.createComment.bind(this);
     this.contributeGems = this.contributeGems.bind(this);
-    this.refreshComments = this.refreshComments.bind(this);
-    this.fetchReplies = this.fetchReplies.bind(this);
     this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
+		this.renderView = this.renderView.bind(this);
   }
 
-  refreshComments() {
+	refreshClip() {
+		BackendManager.makeQuery('clips/info', JSON.stringify({
+      uuid: this.props.match.params.id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+					show404: false,
+          clip: data.clip,
+        });
+        BackendManager.makeQuery('clips/others', JSON.stringify({
+          clip_id: data.clip.id,
+          story_id: data.clip.story_id,
+        }))
+        .then(data => {
+          if (data.success) {
+            console.log(data.clips);
+            this.setState({
+              otherClips: data.clips,
+            });
+          }
+        });
+
+				this.refreshComments(data.clip.id);
+
+		    BackendManager.makeQuery('clips/reactions/pos', JSON.stringify({
+		      clip_id: data.clip.id,
+		    }))
+		    .then(data => {
+		      if (data.success) {
+		        this.setState({
+		          heartCount: data.reaction,
+		        });
+		      }
+		    });
+
+		    BackendManager.makeQuery('clips/reactions/check', JSON.stringify({
+		      clip_id: data.clip.id,
+		    }))
+		    .then(data => {
+		      if (data.success) {
+		        this.setState({
+		          hasLiked: data.reaction > 0,
+		        });
+		      }
+		    });
+      } else {
+				this.setState({
+					show404: true,
+				});
+			}
+    });
+	}
+
+  refreshComments(clipId) {
     BackendManager.makeQuery('clips/comments', JSON.stringify({
-      clip_id: this.props.match.params.id,
+      clip_id: clipId,
     }))
     .then(data => {
       if (data.success) {
@@ -626,7 +602,7 @@ class ClipPage extends Component {
         reaction = 0;
       }
       BackendManager.makeQuery('clips/react', JSON.stringify({
-        clip_id: this.props.match.params.id,
+        clip_id: this.state.clip.id,
         user_id: UserManager.id,
         reaction: reaction,
       }))
@@ -652,7 +628,7 @@ class ClipPage extends Component {
 
   createComment(gems) {
     BackendManager.makeQuery('clips/comment', JSON.stringify({
-      clip_id: this.props.match.params.id,
+      clip_id: this.state.clip.id,
       user_id: UserManager.id,
       comment: this.state.comment,
     }))
@@ -686,91 +662,36 @@ class ClipPage extends Component {
     });
   }
 
+	renderShareButton() {
+		if (this.state.isMobile) {
+			return (
+				<img style={{ margin: 10, width: 30, height: 30, cursor: 'pointer' }} src='../../../../../images/share_icon.png'/>
+			);
+		} else {
+			return (
+				<button className='button-rounded-green-no-mar' style={{ margin: 0 }} data-tip data-for='share_clip' data-event='click'>Share</button>
+			);
+		}
+	}
+
   renderBottomVideoPlayer() {
-		var titleStyle = textStyleBig;
-		var clippedByStyle = textStyleSmall;
-		var fontSize = 15;
-
-    if (this.state.isMobile) {
-			titleStyle = textStyleBigMobile;
-			clippedByStyle = textStyleSmallMobile;
-			fontSize = 10;
-    } else {
-			titleStyle = textStyleBig;
-			clippedByStyle = textStyleSmall;
-			fontSize = 15;
-    }
-
 		return (
 			<div>
-				<Typography style={titleStyle}>
-					{this.state.clip.title}
-				</Typography>
-				<Typography style={clippedByStyle}>
-					{"Clipped by " + this.state.clip.username}
-				</Typography>
-				<Row style={{marginTop: 10, marginLeft: 20, marginBottom: 20}}>
-					<div style={{marginRight: 15, cursor: 'pointer'}} onClick={() => this.handleHeartClick()}>
-						{this.renderHeart()}
-						<p style={{margin: 0, fontSize: fontSize, textAlign: 'center'}}>{this.getCountStr(this.state.heartCount)}</p>
+				<Row>
+					<div>
+						<Typography style={textStyleBig}>
+							{this.state.clip.title}
+						</Typography>
+						<Typography style={textStyleSmall}>
+							{"Clipped by " + this.state.clip.username}
+						</Typography>
 					</div>
-					<button className='button-rounded-green-no-mar' style={{ margin: 0 }} data-tip data-for='share_clip' data-event='click'>Share</button>
-					<ReactTooltip id='share_clip' place='top' effect='solid' clickable={true}>
-						<Row style={{marginLeft: 20}}>
-							<TwitterLogin
-								style={{width: 30, height: 30, backgroundColor: '#1DA1F2', cursor: 'pointer', padding: 0}}
-								loginUrl="https://api.mypokadot.com/pp/auth/twitter"
-								onFailure={this.onTwitterAuthFailure}
-								onSuccess={this.onTwitterAuthSuccess}
-								forceLogin={true}
-								requestTokenUrl="https://api.mypokadot.com/pp/auth/twitter/reverse"
-							>
-								<img data-tip data-for='twitterTT' style={{width: 20, height: 20}} src='../../../../../images/twitter_icon.png'/>
-							</TwitterLogin>
-							<ReactTooltip id="twitterTT" place="top" type="light" effect="float">
-								<span>Twitter</span>
-							</ReactTooltip>
-							<div data-tip data-for='clipboardTT' style={{marginLeft: 10, backgroundColor: '#3ABBBC', width: 30, height: 30, cursor: 'pointer'}} onClick={() => this.copyToClipboard()}>
-								<img style={{width: 30, height: 30}} src='../../../../../images/copy.png'/>
-							</div>
-							<ReactTooltip id="clipboardTT" place="top" type="light" effect="float">
-								<span>Copy to clipboard</span>
-							</ReactTooltip>
-						</Row>
-						{
-							document.queryCommandSupported('copy') &&
-							<input ref={this.copyRef} type='text' value={'https://theopenmic.fm/clips/' + this.state.clip.id} style={{width: 100, marginTop: 10}} />
-						}
-					</ReactTooltip>
+					<div style={{marginTop: 10, marginLeft: 'auto', marginRight: 20}}>
+						{this.renderShareButton()}
+					</div>
 				</Row>
-				{this.renderAbout()}
 			</div>
 		);
-  }
-
-  renderTopView() {
-    if (this.state.clip != null) {
-			return (
-				<div style={{width: '100%', height: 70, backgroundColor: '#f2f2f2'}}>
-					<Row>
-						<Col>
-							<div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>
-								<Row>
-									<Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
-									<Col>
-										<div style={centerVertical}>
-											<Typography style={topPanelText}>
-												{"Listen to full Podcast: " + this.state.clip.story_title}
-											</Typography>
-										</div>
-									</Col>
-								</Row>
-							</div>
-						</Col>
-					</Row>
-				</div>
-			);
-    }
   }
 
   handleCommentChange(e) {
@@ -781,7 +702,7 @@ class ClipPage extends Component {
 
   handleSendClick() {
     BackendManager.makeQuery('clips/comment', JSON.stringify({
-      clip_id: this.props.match.params.id,
+      clip_id: this.state.clip.id,
       user_id: UserManager.id,
       comment: this.state.comment,
     }))
@@ -791,7 +712,7 @@ class ClipPage extends Component {
           comment: "",
         });
         BackendManager.makeQuery('clips/comments', JSON.stringify({
-          clip_id: this.props.match.params.id,
+          clip_id: this.state.clip.id,
         }))
         .then(data => {
           if (data.success) {
@@ -816,14 +737,18 @@ class ClipPage extends Component {
     });
   }
 
-  renderView(classes) {
+  renderClipView(classes) {
+		var textFieldWidth = '100%';
+		if (this.state.isMobile) {
+			textFieldWidth = '95%';
+		}
     if (this.state.clip != null) {
       return (
         <div>
           <Row>
             <Col md={8}>
               {this.renderVideoPlayer()}
-							<div style={{width: '100%', border: '2px solid #4E5CD8', marginLeft: 10, paddingBottom: 20, borderRadius: 15}}>
+							<div style={{width: textFieldWidth, border: '2px solid #4E5CD8', marginLeft: 10, paddingBottom: 20, borderRadius: 15, marginRight: 20}}>
 	              <Row>
 	                <TextField
 	                  label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
@@ -870,42 +795,66 @@ class ClipPage extends Component {
   renderOtherClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
+        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
         <Divider />
       </div>
     );
   }
 
 	renderRightPanelContent(hasClips) {
+		var marginLeft = 0;
+		if (this.state.isMobile) {
+			marginLeft = 20;
+		}
+
 		if (hasClips) {
 			return (
-				<ul>
-					{this.state.otherClips.map((item) => {
-						return (this.renderOtherClipsListItem(item))
-					})}
-				</ul>
-			);
-		} else {
-			return (
-				<button className='button-rounded-purple-no-mar-small' style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_id)}>Listen to full podcast</button>
+				<div style={{marginLeft: marginLeft, marginTop: 20, marginRight: 20, marginBottom: 20}}>
+					<Paper elevation={1} style={{backgroundColor: 'white'}}>
+						<div>
+							<div style={{height: 5}}/>
+							<Typography style={rightPanelText}>
+								{"Other clips!"}
+							</Typography>
+							<ul>
+								{this.state.otherClips.map((item) => {
+									return (this.renderOtherClipsListItem(item))
+								})}
+							</ul>
+							<div style={{paddingBottom: 10}}>
+							</div>
+						</div>
+					</Paper>
+				</div>
 			);
 		}
 	}
 
   renderRightPanel() {
+		var marginLeft = 0;
+		if (this.state.isMobile) {
+			marginLeft = 20;
+		}
+
 		return (
-			<div style={{marginTop: 20, marginRight: 20, marginBottom: 20}}>
-				<Paper elevation={1} style={{backgroundColor: 'white'}}>
-					<div>
-						<div style={{height: 5}}/>
-						<Typography style={rightPanelText}>
-							{"Other clips!"}
-						</Typography>
-						{this.renderRightPanelContent(this.state.otherClips.length > 0)}
-						<div style={{paddingBottom: 10}}>
+			<div>
+				<div style={{marginTop: 20, marginLeft: marginLeft, marginRight: 20}}>
+					<Paper elevation={1} style={{backgroundColor: '#6175E0'}}>
+						<div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_uuid)}>
+							<Row>
+								<Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
+								<Col>
+									<div style={centerVertical}>
+										<Typography style={topPanelText}>
+											{"Listen to full podcast"}
+										</Typography>
+									</div>
+								</Col>
+							</Row>
 						</div>
-					</div>
-				</Paper>
+					</Paper>
+				</div>
+				{this.renderRightPanelContent(this.state.otherClips.length > 0)}
 			</div>
 		);
   }
@@ -937,7 +886,7 @@ class ClipPage extends Component {
   sendReply(comment, parentCommentId, rootCommentId) {
     if (this.props.isLoggedIn) {
       BackendManager.makeQuery('clips/reply', JSON.stringify({
-        clip_id: this.props.match.params.id,
+        clip_id: this.state.clip.id,
         comment: comment,
         parent_comment_id: parentCommentId,
         root_comment_id: rootCommentId,
@@ -953,35 +902,52 @@ class ClipPage extends Component {
     }
   }
 
+	renderView(classes) {
+		if (this.state.show404) {
+			return (
+				<BrokenPageSection />
+			);
+		} else {
+			var modalStyle = customStyles;
+			if (this.state.isMobile) {
+				modalStyle = customStylesMobile;
+			}
+			return (
+				<div>
+	        <Modal
+	          isOpen={this.state.contributeGemsIsOpen}
+	          style={modalStyle}
+	          onRequestClose={this.closeContributeGemsModal}
+	          contentLabel="Contribute Gems"
+	        >
+	          <ContributeGemsModal
+	            commentId={this.state.currentCommentId}
+	            contributeGems={this.contributeGems}
+	            createComment={this.createComment}
+	            closeContributeGemsModal={this.closeContributeGemsModal}
+	            openBuyGemsModal={this.props.openBuyGemsModal}
+	          />
+	        </Modal>
+	        <Modal
+	          isOpen={this.state.viewContributorsIsOpen}
+	          style={modalStyle}
+	          onRequestClose={this.closeViewContributorsModal}
+	          contentLabel="Contribute Gems"
+	        >
+	          <ContributorsModal commentId={this.state.contributorsCommentId}/>
+	        </Modal>
+	        {this.renderClipView(classes)}
+	      </div>
+			);
+		}
+	}
+
   render() {
     const { classes } = this.props;
 		return (
       <div>
-        <Modal
-          isOpen={this.state.contributeGemsIsOpen}
-          style={customStyles}
-          onRequestClose={this.closeContributeGemsModal}
-          contentLabel="Contribute Gems"
-        >
-          <ContributeGemsModal
-            commentId={this.state.currentCommentId}
-            contributeGems={this.contributeGems}
-            createComment={this.createComment}
-            closeContributeGemsModal={this.closeContributeGemsModal}
-            openBuyGemsModal={this.props.openBuyGemsModal}
-          />
-        </Modal>
-        <Modal
-          isOpen={this.state.viewContributorsIsOpen}
-          style={customStyles}
-          onRequestClose={this.closeViewContributorsModal}
-          contentLabel="Contribute Gems"
-        >
-          <ContributorsModal commentId={this.state.contributorsCommentId}/>
-        </Modal>
-        {this.renderTopView()}
-        {this.renderView(classes)}
-      </div>
+				{this.renderView(classes)}
+			</div>
     )
   }
 }

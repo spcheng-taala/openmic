@@ -4,6 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+import UtilsManager from '../../singletons/UtilsManager.js';
 
 const gemIconStyle = {
   marginLeft: 10,
@@ -71,9 +72,10 @@ class WhatAreGemsPage extends Component {
       }
     });
 
-    if (this.props.isLoggedIn) {
-      if (UserManager.id <= 0) {
-        var id = localStorage.getItem('id');
+
+    if (UserManager.id <= 0) {
+      var id = localStorage.getItem('id');
+      if (id) {
         UserManager.id = id;
       }
       BackendManager.makeQuery('gems/user', JSON.stringify({
@@ -115,14 +117,8 @@ class WhatAreGemsPage extends Component {
       gem_count: 0,
     }
     this.renderGemItem = this.renderGemItem.bind(this);
-    this.convertToDollars = this.convertToDollars.bind(this);
     this.renderGemItem = this.renderGemItem.bind(this);
     this.handleBuyGems = this.handleBuyGems.bind(this);
-  }
-
-  convertToDollars(cents) {
-    var dollars = cents / 100;
-    return dollars.toLocaleString("en-US", {style:"currency", currency:"USD"});
   }
 
   handleBuyGems(gem) {
@@ -144,11 +140,11 @@ class WhatAreGemsPage extends Component {
           <Row>
             <Col>
               <Typography style={titleStyle}>
-                {gem.quantity + " Gems"}
+                {UtilsManager.convertToCommaString(gem.quantity) + " Gems"}
               </Typography>
               {this.renderGemIcons(gem)}
             </Col>
-            <button style={{float: 'right'}} className="button-rounded-green-no-mar-small" onClick={() => this.handleBuyGems(gem)}>{this.convertToDollars(gem.price)}</button>
+            <button style={{float: 'right'}} className="button-rounded-green-no-mar-small" onClick={() => this.handleBuyGems(gem)}>{UtilsManager.convertToDollars(gem.price)}</button>
           </Row>
         </Container>
       </div>
@@ -238,7 +234,7 @@ class WhatAreGemsPage extends Component {
                 </Container>
               </Col>
               <Col style={{marginTop: 100}}>
-                <p style={sectionText}>{'You have ' + this.state.gem_count + ' Gems'}</p>
+                <p style={sectionText}>{'You have ' + UtilsManager.convertToCommaString(this.state.gem_count) + ' Gems'}</p>
                 <p style={descText}>{'Prices are shown in USD'}</p>
                 <ul style={{margin: 0, padding: 0}}>
                   {this.state.gems.map((item) => {

@@ -37,6 +37,29 @@ const thumbnail = {
   marginLeft: 50,
 }
 
+const textStyleBigMobile = {
+  color: '#2A2D34',
+  fontFamily: 'Lato',
+  fontSize: 20,
+  marginLeft: 20,
+  paddingTop: 10,
+}
+
+const textStyleMedMobile = {
+  color: '#2A2D34',
+  fontFamily: 'Lato',
+  fontSize: 14,
+  marginLeft: 20,
+}
+
+const textStyleSmallMobile = {
+  color: '#868994',
+  fontFamily: 'Lato',
+  fontSize: 12,
+  marginLeft: 20,
+  marginBottom: 10,
+}
+
 class ClipItem extends React.Component {
 
   constructor(props) {
@@ -53,6 +76,18 @@ class ClipItem extends React.Component {
   }
 
   render() {
+    var thumbnailWidth = 200;
+    var thumbnailHeight= 150;
+    var textBig = textStyleBig;
+    var textMed = textStyleMed;
+    var textSmall = textStyleSmall;
+    if (this.props.isMobile) {
+      thumbnailWidth = 100;
+      thumbnailHeight= 75;
+      textBig = textStyleBigMobile;
+      textMed = textStyleMedMobile;
+      textSmall = textStyleSmallMobile;
+    }
     return (
       <div>
         <CardActionArea onClick={() => this.props.handleClipClick(this.props.id)}>
@@ -61,24 +96,24 @@ class ClipItem extends React.Component {
               <Row>
                 <div>
                   <div style={{marginLeft: 25, paddingBottom: 10, paddingTop: 10}}>
-                    <div style={{height: 150, width: 200}}>
+                    <div style={{height: thumbnailHeight, width: thumbnailWidth}}>
                       <VideoThumbnail
                         style={thumbnail}
                         videoUrl={this.props.url}
-                        width={200}
-                        height={150}
+                        width={thumbnailWidth}
+                        height={thumbnailHeight}
                         thumbnailHandler={(thumbnail) => console.log(thumbnail)}/>
                     </div>
                   </div>
                 </div>
                 <Col>
-                  <Typography className="lineClamp" style={textStyleBig}>
+                  <Typography className="lineClamp" style={textBig}>
                     {this.props.title}
                   </Typography>
-                  <Typography className="lineClamp" style={textStyleMed}>
+                  <Typography className="lineClamp" style={textMed}>
                     {"from: " + this.props.podcast}
                   </Typography>
-                  <Typography className="lineClamp" style={textStyleSmall}>
+                  <Typography className="lineClamp" style={textSmall}>
                     {"clipped by " + this.props.name}
                   </Typography>
                 </Col>

@@ -3,6 +3,7 @@ import { Container, Row, Col } from 'react-grid-system';
 import Paper from '@material-ui/core/Paper';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
+import BrokenPageSection from '../../sections/BrokenPageSection.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 
@@ -58,6 +59,7 @@ class ProfilePage extends Component {
     super(props);
 
     this.state = {
+      show404: false,
       user: null,
     };
 
@@ -67,17 +69,22 @@ class ProfilePage extends Component {
     this.renderMyProfile = this.renderMyProfile.bind(this);
     this.renderLeftPanel = this.renderLeftPanel.bind(this);
     this.logout = this.logout.bind(this);
+    this.renderView = this.renderView.bind(this);
   }
 
-  fetchUser(userId) {
-    BackendManager.makeQuery('users/basic', JSON.stringify({
-      user_id: userId,
+  fetchUser(username) {
+    BackendManager.makeQuery('users/basic/username', JSON.stringify({
+      username: username,
     }))
     .then(data => {
       if (data.success) {
         this.setState({
           user: data.info,
         })
+      } else {
+        this.setState({
+          show404: true,
+        });
       }
     });
   }
@@ -100,7 +107,7 @@ class ProfilePage extends Component {
           <h2 style={titleStyle}>{this.state.user.first_name + " " + this.state.user.last_name}</h2>
           {this.renderVerified()}
         </Row>
-      );      
+      );
     }
   }
 
@@ -141,9 +148,13 @@ class ProfilePage extends Component {
     this.props.history.push('/');
   }
 
-  render() {
-		return (
-      <div>
+  renderView() {
+    if (this.state.show404) {
+      return (
+        <BrokenPageSection />
+      );
+    } else {
+      return (
         <Container>
           <Row>
             <Col md={4}>
@@ -156,6 +167,14 @@ class ProfilePage extends Component {
             </Col>
           </Row>
         </Container>
+      );
+    }
+  }
+
+  render() {
+		return (
+      <div>
+        {this.renderView()}
       </div>
     )
   }

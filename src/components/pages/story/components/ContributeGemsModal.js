@@ -132,7 +132,7 @@ class ContributeGemsModal extends Component {
   render() {
     const { classes } = this.props;
 		return (
-      <div style={{padding: 0, width: 500, backgroundColor: '#18161B'}}>
+      <div style={{padding: 0, backgroundColor: '#18161B'}}>
         {this.renderTitleText()}
         <p style={textStyle}>{'You have ' + UtilsManager.convertToCommaString(this.state.gem_count) + ' Gems'}</p>
         <div style={{width: '50%', margin: '0 auto'}}>

@@ -124,51 +124,11 @@ const panelTitleText = {
 	fontWeight: 'bold',
 }
 
-const topClipText = {
-	color: '#B8B5BF',
-	fontFamily: 'Lato',
-	fontSize: 17,
-	marginLeft: 5,
-	marginRight: 5,
-  cursor: 'pointer',
-}
-
-const topClipSubMdText = {
-	color: '#898395',
-	fontFamily: 'Lato',
-	fontSize: 14,
-	marginBottom: 9,
-	marginLeft: 5,
-	marginRight: 5,
-	marginTop: 5,
-  cursor: 'pointer',
-}
-
-const topClipSubText = {
-	color: '#898395',
-	fontFamily: 'Lato',
-	fontSize: 14,
-	marginBottom: 9,
-	marginLeft: 5,
-	marginRight: 5,
-  cursor: 'pointer',
-}
-
 const logoStyle = {
   width: 30,
   height: 30,
 	marginLeft: 10,
 	cursor: "pointer",
-}
-
-const followingPodcastStyleSmall = {
-  color: '#868994',
-  fontFamily: 'Lato',
-  fontSize: 17,
-  marginLeft: 10,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
 }
 
 const styles = theme => ({
@@ -256,7 +216,9 @@ class MainPage extends React.Component {
 				isLoggedIn: true,
 			});
 			var profilePicture = localStorage.getItem('profile_picture');
+			var username = localStorage.getItem('username');
 			UserManager.id = id;
+			UserManager.username = username;
 			this.setState({
 				profilePicture: profilePicture,
 			});
@@ -272,7 +234,6 @@ class MainPage extends React.Component {
 		        });
 		      }
 		    });
-				this.fetchFollowing(UserManager.id);
 			});
 		}
   }
@@ -294,40 +255,11 @@ class MainPage extends React.Component {
       isSignUp: true,
       isLoggedIn: false,
       signUpText: "Have an account? Login",
-			following: [],
-			followers: [],
 			isCreator: false,
 			selectedFile: null,
 			gemsAdded: 0,
 			gemsText: "",
 			seconds: 5,
-			topClips: [
-				{
-					id: 1,
-					title: "Jessica Keeps Guests in Check",
-					username: "houstondownes",
-				},
-				{
-					id: 2,
-					title: "Secret Agent Cerny",
-					username: "imacoolpanda",
-				},
-				{
-					id: 3,
-					title: "Don't try to fight Russell Peters",
-					username: "seanpcheng",
-				},
-				{
-					id: 4,
-					title: "Haddish House Hunting Method",
-					username: "shrewdsheeple",
-				},
-				{
-					id: 5,
-					title: "Ask and you will receive",
-					username: "houstondownes",
-				},
-			],
     };
 
 		this.timer = 0;
@@ -348,14 +280,9 @@ class MainPage extends React.Component {
     this.handleAuth = this.handleAuth.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
 		this.renderAudio = this.renderAudio.bind(this);
-		this.fetchFollowing = this.fetchFollowing.bind(this);
 		this.uploadFile = this.uploadFile.bind(this);
     this.showToast = this.showToast.bind(this);
     this.logout = this.logout.bind(this);
-		this.renderTopLeftPanel = this.renderTopLeftPanel.bind(this);
-		this.renderTopClipImg = this.renderTopClipImg.bind(this);
-		this.renderTopClipListItem = this.renderTopClipListItem.bind(this);
-		this.renderFollowingPodcasts = this.renderFollowingPodcasts.bind(this);
   }
 
 	hideDrawer(t) {
@@ -479,19 +406,6 @@ class MainPage extends React.Component {
 		}
 	}
 
-	fetchFollowing(id) {
-    BackendManager.makeQuery('users/following', JSON.stringify({
-      user_id: id,
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-					following: data.friends,
-        });
-      }
-    });
-  }
-
 	handleMetadata(e) {
     const duration = e.currentTarget.duration;
 		alert(duration);
@@ -555,102 +469,6 @@ class MainPage extends React.Component {
       isLoggedIn: false,
     });
   }
-
-	renderTopClipImg(item, i) {
-		if (i == 0) {
-			return (
-				<Row>
-					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/gold-medal.svg"}/>
-					<Typography style={topClipSubMdText}>
-						{"by " + item.username}
-					</Typography>
-				</Row>
-			);
-		} else if (i == 1) {
-			return (
-				<Row>
-					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/silver-medal.svg"}/>
-					<Typography style={topClipSubMdText}>
-						{"by " + item.username}
-					</Typography>
-				</Row>
-			);
-		} else if (i == 2) {
-			return (
-				<Row>
-					<img style={{width: 70, height: 70, marginTop: -20, marginRight: -15}} src={"../../../../../images/bronze-medal.svg"}/>
-					<Typography style={topClipSubMdText}>
-						{"by " + item.username}
-					</Typography>
-				</Row>
-			);
-		} else {
-			return (
-				<Typography style={topClipSubText}>
-					{"by " + item.username}
-				</Typography>
-			);
-		}
-	}
-
-	renderTopClipListItem(item, i) {
-		return (
-			<div>
-				<Typography className="lineClamp" style={topClipText}>
-					{item.title}
-				</Typography>
-				{this.renderTopClipImg(item, i)}
-			</div>
-		);
-	}
-
-	renderFollowingPodcasts(item) {
-		return (
-			<div style={{marginBottom: 10}}>
-				<Row>
-					<Avatar src={item.profile_picture} style={{width: 30, height: 30, marginLeft: 10, display: 'inline-block'}} />
-					<Typography style={followingPodcastStyleSmall}>
-						{item.first_name}
-					</Typography>
-				</Row>
-			</div>
-		);
-	}
-
-	renderTopLeftPanel() {
-		return (
-			<div className='left-panel'>
-				<div style={{margin: 10}}>
-	        <Paper elevation={1} style={{backgroundColor: '#164747'}}>
-	          <div>
-	            <Typography style={panelTitleText}>
-	              {"Weekly Leaderboard"}
-	            </Typography>
-							<div style={{margin: 5, height: 1, backgroundColor: '#1e6161'}}/>
-							<ul style={{marginLeft: 5, padding: 0}}>
-								{this.state.topClips.map((item, i) => {
-									return (this.renderTopClipListItem(item, i))
-								})}
-							</ul>
-	            <div style={{paddingBottom: 10}}>
-	            </div>
-	          </div>
-	        </Paper>
-					<div style={{marginTop: 10}}>
-						<Typography style={panelTitleText}>
-							{"Followed Podcasts"}
-						</Typography>
-						<div style={{margin: 5, height: 1, backgroundColor: '#1e6161'}}/>
-						<ul style={{marginLeft: 5, padding: 0}}>
-							{this.state.following.map((item) => {
-								return (this.renderFollowingPodcasts(item))
-							})}
-						</ul>
-					</div>
-	      </div>
-			</div>
-		)
-	}
 
   render() {
     const { classes } = this.props;
@@ -733,7 +551,7 @@ class MainPage extends React.Component {
 								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} backgroundColor={'transparent'} onClick={() => this.openBuyGemsModal()}/>
                 {this.state.isLoggedIn ?
 									<div>
-										<NavLink to={"/profile/" + UserManager.id}>
+										<NavLink to={"/profile/" + UserManager.username}>
 											<Avatar style={logoStyle} src={"../../../../../../images/default_profile_picture_7.png"} backgroundColor={'transparent'}/>
 										</NavLink>
 									</div> :

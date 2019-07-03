@@ -18,6 +18,7 @@ import Typography from '@material-ui/core/Typography';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
+import BrokenPageSection from '../../sections/BrokenPageSection.js';
 import Comments from './components/Comments.js';
 import ClipItem from './components/ClipItem.js';
 import ContributeGemsModal from './components/ContributeGemsModal.js';
@@ -77,6 +78,32 @@ const customStyles = {
     marginRight: '-50%',
 		background: '#18161B',
     maxHeight: '80%',
+		width: '50%',
+    transform: 'translate(-50%, -50%)'
+  },
+};
+
+const customStylesMobile = {
+	overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(19, 18, 24, 0.75)',
+		maxHeight: '100%',
+    overflowY: 'auto',
+  },
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+		background: '#18161B',
+    maxHeight: '80%',
+		width: '80%',
     transform: 'translate(-50%, -50%)'
   },
 };
@@ -170,12 +197,13 @@ class StoryPage extends Component {
     window.scrollTo(0, 0);
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
-    BackendManager.makeQuery('public/stories/feed/story', JSON.stringify({
-      story_id: this.props.match.params.id,
+    BackendManager.makeQuery('public/stories', JSON.stringify({
+      uuid: this.props.match.params.id,
     }))
     .then(data => {
       if (data.success) {
         this.setState({
+          show404: false,
           story: data.story
         });
         if (data.story.type == 0) {
@@ -211,22 +239,26 @@ class StoryPage extends Component {
             });
           });
         }
-      }
-    });
-    var hasListened = false;
-    BackendManager.makeQuery('clips/story', JSON.stringify({
-      story_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      console.log(data);
-      if (data.success) {
+
+        BackendManager.makeQuery('clips/story', JSON.stringify({
+          story_id: this.props.match.params.id,
+        }))
+        .then(data => {
+          console.log(data);
+          if (data.success) {
+            this.setState({
+    					clips: data.clips,
+            });
+          }
+        });
+
+        this.refreshComments();
+      } else {
         this.setState({
-					clips: data.clips,
+          show404: true
         });
       }
     });
-
-    this.refreshComments();
   }
 
   componentWillUnmount() {
@@ -253,6 +285,7 @@ class StoryPage extends Component {
     this.playerRef = React.createRef();
     this.copyRef = React.createRef();
     this.state = {
+      show404: false,
       duration: 0,
       story: null,
       comment: "",
@@ -301,6 +334,7 @@ class StoryPage extends Component {
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
     this.renderPodcastView = this.renderPodcastView.bind(this);
+    this.renderView = this.renderView.bind(this);
   }
 
   ref = player => {
@@ -600,7 +634,7 @@ class StoryPage extends Component {
               <img style={storyImgStyle} src={this.state.story.profile_picture} backgroundColor={'transparent'}/>
               <Col>
                 <div>
-                  <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.user_id)} activeClassName="active">
+                  <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.username)} activeClassName="active">
                     {this.state.story.first_name + " " + this.state.story.last_name}
                   </a>
                   <Row>
@@ -780,7 +814,7 @@ class StoryPage extends Component {
   renderClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.id} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
+        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
         <Divider />
       </div>
     );
@@ -824,78 +858,102 @@ class StoryPage extends Component {
     });
   }
 
+  renderView(classes) {
+    if (this.state.show404) {
+      return (
+        <BrokenPageSection />
+      );
+    } else {
+      var modalStyle = customStyles;
+      var textFieldWidth = '100%';
+      var marginLeft = 0;
+      var marginRight = 0;
+      if (this.state.isMobile) {
+        modalStyle = customStylesMobile;
+        textFieldWidth = '95%';
+        marginLeft = 20;
+        marginRight = 20;
+      }
+      return (
+        <div style={{backgroundColor: '#F4F3F6'}}>
+          <Modal
+            isOpen={this.state.contributeGemsIsOpen}
+            style={customStyles}
+            onRequestClose={this.closeContributeGemsModal}
+            contentLabel="Contribute Gems"
+          >
+            <ContributeGemsModal
+              commentId={this.state.currentCommentId}
+              contributeGems={this.contributeGems}
+              createComment={this.createComment}
+              closeContributeGemsModal={this.closeContributeGemsModal}
+              openBuyGemsModal={this.props.openBuyGemsModal}
+            />
+          </Modal>
+          <Modal
+            isOpen={this.state.viewContributorsIsOpen}
+            style={customStyles}
+            onRequestClose={this.closeViewContributorsModal}
+            contentLabel="Contribute Gems"
+          >
+            <ContributorsModal commentId={this.state.contributorsCommentId}/>
+          </Modal>
+          <Modal
+            isOpen={this.state.contributeGifAnimationIsOpen}
+            style={customStylesLight}
+            onRequestClose={this.closeContributeGifAnimationModal}
+            contentLabel="Yay!"
+          >
+            <ContributeGifAnimationModal gems={this.state.gemsContributed}/>
+          </Modal>
+          <div>
+            <Row>
+              <Col sm={8}>
+                <Paper elevation={1} style={{backgroundColor: 'white', marginTop: 20, marginLeft: 20, paddingBottom: 20, marginRight: marginRight}}>
+                  {this.renderPodcastView()}
+                  {this.renderProfile()}
+                </Paper>
+                <div style={{width: textFieldWidth, border: '2px solid #4E5CD8', marginLeft: 10, marginTop: 10, paddingBottom: 20, borderRadius: 15}}>
+                  <Row style={{marginLeft: 5, marginTop: 10}}>
+                    {this.state.story ?
+                      <TextField
+                        label={"Chat with " + this.state.story.first_name + " " + this.state.story.last_name}
+                        id="outlined-adornment-amount"
+                        placeholder="What do you want to say?"
+                        fullWidth
+                        style={textFieldStyle}
+                        value={this.state.name}
+                        InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+    										InputLabelProps={{
+    						          FormLabelClasses: {
+    						            root: classes.textFieldLabelRoot
+    						          }
+    						        }}
+                        onChange={this.handleCommentChange} /> : <div />}
+                    <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
+                      {"Send"}
+                    </button>
+                  </Row>
+                </div>
+                {this.renderComments()}
+              </Col>
+              <Col sm={4}>
+                <Paper elevation={1} style={{backgroundColor: 'white', marginLeft: marginLeft, marginRight: 20}}>
+                  {this.renderRightPanel()}
+                </Paper>
+              </Col>
+            </Row>
+          </div>
+        </div>
+      );
+    }
+  }
+
   render() {
     const { classes } = this.props;
 		return (
-      <div style={{backgroundColor: '#F4F3F6'}}>
-        <Modal
-          isOpen={this.state.contributeGemsIsOpen}
-          style={customStyles}
-          onRequestClose={this.closeContributeGemsModal}
-          contentLabel="Contribute Gems"
-        >
-          <ContributeGemsModal
-            commentId={this.state.currentCommentId}
-            contributeGems={this.contributeGems}
-            createComment={this.createComment}
-            closeContributeGemsModal={this.closeContributeGemsModal}
-            openBuyGemsModal={this.props.openBuyGemsModal}
-          />
-        </Modal>
-        <Modal
-          isOpen={this.state.viewContributorsIsOpen}
-          style={customStyles}
-          onRequestClose={this.closeViewContributorsModal}
-          contentLabel="Contribute Gems"
-        >
-          <ContributorsModal commentId={this.state.contributorsCommentId}/>
-        </Modal>
-        <Modal
-          isOpen={this.state.contributeGifAnimationIsOpen}
-          style={customStylesLight}
-          onRequestClose={this.closeContributeGifAnimationModal}
-          contentLabel="Yay!"
-        >
-          <ContributeGifAnimationModal gems={this.state.gemsContributed}/>
-        </Modal>
-        <div>
-          <Row>
-            <Col sm={8}>
-              <Paper elevation={1} style={{backgroundColor: 'white', marginTop: 20, marginLeft: 20, paddingBottom: 20}}>
-                {this.renderPodcastView()}
-                {this.renderProfile()}
-              </Paper>
-              <div style={{width: '100%', border: '2px solid #4E5CD8', marginLeft: 10, marginTop: 10, paddingBottom: 20, borderRadius: 15}}>
-                <Row style={{marginLeft: 5, marginTop: 10}}>
-                  {this.state.story ?
-                    <TextField
-                      label={"Chat with " + this.state.story.first_name + " " + this.state.story.last_name}
-                      id="outlined-adornment-amount"
-                      placeholder="What do you want to say?"
-                      fullWidth
-                      style={textFieldStyle}
-                      value={this.state.name}
-                      InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-  										InputLabelProps={{
-  						          FormLabelClasses: {
-  						            root: classes.textFieldLabelRoot
-  						          }
-  						        }}
-                      onChange={this.handleCommentChange} /> : <div />}
-                  <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
-                    {"Send"}
-                  </button>
-                </Row>
-              </div>
-              {this.renderComments()}
-            </Col>
-            <Col sm={4}>
-              <Paper elevation={1} style={{backgroundColor: 'white', marginRight: 20}}>
-                {this.renderRightPanel()}
-              </Paper>
-            </Col>
-          </Row>
-        </div>
+      <div>
+        {this.renderView(classes)}
       </div>
     )
   }
