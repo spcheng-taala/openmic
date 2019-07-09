@@ -6,7 +6,7 @@ import { Row, Col } from 'react-grid-system';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import UtilsManager from '../../../singletons/UtilsManager.js';
+import UtilsManager from '../singletons/UtilsManager.js';
 
 const styles = theme => ({
   textFieldInputRoot: {

@@ -54,7 +54,7 @@ class SignUpModal extends Component {
 
   signUpHandler() {
     var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
-    
+
     BackendManager.makeQuery('users/create/email', JSON.stringify({
       first_name: this.state.firstName,
       last_name: this.state.lastName,
@@ -210,7 +210,7 @@ class SignUpModal extends Component {
           />
         </div>
         {this.renderSignUpButton()}
-        <p style={termsStyle}>{"By clicking Sign Up you agree to our Terms of Service"}</p>
+        <p style={termsStyle}>By clicking Sign Up you have indicated that you have read and agreed to our <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'terms', "_blank")}>Terms of Service</a> and <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'privacy', "_blank")}>Privacy Policy</a></p>
       </div>
     )
   }

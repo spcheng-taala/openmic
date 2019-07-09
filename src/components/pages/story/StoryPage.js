@@ -19,11 +19,10 @@ import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
 import BrokenPageSection from '../../sections/BrokenPageSection.js';
-import Comments from './components/Comments.js';
+import Comments from '../../sections/Comments.js';
 import ClipItem from './components/ClipItem.js';
 import ContributeGemsModal from './components/ContributeGemsModal.js';
 import ContributorsModal from './components/ContributorsModal.js';
-import ContributeGifAnimationModal from './components/ContributeGifAnimationModal.js';
 
 // some track meta information
 var wavesurfer = null;
@@ -241,10 +240,9 @@ class StoryPage extends Component {
         }
 
         BackendManager.makeQuery('clips/story', JSON.stringify({
-          story_id: this.props.match.params.id,
+          story_id: this.state.story.id,
         }))
         .then(data => {
-          console.log(data);
           if (data.success) {
             this.setState({
     					clips: data.clips,
@@ -290,15 +288,15 @@ class StoryPage extends Component {
       story: null,
       comment: "",
       comments: [],
+      completedComments: [],
       isMobile: false,
       clips: [],
       isPlaying: false,
+      currentResponseId: 0,
       currentTime: 0,
       contributeGemsIsOpen: false,
       viewContributorsIsOpen: false,
-      contributeGifAnimationIsOpen: false,
-      gemsContributed: 0,
-      currentCommentId: 0,
+      currentComment: null,
       contributorsCommentId: 0,
       value: 0,
       scrubberShouldMove: true,
@@ -311,14 +309,15 @@ class StoryPage extends Component {
     this.handleSendClick = this.handleSendClick.bind(this);
     this.sendReply = this.sendReply.bind(this);
     this.renderProfile = this.renderProfile.bind(this);
+    this.renderFollowButton = this.renderFollowButton.bind(this);
+    this.setFollowing = this.setFollowing.bind(this);
     this.renderComments = this.renderComments.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
     this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
-    this.openContributeGifAnimationModal = this.openContributeGifAnimationModal.bind(this);
-    this.closeContributeGifAnimationModal = this.closeContributeGifAnimationModal.bind(this);
+
     this.refreshComments = this.refreshComments.bind(this);
     this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
@@ -327,6 +326,7 @@ class StoryPage extends Component {
     this.createComment = this.createComment.bind(this);
     this.contributeGems = this.contributeGems.bind(this);
     this.fetchReplies = this.fetchReplies.bind(this);
+    this.fetchResponse = this.fetchResponse.bind(this);
     this.openClip = this.openClip.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
     this.handleVideoProgress = this.handleVideoProgress.bind(this);
@@ -335,6 +335,7 @@ class StoryPage extends Component {
     this.playAtValue = this.playAtValue.bind(this);
     this.renderPodcastView = this.renderPodcastView.bind(this);
     this.renderView = this.renderView.bind(this);
+    this.handleResponseVideoClick = this.handleResponseVideoClick.bind(this);
   }
 
   ref = player => {
@@ -445,39 +446,62 @@ class StoryPage extends Component {
   }
 
   refreshComments() {
-    BackendManager.makeQuery('stories/comments', JSON.stringify({
-      story_id: this.props.match.params.id,
-    }))
-    .then(data => {
-      if (data.success) {
-        console.log(data.comments);
-        var comments = [];
-        for (var i = 0; i < data.comments.length; i++) {
-          var comment = data.comments[i];
-          comment.children = [];
-          if (comment.sum == null) {
-            comment.sum = 0;
+    if (this.state.story) {
+      BackendManager.makeQuery('stories/comments', JSON.stringify({
+        story_id: this.state.story.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          var comments = [];
+          for (var i = 0; i < data.comments.length; i++) {
+            var comment = data.comments[i];
+            comment.children = [];
+            if (comment.sum == null) {
+              comment.sum = 0;
+            }
+            if (comment.id != null) {
+              comments.push(comment);
+              this.fetchReplies(comment.id, comments, false);
+            }
           }
-          if (comment.id != null) {
-            comments.push(comment);
-            this.fetchReplies(comment.id);
-          }
+          this.setState({
+            comments: comments,
+          });
         }
-        this.setState({
-          comments: comments,
-        });
-      }
-    });
+      });
+
+      BackendManager.makeQuery('stories/comments/completed', JSON.stringify({
+        story_id: this.state.story.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          var comments = [];
+          for (var i = 0; i < data.comments.length; i++) {
+            var comment = data.comments[i];
+            comment.children = [];
+            if (comment.sum == null) {
+              comment.sum = 0;
+            }
+            if (comment.id != null) {
+              comments.push(comment);
+              this.fetchReplies(comment.id, comments, true);
+              this.fetchResponse(comment.id);
+            }
+          }
+          this.setState({
+            completedComments: comments,
+          });
+        }
+      });
+    }
   }
 
-  fetchReplies(commentId) {
+  fetchReplies(commentId, comments, isCompleted) {
     BackendManager.makeQuery('stories/comments/children', JSON.stringify({
       comment_id: commentId,
     }))
     .then(data => {
       if (data.success) {
-        console.log(data.comments);
-        var comments = this.state.comments;
         var replies = [];
         for (var i = 0; i < comments.length; i++) {
           if (comments[i].id == commentId) {
@@ -495,8 +519,33 @@ class StoryPage extends Component {
             comments[i].children = replies;
           }
         }
+        if (isCompleted) {
+					this.setState({
+						completedComments: comments,
+	        });
+				} else {
+					this.setState({
+	          comments: comments,
+	        });
+				}
+      }
+    });
+  }
+
+  fetchResponse(commentId) {
+    BackendManager.makeQuery('stories/comments/response', JSON.stringify({
+      comment_id: commentId,
+    }))
+    .then(data => {
+      if (data.success) {
+        var comments = this.state.completedComments;
+        for (var i = 0; i < comments.length; i++) {
+          if (comments[i].id == commentId) {
+            comments[i].response = data.response;
+          }
+        }
         this.setState({
-          comments: comments,
+          completedComments: comments,
         });
       }
     });
@@ -550,16 +599,49 @@ class StoryPage extends Component {
   }
 
   renderComments() {
-    return (
-      <Comments
-        isChild={false}
-        comments={this.state.comments}
-        sendReply={this.sendReply}
-        openContributeGemsModal={this.openContributeGemsModal}
-        setContributorsCommentId={this.setContributorsCommentId}
-      />
-    );
+    if (this.state.story) {
+      return (
+        <div>
+          <Comments
+            isLoggedIn={this.props.isLoggedIn}
+            isOwner={this.state.story.user_id == UserManager.id}
+            openLoginModal={this.props.openLoginModal}
+            isChild={false}
+            comments={this.state.comments}
+            sendReply={this.sendReply}
+            currentResponseId={this.state.currentResponseId}
+            openContributeGemsModal={this.openContributeGemsModal}
+            setContributorsCommentId={this.setContributorsCommentId}
+            handleResponseVideoClick={this.handleResponseVideoClick}
+          />
+          <Comments
+            isLoggedIn={this.props.isLoggedIn}
+            isOwner={this.state.story.user_id == UserManager.id}
+            openLoginModal={this.props.openLoginModal}
+            isChild={false}
+            comments={this.state.completedComments}
+            sendReply={this.sendReply}
+            currentResponseId={this.state.currentResponseId}
+            openContributeGemsModal={this.openContributeGemsModal}
+            setContributorsCommentId={this.setContributorsCommentId}
+            handleResponseVideoClick={this.handleResponseVideoClick}
+          />
+        </div>
+      );
+    }
   }
+
+  handleResponseVideoClick(id) {
+		if (this.state.currentResponseId != id) {
+			this.setState({
+				currentResponseId: id
+			});
+		} else {
+			this.setState({
+				currentResponseId: 0
+			});
+		}
+	}
 
   handleSendClick() {
     if (this.props.isLoggedIn) {
@@ -585,14 +667,17 @@ class StoryPage extends Component {
     }
   }
 
-  sendReply(reply, parentCommentId, rootCommentId) {
+  sendReply(reply, parentCommentId, parentComment, rootCommentId) {
     if (this.props.isLoggedIn) {
       BackendManager.makeQuery('stories/comments/reply', JSON.stringify({
         story_id: this.props.match.params.id,
         user_id: UserManager.id,
         parent_comment_id: parentCommentId,
+        parent_comment: parentComment,
         root_comment_id: rootCommentId,
         comment: reply,
+        user_id: UserManager.id,
+				uuid: this.props.match.params.id,
       }))
       .then(data => {
         if (data.success) {
@@ -616,11 +701,11 @@ class StoryPage extends Component {
               <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.user_id)} activeClassName="active">
                 {this.state.story.first_name + " " + this.state.story.last_name}
               </a>
-              <img
-                style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
-                src='../../../../../images/create_clip.png'
-                onClick={() => this.openClip()}
-                />
+
+              <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
+                {"Follow"}
+              </button>
+              {this.renderFollowButton()}
               <p style={{paddingLeft: 20, flex: 1}}>{this.state.story.bio}</p>
             </Container>
           </div>
@@ -638,11 +723,7 @@ class StoryPage extends Component {
                     {this.state.story.first_name + " " + this.state.story.last_name}
                   </a>
                   <Row>
-                    <img
-                      style={{height: 50, cursor: 'pointer', marginTop: 15, marginLeft: 20}}
-                      src='../../../../../images/create_clip.png'
-                      onClick={() => this.openClip()}
-                      />
+                    {this.renderFollowButton()}
                   </Row>
                   <p style={{paddingLeft: 20, flex: 1}}>{this.state.story.bio}</p>
                 </div>
@@ -651,6 +732,45 @@ class StoryPage extends Component {
           </Container>
         );
       }
+    }
+  }
+
+  renderFollowButton() {
+    if (this.props.isLoggedIn) {
+      var isFollowing = false;
+      for (var i = 0; i < this.props.following.length; i++) {
+        if (this.state.story.user_id == this.props.following[i].id) {
+          isFollowing = true;
+        }
+      }
+
+      if (isFollowing) {
+        return (
+          <button className='button-rounded-empty-purple-no-mar' style={{marginLeft: 30, marginTop: 20}} onClick={() => this.setFollowing(isFollowing)}>
+            {"Unfollow"}
+          </button>
+        );
+      } else {
+        return (
+          <button className='button-rounded-purple-no-mar' style={{marginLeft: 30, marginTop: 20}} onClick={() => this.setFollowing(isFollowing)}>
+            {"Follow"}
+          </button>
+        );
+      }
+    } else {
+      return (
+        <button className='button-rounded-purple-no-mar' style={{marginLeft: 30, marginTop: 20}} onClick={() => this.setFollowing(false)}>
+          {"Follow"}
+        </button>
+      );
+    }
+  }
+
+  setFollowing(isFollowing) {
+    if (this.props.isLoggedIn) {
+      this.props.setFollowing(isFollowing, this.state.story.user_id);
+    } else {
+      this.props.openLoginModal();
     }
   }
 
@@ -731,11 +851,11 @@ class StoryPage extends Component {
     }
   }
 
-  openContributeGemsModal(commentId) {
+  openContributeGemsModal(comment) {
     if (this.props.isLoggedIn) {
       this.setState({
         contributeGemsIsOpen: true,
-        currentCommentId: commentId,
+        currentComment: comment,
       });
     } else {
       this.props.openLoginModal();
@@ -758,20 +878,6 @@ class StoryPage extends Component {
   closeViewContributorsModal() {
     this.setState({
       viewContributorsIsOpen: false,
-    });
-  }
-
-  openContributeGifAnimationModal(gems) {
-    this.setState({
-      contributeGifAnimationIsOpen: true,
-      gemsContributed: gems,
-    });
-  }
-
-  closeContributeGifAnimationModal() {
-    this.setState({
-      contributeGifAnimationIsOpen: false,
-      gemsContributed: 0
     });
   }
 
@@ -826,23 +932,26 @@ class StoryPage extends Component {
 
   createComment(gems) {
     BackendManager.makeQuery('stories/comment', JSON.stringify({
-      story_id: this.props.match.params.id,
+      story_id: this.state.story.id,
       user_id: UserManager.id,
       comment: this.state.comment,
     }))
     .then(data => {
       if (data.success) {
-        this.contributeGems(data.id, gems)
+        this.contributeGems(data.id, gems, this.state.comment)
       }
     });
   }
 
-  contributeGems(commentId, gems) {
+  contributeGems(commentId, gems, comment) {
     this.closeContributeGemsModal();
     BackendManager.makeQuery('stories/comments/gem/add', JSON.stringify({
       comment_id: commentId,
+      comment: comment,
       user_id: UserManager.id,
       gems: gems,
+      uuid: this.props.match.params.id,
+      creator_email: this.state.story.creator_email,
     }))
     .then(data => {
       if (data.success) {
@@ -852,7 +961,11 @@ class StoryPage extends Component {
           user_id: UserManager.id,
         }))
         .then(data => {
-          this.openContributeGifAnimationModal(gems);
+          this.setState({
+            comment: "",
+          });
+          var text = "You just contributed " + gems + " Gems!";
+          this.props.openGemGifModal(gems, text);
         });
       }
     });
@@ -883,7 +996,7 @@ class StoryPage extends Component {
             contentLabel="Contribute Gems"
           >
             <ContributeGemsModal
-              commentId={this.state.currentCommentId}
+              comment={this.state.currentComment}
               contributeGems={this.contributeGems}
               createComment={this.createComment}
               closeContributeGemsModal={this.closeContributeGemsModal}
@@ -897,14 +1010,6 @@ class StoryPage extends Component {
             contentLabel="Contribute Gems"
           >
             <ContributorsModal commentId={this.state.contributorsCommentId}/>
-          </Modal>
-          <Modal
-            isOpen={this.state.contributeGifAnimationIsOpen}
-            style={customStylesLight}
-            onRequestClose={this.closeContributeGifAnimationModal}
-            contentLabel="Yay!"
-          >
-            <ContributeGifAnimationModal gems={this.state.gemsContributed}/>
           </Modal>
           <div>
             <Row>

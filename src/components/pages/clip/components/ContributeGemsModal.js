@@ -83,7 +83,7 @@ class ContributeGemsModal extends Component {
   }
 
   renderTitleText() {
-    if (this.props.commentId > 0) {
+    if (this.props.comment) {
       return (
         <p style={topTextStyle}>{'How many Gems do you want to add?'}</p>
       );
@@ -109,8 +109,8 @@ class ContributeGemsModal extends Component {
 
   sendGems() {
     if (/^\+?(0|[1-9]\d*)$/.test(this.state.amount)) {
-      if (this.props.commentId > 0) {
-        this.props.contributeGems(this.props.commentId, this.state.amount);
+      if (this.props.comment) {
+        this.props.contributeGems(this.props.comment.id, this.state.amount, this.props.comment.comment);
       } else {
         this.props.createComment(this.state.amount);
       }
@@ -156,7 +156,7 @@ class ContributeGemsModal extends Component {
             margin="normal"
           />
         </div>
-        <button className="button-rounded-purple" onClick={() => window.open('http://localhost:3000/howitworks/gems', "_blank")}>{"What are Gems?"}</button>
+        <button className="button-rounded-purple" onClick={() => window.open(UserManager.domain + 'howitworks/gems', "_blank")}>{"What are Gems?"}</button>
 				{this.renderBuySendGemsButton()}
       </div>
     )

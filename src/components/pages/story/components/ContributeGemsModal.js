@@ -10,6 +10,7 @@ import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const styles = theme => ({
 	textField: {
+		fontFamily: 'Lato',
 		textAlign: 'center',
 		color: '#FF0081',
     fontSize: 30,
@@ -18,16 +19,9 @@ const styles = theme => ({
     textAlign: 'center',
 		color: '#FF0081',
     fontSize: 17,
+		fontFamily: 'Lato',
   }
 });
-
-const titleStyle = {
-  fontWeight: 'bold',
-  color: "#DAD8DE",
-  font: "Lato",
-  textAlign: "left",
-  fontSize: 20,
-}
 
 const textStyle = {
   color: "#D4D2D8",
@@ -61,13 +55,13 @@ class ContributeGemsModal extends Component {
           .then(data => {
             if (data.success) {
               this.setState({
-                gem_count: 0,
+                gemCount: 0,
               });
             }
           });
         } else {
           this.setState({
-            gem_count: data.gem_count,
+            gemCount: data.gem_count,
           });
         }
       }
@@ -78,17 +72,18 @@ class ContributeGemsModal extends Component {
     super(props);
     this.state = {
       amount: 1,
-      gem_count: 0,
+      gemCount: 0,
     }
 
     this.renderTitleText = this.renderTitleText.bind(this);
     this.handleGemAmountChange = this.handleGemAmountChange.bind(this);
-    this.sendGems = this.sendGems.bind(this);
 		this.renderBuySendGemsButton = this.renderBuySendGemsButton.bind(this);
+    this.sendGems = this.sendGems.bind(this);
+		this.buyGems = this.buyGems.bind(this);
   }
 
   renderTitleText() {
-    if (this.props.commentId > 0) {
+    if (this.props.comment) {
       return (
         <p style={topTextStyle}>{'How many Gems do you want to add?'}</p>
       );
@@ -107,10 +102,15 @@ class ContributeGemsModal extends Component {
     }
   }
 
+	buyGems() {
+		this.props.openBuyGemsModal();
+		this.props.closeContributeGemsModal();
+	}
+
   sendGems() {
     if (/^\+?(0|[1-9]\d*)$/.test(this.state.amount)) {
-      if (this.props.commentId > 0) {
-        this.props.contributeGems(this.props.commentId, this.state.amount);
+      if (this.props.comment) {
+        this.props.contributeGems(this.props.comment.id, this.state.amount, this.props.comment.comment);
       } else {
         this.props.createComment(this.state.amount);
       }
@@ -134,7 +134,7 @@ class ContributeGemsModal extends Component {
 		return (
       <div style={{padding: 0, backgroundColor: '#18161B'}}>
         {this.renderTitleText()}
-        <p style={textStyle}>{'You have ' + UtilsManager.convertToCommaString(this.state.gem_count) + ' Gems'}</p>
+        <p style={textStyle}>{'You have ' + UtilsManager.convertToCommaString(this.state.gemCount) + ' Gems'}</p>
         <div style={{width: '50%', margin: '0 auto'}}>
           <TextField
             id="outlined-number"
@@ -156,8 +156,8 @@ class ContributeGemsModal extends Component {
             margin="normal"
           />
         </div>
-        <button className="button-rounded-purple" onClick={() => window.open('http://localhost:3000/howitworks/gems', "_blank")}>{"What are Gems?"}</button>
-        {this.renderBuySendGemsButton()}
+        <button className="button-rounded-purple" onClick={() => window.open(UserManager.domain + 'howitworks/gems', "_blank")}>{"What are Gems?"}</button>
+				{this.renderBuySendGemsButton()}
       </div>
     )
   }

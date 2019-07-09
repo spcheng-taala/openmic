@@ -234,6 +234,7 @@ class MainPage extends React.Component {
 		        });
 		      }
 		    });
+				this.refreshFollowing();
 			});
 		}
   }
@@ -252,6 +253,7 @@ class MainPage extends React.Component {
 			profilePicture: "",
 			uploadedStoryId: 0,
 			uploadedStoryTitle: "",
+			following: [],
       isSignUp: true,
       isLoggedIn: false,
       signUpText: "Have an account? Login",
@@ -259,10 +261,12 @@ class MainPage extends React.Component {
 			selectedFile: null,
 			gemsAdded: 0,
 			gemsText: "",
-			seconds: 5,
+			seconds: 4,
     };
 
 		this.timer = 0;
+
+		this.refreshFollowing = this.refreshFollowing.bind(this);
 
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
@@ -283,7 +287,21 @@ class MainPage extends React.Component {
 		this.uploadFile = this.uploadFile.bind(this);
     this.showToast = this.showToast.bind(this);
     this.logout = this.logout.bind(this);
+		this.setFollowing = this.setFollowing.bind(this);
   }
+
+	refreshFollowing() {
+		BackendManager.makeQuery('followers/following', JSON.stringify({
+			user_id: UserManager.id,
+		}))
+		.then(data => {
+			if (data.success) {
+				this.setState({
+					following: data.following,
+				});
+			}
+		});
+	}
 
 	hideDrawer(t) {
 		this.setState({
@@ -357,10 +375,12 @@ class MainPage extends React.Component {
 
 	openGemGifModal(gems, text) {
 		this.setState({
+			seconds: 4,
 			gemsAdded: gems,
 			gemsText: text,
 			gemGifModalIsOpen: true,
 		});
+		this.timer = 0;
 		if (this.timer == 0 && this.state.seconds > 0) {
       this.timer = setInterval(this.countDown, 1000);
     }
@@ -376,9 +396,10 @@ class MainPage extends React.Component {
     // Check if we're at zero.
     if (seconds == 0) {
       clearInterval(this.timer);
+			this.timer = 0;
 			this.setState({
 				gemGifModalIsOpen: false,
-				seconds: 5,
+				seconds: 4,
 			});
     }
   }
@@ -469,6 +490,23 @@ class MainPage extends React.Component {
       isLoggedIn: false,
     });
   }
+
+	setFollowing(isFollowing, userId) {
+		var stage = 1;
+		if (isFollowing) {
+			stage = 0;
+		}
+		BackendManager.makeQuery('followers/update', JSON.stringify({
+			follower_id: UserManager.id,
+			user_id: userId,
+			stage: stage,
+		}))
+		.then(data => {
+			if (data.success) {
+				this.refreshFollowing();
+			}
+		});
+	}
 
   render() {
     const { classes } = this.props;
@@ -604,13 +642,6 @@ class MainPage extends React.Component {
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route
-										exact path='/clip'
-										render={(props) =>
-											<ClipAudioPage {...props}
-												showToast={this.showToast}
-											/>}
-									/>
-									<Route
 										exact path='/checkout'
 										render={(props) =>
 											<CheckOutPage {...props}
@@ -619,15 +650,6 @@ class MainPage extends React.Component {
 											/>
 										}
 									/>
-									<Route
-										exact path='/editor/:id'
-										render={(props) =>
-											<EditClipPage {...props}
-												showToast={this.showToast}
-											/>
-										}
-									/>
-									<Route path="/transcribe" component={TranscribePage}/>
 									<Route
                     exact path='/edit'
                     render={(props) =>
@@ -645,6 +667,7 @@ class MainPage extends React.Component {
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
 												openBuyGemsModal={this.openBuyGemsModal}
+												openGemGifModal={this.openGemGifModal}
 											/>}
                   />
                   <Route
@@ -656,6 +679,9 @@ class MainPage extends React.Component {
   											openLoginModal={this.openModal}
                         showToast={this.showToast}
 												openBuyGemsModal={this.openBuyGemsModal}
+												openGemGifModal={this.openGemGifModal}
+												following={this.state.following}
+												setFollowing={this.setFollowing}
                       />}
                   />
                   <Route

@@ -213,20 +213,35 @@ h1, h2, h3, h4, p, span {
   border: none;
 }
 
-.button-rounded-grey-no-mar-small {
+.button-rounded-purple-no-mar {
   cursor: pointer;
   position: relative;
   display: block;
-  height: 30px;
-  padding: 5px 20px;
+  height: 50px;
+  padding: 10px 30px;
   margin-bottom: 20px;
-  background: #818181; /* For browsers that do not support gradients */
+  background: #6175E0; /* For browsers that do not support gradients */
   border-radius: 40px;
   color: white;
   font-weight: 400;
-  font-size: 15px;
+  font-size: 20px;
   font-family: "Lato";
   border: none;
+}
+
+.button-rounded-empty-purple-no-mar {
+  cursor: pointer;
+  position: relative;
+  display: block;
+  height: 50px;
+  padding: 10px 30px;
+  margin-bottom: 20px;
+  background-color: white;
+  color: #6175E0;
+  border: 2px solid #6175E0;border-radius: 40px;
+  font-weight: 400;
+  font-size: 20px;
+  font-family: "Lato";
 }
 
 .button-rounded-purple-no-mar-small {
@@ -237,6 +252,22 @@ h1, h2, h3, h4, p, span {
   padding: 5px 20px;
   margin-bottom: 20px;
   background: #6175E0; /* For browsers that do not support gradients */
+  border-radius: 40px;
+  color: white;
+  font-weight: 400;
+  font-size: 15px;
+  font-family: "Lato";
+  border: none;
+}
+
+.button-rounded-grey-no-mar-small {
+  cursor: pointer;
+  position: relative;
+  display: block;
+  height: 30px;
+  padding: 5px 20px;
+  margin-bottom: 20px;
+  background: #818181; /* For browsers that do not support gradients */
   border-radius: 40px;
   color: white;
   font-weight: 400;
@@ -258,7 +289,7 @@ h1, h2, h3, h4, p, span {
   border-radius: 40px;
   font-weight: 400;
   font-size: 15px;
-  font-family: "Lato";  
+  font-family: "Lato";
 }
 
 .button-rounded-green-no-mar-small {
@@ -661,132 +692,6 @@ hr {
   height: 70%;
   width: 13.5%;
 }
-
-svg#fish {
-  top: 5em;
-}
-/* Fish Animation */
-svg.fish{
-  overflow:visible;
-}
-
-@-webkit-keyframes swim
-{
-	0% {margin-left: -235px}
-	90% {margin-left: 100%;}
-	100% {margin-left: 100%;}
-}
-
-@keyframes swim
-{
-	0% {margin-left: -235px}
-	70% {margin-left: 100%;}
-	100% {margin-left: 100%;}
-}
-
-.fish{
-	width: 100px;
-	height: 100px;
-	margin-left: -235px;
-	position: absolute;
-	animation: swim 20s;
-	-webkit-animation: swim 20s;
-	animation-iteration-count: 1;
-	-webkit-animation-iteration-count: 1;
-	animation-timing-function: linear;
-	-webkit-animation-timing-function: linear;
-}
-
-#fish1,
-#fish2,
-#fish3,
-#fish4,
-#fish5,
-#fish6 {
-  fill:#528484;
-
-}
-
-/*#fish2{
-	animation-delay: 0.5s;
-	-webkit-animation-delay: 0.5s;
-}
-
-img #n {
-  animation-delay: 0.5s;
-	-webkit-animation-delay: 0.5s;
-}
-
-#fish3{
-	animation-delay: 0.2s;
-	-webkit-animation-delay: 0.2s;
-}
-
-#fish4{
-	animation-delay: 0.4s;
-	-webkit-animation-delay: 0.4s;
-}
-
-#fish5{
-	animation-delay: 0.1s;
-	-webkit-animation-delay: 0.1s;
-}
-
-#fish6{
-	animation-delay: 0.3s;
-	-webkit-animation-delay: 0.3s;
-}*/
-
-
-@-moz-keyframes bounce {
-  0%, 50%, 100% {
-    -moz-transform: translateY(0);
-    transform: translateY(0);
-  }
-  25% {
-    -moz-transform: translateY(-5px);
-    transform: translateY(-5px);
-  }
-  75% {
-    -moz-transform: translateY(-3px);
-    transform: translateY(-3px);
-  }
-}
-@-webkit-keyframes bounce {
-  0%, 50%, 100% {
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-  25% {
-    -webkit-transform: translateY(-5px);
-    transform: translateY(-5px);
-  }
-  75% {
-    -webkit-transform: translateY(-3px);
-    transform: translateY(-3px);
-  }
-}
-@keyframes bounce {
-  0%, 50%, 100% {
-    -moz-transform: translateY(0);
-    -ms-transform: translateY(0);
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
-  25% {
-    -moz-transform: translateY(-5px);
-    -ms-transform: translateY(-5px);
-    -webkit-transform: translateY(-5px);
-    transform: translateY(-5px);
-  }
-  75% {
-    -moz-transform: translateY(-3px);
-    -ms-transform: translateY(-3px);
-    -webkit-transform: translateY(-3px);
-    transform: translateY(-3px);
-  }
-}
-
 
 .username {
   font-weight: 700;
