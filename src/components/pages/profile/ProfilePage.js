@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import BrokenPageSection from '../../sections/BrokenPageSection.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+import UtilsManager from '../../singletons/UtilsManager.js';
 
 const titleStyle = {
   color: "#222225",
@@ -135,7 +136,7 @@ class ProfilePage extends Component {
           <Paper elevation={1} style={{backgroundColor: 'white'}}>
             <div style={{margin: 10, padding: 20}}>
               <Avatar src={this.state.user.profile_picture} style={profileAvatar} />
-              <h3 style={usernameStyle}>{"@" + this.state.user.username}</h3>
+              <h3 style={usernameStyle}>{"@" + this.state.user.username}</h3>              
             </div>
           </Paper>
         </div>

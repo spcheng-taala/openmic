@@ -1,7 +1,8 @@
 class UserManager {
   constructor() {
-    this.domain = "http://localhost:3000/";
+    // this.domain = "http://localhost:3000/";
     // this.domain = "https://theopenmic.fm/";
+    this.domain = "https://riptide.fm/";
     this.id = 0;
     this.firstName = "";
     this.lastName = "";

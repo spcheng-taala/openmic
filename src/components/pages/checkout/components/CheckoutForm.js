@@ -120,6 +120,7 @@ class CheckoutForm extends React.Component {
           .then(data => {
             if (data.success) {
               var quantity = this.state.quantity * this.state.multiple;
+              this.props.refreshGems();
               this.props.completeTransaction(quantity);
             }
           });

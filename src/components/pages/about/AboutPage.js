@@ -63,7 +63,7 @@ class AboutPage extends Component {
         <div className="landing-page">
           <Container>
             <h1 style={{textAlign: 'center', fontSize: 50, color: '#3ABBBC', marginTop: 100}}>{"It's more than just listening"}</h1>
-            <p style={text}>{"Welcome to OpenMic! We are a home for podcasters and their fans. Whether you're looking to find new content to listen to, create and share a highlight, or just want to be a part of a community to laugh and have fun with, you'll find it here. With clipping and comments, you don't just listen to podcasts, you're a part of the experience."}</p>
+            <p style={text}>{"Welcome to Riptide! We are a home for podcasters and their fans. Whether you're looking to find new content to listen to, create and share a highlight, or just want to be a part of a community to laugh and have fun with, you'll find it here. With clipping and comments, you don't just listen to podcasts, you're a part of the experience."}</p>
           </Container>
           <Container>
             <h1 style={{textAlign: 'center', fontSize: 50, color: '#3ABBBC', marginTop: 100}}>{"Become a creator"}</h1>

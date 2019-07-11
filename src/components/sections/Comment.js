@@ -158,6 +158,7 @@ class Comment extends React.Component {
     this.renderChildren = this.renderChildren.bind(this);
     this.renderPlayPauseButton = this.renderPlayPauseButton.bind(this);
     this.handleMouseHover = this.handleMouseHover.bind(this);
+    this.handleCollectClick = this.handleCollectClick.bind(this);
   }
 
   renderGem(gems) {
@@ -300,24 +301,24 @@ class Comment extends React.Component {
   renderChildren(comment) {
     if (comment.stage == 0) {
       return (
-        <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
+        <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply} depth={this.props.depth + 1}/>
       );
     } else {
       if (comment.root) {
         return (
-          <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
+          <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply} depth={this.props.depth + 1}/>
         );
       } else {
         if (comment.response) {
           return (
             <div>
               {this.renderResponseVideo(comment.response)}
-              <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
+              <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply} depth={this.props.depth + 1}/>
             </div>
           );
         } else {
           return (
-            <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply}/>
+            <Comments isChild={true} comments={comment.children} sendReply={this.props.sendReply} depth={this.props.depth + 1}/>
           );
         }
       }
@@ -358,7 +359,7 @@ class Comment extends React.Component {
     if (comment.stage == 0 && !comment.root) {
       return (
         <Row style={{marginTop: 0}}>
-          {this.props.isOwner ? <button style={{marginLeft: 40}} className='button-rounded-green-no-mar-small' onClick={() => this.handleSendClick()}>{"Collect Gems"}</button> : <img style={{marginLeft: 40, height: 30, cursor: 'pointer'}} src='../../../../../images/contribute_gems.png' onClick={() => this.props.openContributeGemsModal(comment)}/>}
+          {this.props.isOwner ? <button style={{marginLeft: 40}} className='button-rounded-green-no-mar-small' onClick={() => this.handleCollectClick(comment)}>{"Collect Gems"}</button> : <img style={{marginLeft: 40, height: 30, cursor: 'pointer'}} src='../../../../../images/contribute_gems.png' onClick={() => this.props.openContributeGemsModal(comment)}/>}
           {this.renderReply(classes)}
         </Row>
       );
@@ -367,6 +368,10 @@ class Comment extends React.Component {
         <div style={{marginLeft: 30}}>{this.renderReply(classes)}</div>
       );
     }
+  }
+
+  handleCollectClick(comment) {
+    this.props.handleCollectClick(comment.id, comment.username, comment.comment, comment.gems);
   }
 
   handleReplyChange(e) {

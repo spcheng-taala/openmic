@@ -75,7 +75,7 @@ class TwitterSharePage extends Component {
       var handle = localStorage.getItem('screen_name');
       this.setState({
         clip: clip,
-        tweet: title + ": " + "https://theopenmic.fm/clips/" + clipId,
+        tweet: title + ": " + "https://riptide.fm/clips/" + clipId,
         token: token,
         secret: secret,
         handle: handle,
@@ -141,7 +141,7 @@ class TwitterSharePage extends Component {
       if (data.success) {
         console.log(data);
         this.closeUploadingModal();
-        this.props.showToast("Posted!");
+        this.props.showToast("Posted!", 'custom');
       }
     });
   }

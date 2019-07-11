@@ -244,6 +244,7 @@ class ClipPage extends Component {
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
 		this.renderView = this.renderView.bind(this);
 		this.handleResponseVideoClick = this.handleResponseVideoClick.bind(this);
+		this.handleCollectClick = this.handleCollectClick.bind(this);
   }
 
 	refreshClip() {
@@ -335,8 +336,10 @@ class ClipPage extends Component {
       if (data.success) {
         console.log(data.comments);
         var replies = [];
+				var index = -1;
         for (var i = 0; i < comments.length; i++) {
           if (comments[i].id == commentId) {
+						index = i;
             for (var j = 0; j < data.comments.length; j++) {
               var c = data.comments[j];
               c.children = [];
@@ -351,6 +354,12 @@ class ClipPage extends Component {
             comments[i].children = replies;
           }
         }
+
+				if (replies.length > 0 && index >= 0) {
+					replies = UtilsManager.buildHierarchy(replies, commentId);
+					comments[index].children = replies;
+				}
+
 				if (isCompleted) {
 					this.setState({
 						completedComments: comments,
@@ -590,6 +599,7 @@ class ClipPage extends Component {
 	            comment: "",
 	          });
 						var text = "You just contributed " + gems + " Gems!";
+						this.props.refreshGems();
 	          this.props.openGemGifModal(gems, text);
           }
         });
@@ -715,6 +725,8 @@ class ClipPage extends Component {
                 openContributeGemsModal={this.openContributeGemsModal}
                 setContributorsCommentId={this.setContributorsCommentId}
 								handleResponseVideoClick={this.handleResponseVideoClick}
+								handleCollectClick={this.handleCollectClick}
+								depth={1}
               />
 							<Comments
                 isLoggedIn={this.props.isLoggedIn}
@@ -727,6 +739,8 @@ class ClipPage extends Component {
                 openContributeGemsModal={this.openContributeGemsModal}
                 setContributorsCommentId={this.setContributorsCommentId}
 								handleResponseVideoClick={this.handleResponseVideoClick}
+								handleCollectClick={this.handleCollectClick}
+								depth={1}
               />
             </Col>
             <Col md={4}>
@@ -824,7 +838,7 @@ class ClipPage extends Component {
   copyToClipboard() {
     this.copyRef.current.select();
     document.execCommand('copy');
-    this.props.showToast('Copied!');
+    this.props.showToast('Copied!', 'custom');
   }
 
   onTwitterAuthFailure(error) {
@@ -865,6 +879,18 @@ class ClipPage extends Component {
       this.props.openLoginModal();
     }
   }
+
+	handleCollectClick(commentId, username, comment, gems) {
+		BackendManager.makeQuery('notifications/collect', JSON.stringify({
+			id: this.state.clip.id,
+			comment: comment,
+			user_id: this.state.clip.creator_id,
+			username: username,
+			comment_id: commentId,
+			type: 'clip',
+			gems: gems,
+		}));
+	}
 
 	renderView(classes) {
 		if (this.state.show404) {

@@ -28,7 +28,7 @@ class CheckOutPage extends Component {
 
   render() {
     return (
-      <StripeProvider apiKey="pk_test_9XPRUcB7oDZHId8M1DGdZYcn">
+      <StripeProvider apiKey="pk_live_ggRDpKqRS1hqMFnEITD4pCXL">
         <MyStoreCheckout completeTransaction={this.completeTransaction}/>
       </StripeProvider>
     );

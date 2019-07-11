@@ -26,23 +26,23 @@ const tileData = [
     type: "title",
   },
   {
-    text: "You may connect to the Services using credentials from social media services such as Facebook or Twitter (“Social Media Services”). When you provide OpenMic access to your Social Media Services account, we will collect relevant information necessary to enable the Services to access that Social Media Service, however you will provide your login information, like your password, directly to such Social Media Service (and not to OpenMic).",
+    text: "You may connect to the Services using credentials from social media services such as Facebook or Twitter (“Social Media Services”). When you provide Riptide access to your Social Media Services account, we will collect relevant information necessary to enable the Services to access that Social Media Service, however you will provide your login information, like your password, directly to such Social Media Service (and not to Riptide).",
     type: "text",
   },
   {
-    text: "To access your Social Media Services account, we provide a link that directs you to a Social Media Service, where you may access the Services directly. As part of the integration with the Services, the Social Media Service will provide OpenMic with access to certain information that you have provided to such Social Media Service, including for example to post-related meta data from your Twitter feed or Facebook wall (such as post type, date of creation, date of update, post creator, permanent link, and the number of “Likes” and “Comments”), and “friends” or other Users you are “following”.",
+    text: "To access your Social Media Services account, we provide a link that directs you to a Social Media Service, where you may access the Services directly. As part of the integration with the Services, the Social Media Service will provide Riptide with access to certain information that you have provided to such Social Media Service, including for example to post-related meta data from your Twitter feed or Facebook wall (such as post type, date of creation, date of update, post creator, permanent link, and the number of “Likes” and “Comments”), and “friends” or other Users you are “following”.",
     type: "text",
   },
   {
-    text: "OpenMic does not download, save, or store your photos, videos, or status messages posted on your Social Media Services accounts unless you grant us permission to do so. We will use, store and disclose such information in accordance with this Privacy Policy and, if and to the extent applicable, the policies of such Social Media Services.",
+    text: "Riptide does not download, save, or store your photos, videos, or status messages posted on your Social Media Services accounts unless you grant us permission to do so. We will use, store and disclose such information in accordance with this Privacy Policy and, if and to the extent applicable, the policies of such Social Media Services.",
     type: "text",
   },
   {
-    text: "When you elect to access and use the Social Media Services, you will be sharing your information (which will include personal information if you elect to share such information) with those Social Media Services and others on the Social Media Services platform. We are not responsible for the privacy practices of Social Media Services and any the information you share with them is subject to their privacy policies and terms of service. As a result, OpenMic shall not have any liability or responsibility for the privacy practices or other actions of Social Media Services that may be enabled within or otherwise accessible through the Services.",
+    text: "When you elect to access and use the Social Media Services, you will be sharing your information (which will include personal information if you elect to share such information) with those Social Media Services and others on the Social Media Services platform. We are not responsible for the privacy practices of Social Media Services and any the information you share with them is subject to their privacy policies and terms of service. As a result, Riptide shall not have any liability or responsibility for the privacy practices or other actions of Social Media Services that may be enabled within or otherwise accessible through the Services.",
     type: "text",
   },
   {
-    text: "You may be able to adjust your privacy settings with these Social Media Services to control what information the services disclose to other entities, including OpenMic. We suggest checking the privacy policies of the Social Media Services concerning their privacy settings and controls.",
+    text: "You may be able to adjust your privacy settings with these Social Media Services to control what information the services disclose to other entities, including Riptide. We suggest checking the privacy policies of the Social Media Services concerning their privacy settings and controls.",
     type: "text",
   },
   {
@@ -154,11 +154,11 @@ const tileData = [
     type: "text",
   },
   {
-    text: "Marketing. We may contact you to tell you about services or products we believe will be of interest to you. If we do, where required by law, for example if you are a User in the European Union (“EU”), we will only send you marketing information if you consent to us doing so at the time you provide us with your Personal Data. You may opt-out of receiving such emails by following the instructions contained in each promotional email we send you or by updating your user settings. In addition, if at any time you do not wish to receive future marketing communications, please contact us at help@theopenmic.fm. We will continue to contact you via email regarding the provision of our Services and to respond to your requests.",
+    text: "Marketing. We may contact you to tell you about services or products we believe will be of interest to you. If we do, where required by law, for example if you are a User in the European Union (“EU”), we will only send you marketing information if you consent to us doing so at the time you provide us with your Personal Data. You may opt-out of receiving such emails by following the instructions contained in each promotional email we send you or by updating your user settings. In addition, if at any time you do not wish to receive future marketing communications, please contact us at help@riptide.fm. We will continue to contact you via email regarding the provision of our Services and to respond to your requests.",
     type: "text",
   },
   {
-    text: "Targeted Advertisement. OpenMic may display targeted advertisements based on Personal Data. Third parties (including ad serving companies) may assume that Users who interact with, view, or click targeted advertisements meet the targeting criteria (e.g., women ages 18–24 from a particular geographic area). OpenMic does not provide any Personal Data to the advertiser when a User interacts with or views a targeted advertisement. However, please be aware that by interacting with or viewing an advertisement the third party may make the assumption that you meet the targeting criteria used to display the advertisement.",
+    text: "Targeted Advertisement. Riptide may display targeted advertisements based on Personal Data. Third parties (including ad serving companies) may assume that Users who interact with, view, or click targeted advertisements meet the targeting criteria (e.g., women ages 18–24 from a particular geographic area). Riptide does not provide any Personal Data to the advertiser when a User interacts with or views a targeted advertisement. However, please be aware that by interacting with or viewing an advertisement the third party may make the assumption that you meet the targeting criteria used to display the advertisement.",
     type: "text",
   },
   {
@@ -290,7 +290,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "OpenMic does not knowingly collect Personal Data from children under the age of 13. If you have reason to believe that a child under the age of 13 has provided Personal Data to OpenMic through the Services please contact us and we will endeavor to delete that information from our databases.",
+    text: "Riptide does not knowingly collect Personal Data from children under the age of 13. If you have reason to believe that a child under the age of 13 has provided Personal Data to Riptide through the Services please contact us and we will endeavor to delete that information from our databases.",
     type: "text",
   },
   {
@@ -314,7 +314,7 @@ const tileData = [
     type: "text",
   },
   {
-    text: "Some cookies expire after a certain amount of time, or upon logging out (session cookies), others remain on your computer or terminal device for a longer period (persistent cookies). Our Site uses first party cookies (cookies set directly by OpenMic) as well as third party cookies, as described below. For more details on cookies please visit All About Cookies.",
+    text: "Some cookies expire after a certain amount of time, or upon logging out (session cookies), others remain on your computer or terminal device for a longer period (persistent cookies). Our Site uses first party cookies (cookies set directly by Riptide) as well as third party cookies, as described below. For more details on cookies please visit All About Cookies.",
     type: "text",
   },
   {
@@ -322,7 +322,7 @@ const tileData = [
     type: "text",
   },
   {
-    text: "-Strictly Necessary Cookies: Used to provide Users with the Services available through our Site and to use some of their features, such as the ability to log-in and access to secure areas. These cookies are served by OpenMic and are essential for using and navigating the Site. Without these cookies, basic functions of our Site would not work. Because these cookies are strictly necessary to deliver the Site and the Services, you cannot refuse them.",
+    text: "-Strictly Necessary Cookies: Used to provide Users with the Services available through our Site and to use some of their features, such as the ability to log-in and access to secure areas. These cookies are served by Riptide and are essential for using and navigating the Site. Without these cookies, basic functions of our Site would not work. Because these cookies are strictly necessary to deliver the Site and the Services, you cannot refuse them.",
     type: "text",
   },
   {
@@ -362,7 +362,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "This Privacy Policy only applies to the Services. The Services may contain links to other websites not operated or controlled by OpenMic (the “Third Party Sites”). We do not own, control or operate such linked sites, and we are not responsible for the privacy policies or practices of such linked sites. Privacy policies and practices for such linked sites may differ from this Privacy Policy and our practices. We encourage you to read the privacy policies of such linked sites before disclosing personal information on Third Party Sites.",
+    text: "This Privacy Policy only applies to the Services. The Services may contain links to other websites not operated or controlled by Riptide (the “Third Party Sites”). We do not own, control or operate such linked sites, and we are not responsible for the privacy policies or practices of such linked sites. Privacy policies and practices for such linked sites may differ from this Privacy Policy and our practices. We encourage you to read the privacy policies of such linked sites before disclosing personal information on Third Party Sites.",
     type: "text",
   },
   {
@@ -370,7 +370,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "This Privacy Policy applies only to the Services. The Services may contain links to other web sites not operated or controlled by OpenMic (the “Third Party Sites”). The policies and procedures we described here do not apply to the Third Party Sites. The links from the Services do not imply that OpenMic endorses or has reviewed the Third Party Sites. We suggest contacting those sites directly for information on their privacy policies.",
+    text: "This Privacy Policy applies only to the Services. The Services may contain links to other web sites not operated or controlled by Riptide (the “Third Party Sites”). The policies and procedures we described here do not apply to the Third Party Sites. The links from the Services do not imply that Riptide endorses or has reviewed the Third Party Sites. We suggest contacting those sites directly for information on their privacy policies.",
     type: "text",
   },
   {
@@ -378,7 +378,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "You use Services at your own risk. OpenMic takes steps to protect the Personal Data provided via the Services from loss, misuse, and unauthorized access, disclosure, alteration, or destruction. However, no Internet or e-mail transmission is ever fully secure or error free. In particular, e-mail sent to or from the Services may not be secure. Therefore, you should take special care in deciding what information you send to us via e-mail. Please keep this in mind when disclosing any Personal Data to OpenMic via the internet. We cannot control the actions of other Users with whom you may choose to share information. Therefore, we cannot, and do not, guarantee that information or content posted by a User on or through the Services will not be viewed by unauthorized persons. We are not responsible for circumvention of any privacy settings or security measures contained on the Services or Social Media Services.",
+    text: "You use Services at your own risk. Riptide takes steps to protect the Personal Data provided via the Services from loss, misuse, and unauthorized access, disclosure, alteration, or destruction. However, no Internet or e-mail transmission is ever fully secure or error free. In particular, e-mail sent to or from the Services may not be secure. Therefore, you should take special care in deciding what information you send to us via e-mail. Please keep this in mind when disclosing any Personal Data to Riptide via the internet. We cannot control the actions of other Users with whom you may choose to share information. Therefore, we cannot, and do not, guarantee that information or content posted by a User on or through the Services will not be viewed by unauthorized persons. We are not responsible for circumvention of any privacy settings or security measures contained on the Services or Social Media Services.",
     type: "text",
   },
   {
@@ -386,7 +386,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "Your access to and use of the Services is subject to any additional terms applicable to such Services that may be posted on the Services from time to time, including without limitation, OpenMic’s Terms of Use available at https://theopenmic.fm/terms.",
+    text: "Your access to and use of the Services is subject to any additional terms applicable to such Services that may be posted on the Services from time to time, including without limitation, Riptide’s Terms of Use available at https://riptide.fm/terms.",
     type: "text",
   },
   {
@@ -402,7 +402,7 @@ const tileData = [
     type: "title",
   },
   {
-    text: "OpenMic is based in the United States. If you are accessing our Services from the European Union or other regions with laws governing data collection and use, please note that your Personal Data will be transmitted to our servers in the United States and the data may be transmitted to our service providers supporting our business operations (described above). The United States may have data protection laws less stringent than or otherwise different from the laws in effect in the country in which you are located. Where we transfer your Personal Data out of the EU we will take steps to ensure that your Personal Data receives an adequate level of protection where it is processed and your rights continue to be protected.",
+    text: "Riptide is based in the United States. If you are accessing our Services from the European Union or other regions with laws governing data collection and use, please note that your Personal Data will be transmitted to our servers in the United States and the data may be transmitted to our service providers supporting our business operations (described above). The United States may have data protection laws less stringent than or otherwise different from the laws in effect in the country in which you are located. Where we transfer your Personal Data out of the EU we will take steps to ensure that your Personal Data receives an adequate level of protection where it is processed and your rights continue to be protected.",
     type: "text",
   },
   {
@@ -469,8 +469,8 @@ class PrivacyPolicyPage extends Component {
       <div style={root}>
         <p style={textStyle}>{"Date of Last Revision: Feb 08, 2019"}</p>
         <h1 style={titleStyle}>Privacy Policy</h1>
-        <p style={textStyle}>{"Welcome to Pokadot, Inc. (OpenMic”, “we”, “us” and/or “our”) Privacy Policy. Our services are designed to offer users (collectively, “Users,” “you,” or “your”) the opportunity to easily create and share audio recordings with other Users (“Services”). The Services are provided to you through our website (“Site”) and mobile application (“App”)."}</p>
-        <p style={textStyle}>{"This Privacy Policy explains what personal data we collect through the Services, how we use and share that data, and your choices concerning our data practices. This Privacy Policy forms part of our Terms of Use, which are available at: https://theopenmic.fm/#/terms."}</p>
+        <p style={textStyle}>{"Welcome to Pokadot, Inc. (Riptide”, “we”, “us” and/or “our”) Privacy Policy. Our services are designed to offer users (collectively, “Users,” “you,” or “your”) the opportunity to easily create and share audio recordings with other Users (“Services”). The Services are provided to you through our website (“Site”) and mobile application (“App”)."}</p>
+        <p style={textStyle}>{"This Privacy Policy explains what personal data we collect through the Services, how we use and share that data, and your choices concerning our data practices. This Privacy Policy forms part of our Terms of Use, which are available at: https://riptide.fm/terms."}</p>
         <p style={textStyle}>{"By providing us with your personal data when using the Services, you agree to the practices described in this Privacy Policy. If you do not agree to this Privacy Policy, please do not access or use the Services."}</p>
         {this.renderPrivacyPolicy()}
       </div>

@@ -34,7 +34,7 @@ const bigAvatar = {
   height: 100,
 }
 
-const styles = theme => ({  
+const styles = theme => ({
   textFieldInputRoot: {
     fontFamily: 'Lato',
   },
@@ -248,7 +248,7 @@ class EditProfilePage extends Component {
         url += ".jpg";
       }
 
-      var url = "https://s3-us-west-2.amazonaws.com/pokadotmedia/";
+      var url = "https://s3-us-west-2.amazonaws.com/riptide-images/";
       const formData = new FormData();
       formData.append('file', this.state.selectedFile);
       axios.post(`https://api.mypokadot.com/pp/upload`, formData, {
@@ -272,8 +272,9 @@ class EditProfilePage extends Component {
             localStorage.setItem('username', this.state.username);
             localStorage.setItem('bio', this.state.bio);
             localStorage.setItem('profile_picture', imageUrl);
-            this.props.showToast("Done!", 'success');
+            this.props.showToast("Done!", 'custom');
             this.setState({validUsername: data.success});
+            this.props.setProfilePicture(imageUrl);
           });
   			}
       }).catch(error => {

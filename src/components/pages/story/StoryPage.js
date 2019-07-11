@@ -336,6 +336,7 @@ class StoryPage extends Component {
     this.renderPodcastView = this.renderPodcastView.bind(this);
     this.renderView = this.renderView.bind(this);
     this.handleResponseVideoClick = this.handleResponseVideoClick.bind(this);
+    this.handleCollectClick = this.handleCollectClick.bind(this);
   }
 
   ref = player => {
@@ -503,7 +504,9 @@ class StoryPage extends Component {
     .then(data => {
       if (data.success) {
         var replies = [];
+        var index = -1;
         for (var i = 0; i < comments.length; i++) {
+          index = i;
           if (comments[i].id == commentId) {
             for (var j = 0; j < data.comments.length; j++) {
               var c = data.comments[j];
@@ -519,6 +522,12 @@ class StoryPage extends Component {
             comments[i].children = replies;
           }
         }
+
+        if (replies.length > 0 && index >= 0) {
+					replies = UtilsManager.buildHierarchy(replies, commentId);
+					comments[index].children = replies;
+				}
+
         if (isCompleted) {
 					this.setState({
 						completedComments: comments,
@@ -613,6 +622,8 @@ class StoryPage extends Component {
             openContributeGemsModal={this.openContributeGemsModal}
             setContributorsCommentId={this.setContributorsCommentId}
             handleResponseVideoClick={this.handleResponseVideoClick}
+            handleCollectClick={this.handleCollectClick}
+            depth={1}
           />
           <Comments
             isLoggedIn={this.props.isLoggedIn}
@@ -625,6 +636,8 @@ class StoryPage extends Component {
             openContributeGemsModal={this.openContributeGemsModal}
             setContributorsCommentId={this.setContributorsCommentId}
             handleResponseVideoClick={this.handleResponseVideoClick}
+            handleCollectClick={this.handleCollectClick}
+            depth={1}
           />
         </div>
       );
@@ -656,7 +669,7 @@ class StoryPage extends Component {
         }))
         .then(data => {
           if (data.success) {
-            this.props.showToast("Sent!");
+            this.props.showToast("Sent!", 'custom');
             this.props.fetchComments(this.state.story.id);
             this.setState({
               comment: "",
@@ -930,6 +943,18 @@ class StoryPage extends Component {
     this.props.history.push('/clips/' + id);
   }
 
+  handleCollectClick(commentId, username, comment, gems) {
+		BackendManager.makeQuery('notifications/collect', JSON.stringify({
+			id: this.state.story.id,
+			comment: comment,
+			user_id: this.state.story.user_id,
+			username: username,
+			comment_id: commentId,
+			type: 'story',
+			gems: gems,
+		}));
+	}
+
   createComment(gems) {
     BackendManager.makeQuery('stories/comment', JSON.stringify({
       story_id: this.state.story.id,
@@ -965,6 +990,7 @@ class StoryPage extends Component {
             comment: "",
           });
           var text = "You just contributed " + gems + " Gems!";
+          this.props.refreshGems();
           this.props.openGemGifModal(gems, text);
         });
       }

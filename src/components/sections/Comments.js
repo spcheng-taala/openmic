@@ -19,7 +19,7 @@ class Comments extends React.Component {
     var marginLeft = 0;
 
     if (this.props.isChild) {
-      marginLeft = 50;
+      marginLeft = 15 * this.props.depth;
     }
 
     return (
@@ -35,6 +35,8 @@ class Comments extends React.Component {
             setContributorsCommentId={self.props.setContributorsCommentId}
             currentResponseId={self.props.currentResponseId}
             handleResponseVideoClick={self.props.handleResponseVideoClick}
+            handleCollectClick={this.handleCollectClick}
+            depth={self.props.depth}
           />
         })}
       </div>

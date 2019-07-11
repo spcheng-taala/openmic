@@ -54,14 +54,14 @@ class SignUpModal extends Component {
 
   signUpHandler() {
     var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
-
+    var profilePicture = "https://riptide-defaults.s3-us-west-2.amazonaws.com/default_profile_picture_" + profPicNumber + ".png";
     BackendManager.makeQuery('users/create/email', JSON.stringify({
       first_name: this.state.firstName,
       last_name: this.state.lastName,
       email: this.state.email,
       password: this.state.password,
       username: this.state.username,
-      profile_picture: "https://s3-us-west-2.amazonaws.com/pokadotmedia/default_profile_picture.png",
+      profile_picture: profilePicture,
     }))
     .then(data => {
       if (data.success) {
@@ -86,6 +86,7 @@ class SignUpModal extends Component {
         localStorage.setItem('expiration', date);
         localStorage.setItem('bio', "Nothing here yet!");
         this.props.closeModal();
+        this.props.setProfilePicture(data.profile_picture);
         this.props.handleAuth();
         this.props.history.push('/edit');
       }
@@ -117,15 +118,17 @@ class SignUpModal extends Component {
   }
 
   handleUsernameChange(e) {
-    this.setState({
-      username: e.target.value
-    });
-    BackendManager.makeQuery('users/check/username', JSON.stringify({
-      username: this.state.username,
-    }))
-    .then(data => {
-      this.setState({validUsername: data.success});
-    });
+    if (!(/\s/.test(e.target.value))) {
+      this.setState({
+        username: e.target.value
+      });
+      BackendManager.makeQuery('users/check/username', JSON.stringify({
+        username: this.state.username,
+      }))
+      .then(data => {
+        this.setState({validUsername: data.success});
+      });
+    }
   }
 
   renderSignUpButton() {
@@ -140,7 +143,7 @@ class SignUpModal extends Component {
     const { classes } = this.props;
 		return (
       <div>
-        <h2 style={titleStyle}>{"Join OpenMic today"}</h2>
+        <h2 style={titleStyle}>{"Join Riptide today"}</h2>
         <div>
           <TextField label="First Name"
             floatingLabelText="First Name"
@@ -210,7 +213,7 @@ class SignUpModal extends Component {
           />
         </div>
         {this.renderSignUpButton()}
-        <p style={termsStyle}>By clicking Sign Up you have indicated that you have read and agreed to our <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'terms', "_blank")}>Terms of Service</a> and <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'privacy', "_blank")}>Privacy Policy</a></p>
+        <p style={termsStyle}>By clicking Sign Up you have indicated that you have read and agreed to our <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'terms', "_blank")}>Terms of Service</a> and <a href="https://riptide.fm/terms" onClick={() => window.open(UserManager.domain + 'privacy', "_blank")}>Privacy Policy</a></p>
       </div>
     )
   }

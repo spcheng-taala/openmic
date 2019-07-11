@@ -54,7 +54,6 @@ class FeedPage extends Component {
     BackendManager.makeQuery('clips/all/count', JSON.stringify({
     }))
     .then(data => {
-      console.log(data);
       if (data.success) {
         this.setState({
           clipsCount: data.count,
@@ -65,7 +64,6 @@ class FeedPage extends Component {
     BackendManager.makeQuery('clips/all', JSON.stringify({
     }))
     .then(data => {
-      console.log(data);
       if (data.success) {
         this.setState({
           clips: data.clips,
@@ -166,7 +164,7 @@ class FeedPage extends Component {
           <div>
             <img style={{margin: 10, width: 230}} src='../../../../../images/community_bg.png'/>
             <Typography style={textStyleBig}>
-              {"Join the OpenMic community!"}
+              {"Join the Riptide community!"}
             </Typography>
             <Typography style={textStyleSmall}>
               {"Interact with your favorite creators and their fans!"}
@@ -184,7 +182,7 @@ class FeedPage extends Component {
 
   renderBottomRightPanel() {
     return (
-      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
+      <div style={{marginTop: 20, marginLeft: 20, width: 250, paddingBottom: 20}}>
         <Paper elevation={1} style={{backgroundColor: 'white'}}>
           <div>
             <img style={{margin: 10, width: 230}} src='../../../../../images/clip_bg.png'/>
@@ -310,7 +308,7 @@ class FeedPage extends Component {
   render() {
     const { classes } = this.props;
 		return (
-      <div style={{backgroundColor: '#F4F3F6'}}>
+      <div style={{backgroundColor: '#F4F3F6', paddingBottom: 50}}>
         <Container>
           <Row>
             <Col md={8}>

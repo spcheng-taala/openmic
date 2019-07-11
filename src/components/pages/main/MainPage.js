@@ -16,6 +16,7 @@ import Notifications, {notify} from 'react-notify-toast';
 
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
+import UtilsManager from '../../singletons/UtilsManager.js';
 
 import FeedPage from '../feed/FeedPage.js';
 import CommunityPage from '../about/CommunityPage.js';
@@ -162,7 +163,13 @@ const styles = theme => ({
     minWidth: 0, // So the Typography noWrap works
   },
   flex: {
-    flexGrow: 1,
+		flexGrow: 1,
+    marginRight: 10,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+	navBarText: {
+		flexGrow: 1,
     marginRight: 10,
     color: 'white',
     fontWeight: 'bold',
@@ -235,6 +242,7 @@ class MainPage extends React.Component {
 		      }
 		    });
 				this.refreshFollowing();
+				this.refreshGems();
 			});
 		}
   }
@@ -259,6 +267,7 @@ class MainPage extends React.Component {
       signUpText: "Have an account? Login",
 			isCreator: false,
 			selectedFile: null,
+			gems: 0,
 			gemsAdded: 0,
 			gemsText: "",
 			seconds: 4,
@@ -267,6 +276,7 @@ class MainPage extends React.Component {
 		this.timer = 0;
 
 		this.refreshFollowing = this.refreshFollowing.bind(this);
+		this.refreshGems = this.refreshGems.bind(this);
 
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
@@ -282,6 +292,7 @@ class MainPage extends React.Component {
 		this.openGemGifModal = this.openGemGifModal.bind(this);
 		this.countDown = this.countDown.bind(this);
     this.handleAuth = this.handleAuth.bind(this);
+		this.setProfilePicture = this.setProfilePicture.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
 		this.renderAudio = this.renderAudio.bind(this);
 		this.uploadFile = this.uploadFile.bind(this);
@@ -299,6 +310,33 @@ class MainPage extends React.Component {
 				this.setState({
 					following: data.following,
 				});
+			}
+		});
+	}
+
+	refreshGems() {
+		BackendManager.makeQuery('gems/user', JSON.stringify({
+			user_id: UserManager.id,
+		}))
+		.then(data => {
+			if (data.success) {
+				if (data.gem_count < 0) {
+					BackendManager.makeQuery('gems/user/create', JSON.stringify({
+						user_id: UserManager.id,
+						gem_count: 0,
+					}))
+					.then(data => {
+						if (data.success) {
+							this.setState({
+								gems: 0,
+							});
+						}
+					});
+				} else {
+					this.setState({
+						gems: data.gem_count,
+					});
+				}
 			}
 		});
 	}
@@ -410,6 +448,12 @@ class MainPage extends React.Component {
     });
   }
 
+	setProfilePicture(profilePicture) {
+		this.setState({
+			profilePicture: profilePicture,
+		});
+	}
+
   toggleSignUp() {
 		var signUp = !this.state.isSignUp;
 		var signUpText = "Have an account? Login";
@@ -481,7 +525,12 @@ class MainPage extends React.Component {
 	}
 
   showToast(toast, type) {
-    notify.show(toast, type);
+		if (type == "custom") {
+			let customColor = { background: '#6175E0', text: "#FFFFFF" };
+			notify.show(toast, "custom", 5000, customColor);
+		} else {
+			notify.show(toast, type);
+		}
   }
 
   logout() {
@@ -522,8 +571,8 @@ class MainPage extends React.Component {
             style={customStylesSignUp}
             contentLabel="Sign Up"
           >
-            {this.state.isSignUp ? <SignUpModal handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>
-						: <LoginModal handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>}
+            {this.state.isSignUp ? <SignUpModal setProfilePicture={this.setProfilePicture} handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>
+						: <LoginModal showToast={this.showToast} setProfilePicture={this.setProfilePicture} handleAuth={() => this.handleAuth()} closeModal={this.closeModal}/>}
             <button className="demo-link-red" style={{cursor: 'pointer'}} onClick={this.toggleSignUp}>
               {this.state.signUpText}
             </button>
@@ -583,14 +632,21 @@ class MainPage extends React.Component {
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
                 <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"} backgroundColor={'transparent'}/></NavLink>
-                <NavLink exact to="/" className={classes.titleText}>OpenMic</NavLink>
-                <NavLink to="/about" className={classes.flex}>About</NavLink>
+                <NavLink exact to="/" className={classes.titleText}>Riptide</NavLink>
+								<div className={classes.flex}/>
+								{this.state.isLoggedIn ?
+									<div style={{marginRight: 20}}>
+										<p style={{color: '#FFFFFF', display: 'inline', marginRight: 5}}>{UtilsManager.convertToCommaString(this.state.gems)}</p>
+										<img style={{width: 15, display: 'inline'}} src={"../../../../../../images/gem_3_10x.png"} backgroundColor={'transparent'}/>
+									</div>
+									: <div/>
+								}
 								{this.state.isCreator ? <a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a> : <div/>}
 								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} backgroundColor={'transparent'} onClick={() => this.openBuyGemsModal()}/>
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.username}>
-											<Avatar style={logoStyle} src={"../../../../../../images/default_profile_picture_7.png"} backgroundColor={'transparent'}/>
+											<Avatar style={logoStyle} src={this.state.profilePicture} backgroundColor={'transparent'}/>
 										</NavLink>
 									</div> :
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
@@ -645,8 +701,8 @@ class MainPage extends React.Component {
 										exact path='/checkout'
 										render={(props) =>
 											<CheckOutPage {...props}
-												showToast={this.showToast}
 												openGemGifModal={this.openGemGifModal}
+												refreshGems={this.refreshGems}
 											/>
 										}
 									/>
@@ -655,6 +711,7 @@ class MainPage extends React.Component {
                     render={(props) =>
                       <EditProfilePage {...props}
 												isLoggedIn={this.state.isLoggedIn}
+												setProfilePicture={this.setProfilePicture}
                         showToast={this.showToast}
 												openGemGifModal={this.openGemGifModal}
                       />}
@@ -668,6 +725,7 @@ class MainPage extends React.Component {
 												showToast={this.showToast}
 												openBuyGemsModal={this.openBuyGemsModal}
 												openGemGifModal={this.openGemGifModal}
+												refreshGems={this.refreshGems}
 											/>}
                   />
                   <Route
@@ -682,13 +740,14 @@ class MainPage extends React.Component {
 												openGemGifModal={this.openGemGifModal}
 												following={this.state.following}
 												setFollowing={this.setFollowing}
+												refreshGems={this.refreshGems}
                       />}
                   />
                   <Route
                     path="/profile/:id"
                     render={(props) => <ProfilePage
                       {...props}
-											logout={this.logout}
+											logout={this.logout}											
                     />}
                   />
 									<Redirect from='*' to='/' />

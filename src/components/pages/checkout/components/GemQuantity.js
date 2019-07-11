@@ -36,61 +36,36 @@ class GemQuantity extends Component {
   }
 
   renderGemItem() {
+    var src = "../../../../../images/gem_3_10x.png";
+    var text = "100 Gems";
     if (this.props.id == 1) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_3_10x.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"100 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_3_10x.png";
+      text = "100 Gems";      
     } else if (this.props.id == 2) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_stack_2.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"1,000 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_stack_2.png";
+      text = "1,000 Gems";
     } else if (this.props.id == 3) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_stack_3.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"1,500 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_stack_3.png";
+      text = "1,500 Gems";
     } else if (this.props.id == 4) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_stack_4.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"5,000 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_stack_4.png";
+      text = "5,000 Gems";
     } else if (this.props.id == 5) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_stack_5.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"10,000 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_stack_5.png";
+      text = "10,000 Gems";
     } else if (this.props.id == 6) {
-      return (
-        <div>
-          <img style={{margin: 10, width: 230}} src='../../../../../images/gem_stack_6.png'/>
-          <p className="co-label" style={{marginLeft: 20}}>
-            {"25,000 Gems"}
-          </p>
-        </div>
-      );
+      src = "../../../../../images/gem_stack_6.png";
+      text = "25,000 Gems";
     }
+
+    return (
+      <div>
+        <img style={{margin: 10, width: 230}} src={src}/>
+        <p className="co-label" style={{marginLeft: 20}}>
+          {text}
+        </p>
+      </div>
+    );
   }
 
   handleMultipleChange(e) {

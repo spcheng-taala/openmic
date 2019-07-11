@@ -109,6 +109,8 @@ class LoginModal extends Component {
         if (UserManager.id > 0) {
           this.props.closeModal();
           this.props.handleAuth();
+          this.props.showToast("Welcome back!", 'custom');
+          this.props.setProfilePicture(data.profile_picture);
         }
       } else {
         this.setState({
@@ -132,7 +134,7 @@ class LoginModal extends Component {
     const { classes } = this.props;
 		return (
       <div>
-        <h2 style={titleStyle}>{"Login to OpenMic"}</h2>
+        <h2 style={titleStyle}>{"Login to Riptide"}</h2>
         <div>
           <TextField
             label="Email"
