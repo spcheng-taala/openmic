@@ -35,7 +35,7 @@ class Comments extends React.Component {
             setContributorsCommentId={self.props.setContributorsCommentId}
             currentResponseId={self.props.currentResponseId}
             handleResponseVideoClick={self.props.handleResponseVideoClick}
-            handleCollectClick={this.handleCollectClick}
+            handleCollectClick={self.props.handleCollectClick}
             depth={self.props.depth}
           />
         })}

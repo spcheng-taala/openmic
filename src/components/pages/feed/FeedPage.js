@@ -140,7 +140,7 @@ class FeedPage extends Component {
   renderListItem(item) {
     return (
       <div style={cardStyle}>
-        <ClipItem isMobile={this.state.isMobile} id={item.uuid} url={item.url} title={item.title} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
+        <ClipItem isMobile={this.state.isMobile} id={item.uuid} url={item.url} title={item.title} thumbnail={item.thumbnail_url} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
       </div>
     );
   }

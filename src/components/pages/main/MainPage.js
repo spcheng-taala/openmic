@@ -33,6 +33,12 @@ import ClipAudioPage from '../story/ClipAudioPage.js';
 import TranscribePage from '../story/TranscribePage.js';
 import ClipPage from '../clip/ClipPage.js';
 import EditClipPage from '../story/EditClipPage.js';
+import TrimContentPage from '../story/TrimContentPage.js';
+import CreateClipPage from '../story/CreateClipPage.js';
+import EditorPage from '../story/EditorPage.js';
+import PublishingPage from '../story/PublishingPage.js';
+import ClipDetailsPage from '../story/ClipDetailsPage.js';
+import MySponsorsPage from '../sponsor/MySponsorsPage.js';
 import TwitterSharePage from '../clip/TwitterSharePage.js';
 
 import SignUpModal from './components/SignUpModal.js';
@@ -243,6 +249,7 @@ class MainPage extends React.Component {
 		    });
 				this.refreshFollowing();
 				this.refreshGems();
+				this.refreshDeals();
 			});
 		}
   }
@@ -271,12 +278,14 @@ class MainPage extends React.Component {
 			gemsAdded: 0,
 			gemsText: "",
 			seconds: 4,
+			deals: [],
     };
 
 		this.timer = 0;
 
 		this.refreshFollowing = this.refreshFollowing.bind(this);
 		this.refreshGems = this.refreshGems.bind(this);
+		this.refreshDeals = this.refreshDeals.bind(this);
 
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
@@ -337,6 +346,19 @@ class MainPage extends React.Component {
 						gems: data.gem_count,
 					});
 				}
+			}
+		});
+	}
+
+	refreshDeals() {
+		BackendManager.makeQuery('sponsors/user', JSON.stringify({
+			user_id: UserManager.id,
+		}))
+		.then(data => {
+			if (data.success) {
+				this.setState({
+					deals: data.sponsors
+				});
 			}
 		});
 	}
@@ -631,22 +653,30 @@ class MainPage extends React.Component {
           <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
-                <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"} backgroundColor={'transparent'}/></NavLink>
+                <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"}/></NavLink>
                 <NavLink exact to="/" className={classes.titleText}>Riptide</NavLink>
 								<div className={classes.flex}/>
 								{this.state.isLoggedIn ?
 									<div style={{marginRight: 20}}>
 										<p style={{color: '#FFFFFF', display: 'inline', marginRight: 5}}>{UtilsManager.convertToCommaString(this.state.gems)}</p>
-										<img style={{width: 15, display: 'inline'}} src={"../../../../../../images/gem_3_10x.png"} backgroundColor={'transparent'}/>
+										<img style={{width: 15, display: 'inline'}} src={"../../../../../../images/gem_3_10x.png"}/>
 									</div>
 									: <div/>
 								}
 								{this.state.isCreator ? <a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a> : <div/>}
-								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} backgroundColor={'transparent'} onClick={() => this.openBuyGemsModal()}/>
+								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} onClick={() => this.openBuyGemsModal()}/>
+								{this.state.deals.length == 0 ?
+									<NavLink to={"/deals"}>
+										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals.png"}/>
+									</NavLink> :
+									<NavLink to={"/deals"}>
+										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals_notification.png"}/>
+									</NavLink>
+								}
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.username}>
-											<Avatar style={logoStyle} src={this.state.profilePicture} backgroundColor={'transparent'}/>
+											<Avatar style={logoStyle} src={this.state.profilePicture}/>
 										</NavLink>
 									</div> :
                   <p className={classes.menuSignInText} onClick={() => this.openModal()}>Sign In</p>}
@@ -747,8 +777,37 @@ class MainPage extends React.Component {
                     path="/profile/:id"
                     render={(props) => <ProfilePage
                       {...props}
-											logout={this.logout}											
+											logout={this.logout}
                     />}
+                  />
+									<Route
+                    path="/editor"
+                    render={(props) =>
+											<TrimContentPage
+	                      {...props}
+												showToast={this.showToast}
+	                    />}
+                  />
+									<Route
+                    path="/publishing"
+                    render={(props) =>
+											<PublishingPage
+	                      {...props}
+	                    />}
+                  />
+									<Route
+                    path="/deals"
+                    render={(props) =>
+											<MySponsorsPage
+	                      {...props}
+	                    />}
+                  />
+									<Route
+                    path="/studio/:id"
+                    render={(props) =>
+											<ClipDetailsPage
+	                      {...props}
+	                    />}
                   />
 									<Redirect from='*' to='/' />
 									</Switch>
@@ -764,7 +823,6 @@ class MainPage extends React.Component {
 
 MainPage.propTypes = {
   classes: PropTypes.object.isRequired,
-  content: PropTypes.element.isRequired
 };
 
 export default withStyles(styles)(MainPage);

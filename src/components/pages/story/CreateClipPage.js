@@ -4,7 +4,6 @@ import ReactPlayer from 'react-player';
 import { Slider, Rail, Handles, Tracks } from 'react-compound-slider'
 import { Container, Row, Col } from 'react-grid-system';
 import { withStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
@@ -75,17 +74,6 @@ const railStyle = {
   backgroundColor: '#8B9CB6',
 }
 
-const styles = theme => ({
-  textFieldInputRoot: {
-    fontFamily: 'Lato',
-		backgroundColor: 'white',
-		borderRadius: 5
-  },
-  textFieldLabelRoot: {
-    fontFamily: 'Lato',
-  }
-});
-
 export function Handle({ // your handle component
   handle: { id, value, percent },
   getHandleProps
@@ -132,7 +120,7 @@ function Track({ source, target, getTrackProps }) { // your own track component
   )
 }
 
-class TrimContentPage extends Component {
+class CreateClipPage extends Component {
 
   static defaultProps = {
     isDraggable: true,
@@ -145,31 +133,50 @@ class TrimContentPage extends Component {
   };
 
   componentDidMount() {
-		var storyId = localStorage.getItem('story_id');
     var url = localStorage.getItem('url');
-		if (storyId && url) {
+		if (url) {
 			this.setState({
-				storyId: storyId,
 				url: url
 			});
-			localStorage.removeItem('story_id');
-      localStorage.removeItem('url');
-		} else {
-			this.props.history.push('/');
 		}
+    var videos = [
+      {
+        id: 1,
+        url: "https://s3-us-west-2.amazonaws.com/taala-media.io/10_1494102676.mpg4",
+        duration: 9.43
+      },
+      {
+        id: 2,
+        url: "https://s3-us-west-2.amazonaws.com/taala-media.io/10_1494102676.mpg4",
+        duration: 9.43
+      }
+    ];
+    if (videos) {
+      this.setState({
+        videos: videos
+      });
+      var totalDuration = 0;
+      for (var i = 0; i < videos.length; i++) {
+        totalDuration += videos[i].duration;
+      }
+      this.setState({
+        currentClip: videos[0],
+        totalDuration: totalDuration,
+      });
+    }
   }
 
   constructor(props) {
     super(props);
     this.state = {
-			storyId: 0,
-      url: "",
+      url: "https://s3-us-west-2.amazonaws.com/taala-media.io/10_1494102676.mpg4",
 			isPlaying: true,
-			seekStart: 0,
+			seek: 0,
+      totalSeek: 0,
 			duration: 0,
-			start: 0,
-			end: 0,
-			title: "",
+      totalDuration: 0,
+      currentClip: null,
+			videos: [],
     };
 
 		this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
@@ -180,13 +187,11 @@ class TrimContentPage extends Component {
 		this.handleSlideStart = this.handleSlideStart.bind(this);
 		this.handleSlideEnd = this.handleSlideEnd.bind(this);
 		this.handleStartValueChange = this.handleStartValueChange.bind(this);
-		this.handleEndValueChange = this.handleEndValueChange.bind(this);
 		this.handlePlayPause = this.handlePlayPause.bind(this);
 		this.renderPlayPause = this.renderPlayPause.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
 		this.handleTrimClick = this.handleTrimClick.bind(this);
 		this.renderView = this.renderView.bind(this);
-		this.handleTitleChange = this.handleTitleChange.bind(this);
   }
 
 	ref = player => {
@@ -194,10 +199,11 @@ class TrimContentPage extends Component {
   }
 
   renderVideoPlayer() {
-    if (this.state.url != "") {
+    if (this.state.url != "" && this.state.currentClip) {
       return (
         <div style={{margin: 20}}>
           <ReactPlayer
+            key={this.state.currentClip.id}
 						ref={this.ref}
 						width={350}
 						height={200}
@@ -205,8 +211,7 @@ class TrimContentPage extends Component {
 						url={this.state.url}
 						onDuration={this.handleDurationChange}
 						onProgress={this.handleVideoProgress}
-						playing={this.state.isPlaying}
-						loop />
+						playing={this.state.isPlaying}/>
         </div>
       );
     }
@@ -216,25 +221,36 @@ class TrimContentPage extends Component {
 		this.setState({
 			duration: duration,
 		});
-		if (this.state.end == 0) {
-			this.setState({
-				end: duration
-			});
-		}
 	}
 
 	handleVideoProgress(state) {
-		if (state.playedSeconds >= this.state.end) {
-			if (this.state.start < 1) {
-				var percentage = this.state.start / this.state.duration;
-				this.player.seekTo(percentage);
-			} else {
-				this.player.seekTo(this.state.start);
-			}
-		}
-		this.setState({
-			seekStart: state.playedSeconds,
-		});
+    if (this.state.currentClip) {
+      if (state.playedSeconds >= this.state.duration)	{
+        for (var i = 0; i < this.state.videos.length; i++) {
+          if (this.state.videos[i].id == this.state.currentClip.id) {
+            if (i < this.state.videos.length - 1) {
+              this.setState({
+                url: this.state.videos[i+1].url,
+                currentClip: this.state.videos[i+1],
+              });
+            }
+          }
+        }
+      }
+      var secondsBefore = 0;
+      for (var i = 0; i < this.state.videos.length; i++) {
+        if (this.state.videos[i].id != this.state.currentClip.id) {
+          secondsBefore += this.state.videos[i].duration;
+        } else {
+          secondsBefore += state.playedSeconds;
+          break;
+        }
+      }
+
+  		this.setState({
+  			totalSeek: secondsBefore,
+  		});
+    }
   }
 
 	handleStartValueChange(isIncrease) {
@@ -265,82 +281,27 @@ class TrimContentPage extends Component {
 		}
 	}
 
-	handleEndValueChange(isIncrease) {
-		var end = this.state.end;
-		if (isIncrease) {
-			end += 0.5;
-			if (end <= this.state.duration) {
-				this.setState({
-					end: end
-				});
-			}
-		} else {
-			end -= 0.5;
-			if (end > this.state.start) {
-				this.setState({
-					end: end
-				});
-			}
-		}
-	}
-
-	renderTrimmerView(classes) {
+	renderTrimmerView() {
 		if (this.state.url != "") {
 			return (
 				<div style={{marginRight: 20, marginTop: 20, backgroundColor: '#30343E', borderRadius: 5}}>
-					<h3 style={{margin: 20, color: '#FFFFFF', paddingTop: 20}}>{"Clip Video"}</h3>
-					<div style={{margin: 20, paddingBottom: 20}}>
-						<div style={{display: 'inline-block'}}>
-							<p style={{color: 'white'}}>{"Start"}</p>
-							<input style={inputStyle} readonly value={UtilsManager.createTimeString(this.state.start)}/>
-							<div>
-								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleStartValueChange(false)}>{"-0.5s"}</button>
-								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleStartValueChange(true)}>{"+0.5s"}</button>
-							</div>
-						</div>
-						<div style={{display: 'inline-block'}}>
-							<p style={{color: 'white'}}>{"End"}</p>
-							<input style={inputStyle} readonly value={UtilsManager.createTimeString(this.state.end)}/>
-							<div>
-								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleEndValueChange(false)}>{"-0.5s"}</button>
-								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleEndValueChange(true)}>{"+0.5s"}</button>
-							</div>
-						</div>
-					</div>
+					<h3 style={{margin: 20, color: '#FFFFFF', paddingTop: 20}}>{"Trim Video"}</h3>
 					{this.renderPlayPause()}
 					{this.renderProgressStr()}
 					<div style={{marginLeft: 20, marginRight: 20}}>
-						{this.renderSlider(false)}
-						{this.renderSlider(true)}
+						{this.renderSlider()}
 					</div>
-					<div style={{marginLeft: 10, marginRight: 10, paddingBottom: 20}}>
-						<TextField
-							label="Title"
-							multiline
-							fullWidth
-							rows="1"
-							value={this.state.title}
-							InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-							InputLabelProps={{
-								FormLabelClasses: {
-									root: classes.textFieldLabelRoot
-								}
-							}}
-							onChange={this.handleTitleChange}
-							margin="normal"
-							variant="outlined"
-						/>
-					</div>
-					<button className="button-red" style={{margin: 20, float: 'right'}} onClick={() => this.handleTrimClick()}>{"Done"}</button>
+          {
+            !this.state.videos.isEmpty ?
+            <button className="button-purple" style={{margin: 20, float: 'right'}} onClick={() => this.handleTrimClick()}>{"Click to start clipping"}</button> :
+            <div>
+              <button className="button-red" style={{display: 'inline-block', margin: 20, float: 'right'}} onClick={() => this.handleTrimClick()}>{"Done"}</button>
+              <button className="button-purple" style={{display: 'inline-block', marginTop: 20, float: 'right'}} onClick={() => this.handleTrimClick()}>{"Add another clip"}</button>
+            </div>
+          }
 				</div>
 			);
 		}
-	}
-
-	handleTitleChange(e) {
-		this.setState({
-      title: e.target.value
-    });
 	}
 
 	handlePlayPause() {
@@ -368,7 +329,7 @@ class TrimContentPage extends Component {
 	renderProgressStr() {
 		return (
 			<div style={{marginLeft: 20}}>
-				<p style={{color: 'white', fontSize: 15}}>{UtilsManager.createTimeString(this.state.seekStart) + " / " + UtilsManager.createTimeString(this.state.duration)}</p>
+				<p style={{color: 'white', fontSize: 15}}>{UtilsManager.createMinString(this.state.totalSeek) + " / " + UtilsManager.createMinString(this.state.totalDuration)}</p>
 			</div>
 		);
 	}
@@ -381,45 +342,52 @@ class TrimContentPage extends Component {
 
 	handleSlideEnd(state) {
 		if (state.length == 1) {
-			this.setState({
-				seekStart: state[0],
-				isPlaying: true,
-			});
-		}	else if (state.length == 2) {
-			this.setState({
-				seekStart: state[0],
-				start: state[0],
-				end: state[1],
+      this.setState({
+				totalSeek: state[0],
 				isPlaying: true,
 			});
 		}
-		if (this.state.seekStart < 1) {
-			var percentage = this.state.seekStart / this.state.duration;
-			this.player.seekTo(percentage);
-		} else {
-			this.player.seekTo(this.state.seekStart);
-		}
+
+    console.log(state[0]);
+
+    var duration = 0;
+    var beforeDuration = 0;
+    var currentTime = 0;
+    for (var i = 0; i < this.state.videos.length; i++) {
+      duration += this.state.videos[i].duration;
+      if (state[0] <= duration && state[0] >= beforeDuration) {
+        currentTime = state[0] - beforeDuration;
+        this.setState({
+          url: this.state.videos[i].url,
+          currentClip: this.state.videos[i],
+        });
+        if (currentTime < 1) {
+    			var percentage = currentTime / this.state.videos[i].duration;
+          console.log(percentage);
+    			this.player.seekTo(percentage);
+    		} else {
+    			this.player.seekTo(currentTime);
+          console.log(currentTime);
+    		}
+        break;
+      } else {
+        beforeDuration += this.state.videos[i].duration;
+      }
+    }
 	}
 
-	renderSlider(isDouble) {
+	renderSlider() {
 		if (this.state.url != "") {
-			var values = [];
-			if (isDouble) {
-				values.push(this.state.start);
-				values.push(this.state.end);
-			} else {
-				values.push(this.state.seekStart);
-			}
 			return (
 				<div>
 					<Slider
 						rootStyle={sliderStyle}
-						domain={[0, this.state.duration]}
+						domain={[0, this.state.totalDuration]}
 						step={0.01}
 						mode={1}
 						onSlideStart={this.handleSlideStart}
 						onSlideEnd={this.handleSlideEnd}
-						values={values}
+						values={[this.state.totalSeek]}
 					>
 						<div style={railStyle} />
 						<Handles>
@@ -435,7 +403,7 @@ class TrimContentPage extends Component {
 								</div>
 							)}
 						</Handles>
-						<Tracks left={!isDouble} right={false}>
+						<Tracks left={true} right={false}>
 							{({ tracks, getTrackProps }) => (
 								<div className="slider-tracks">
 									{tracks.map(({ id, source, target }) => (
@@ -456,55 +424,44 @@ class TrimContentPage extends Component {
 	}
 
 	handleTrimClick() {
-		if (this.state.title != "") {
-			var start = this.state.start;
-			var end = this.state.end;
-			var duration = end - start;
-			const timestamp = Date.now().toString();
-			var fileName = UserManager.id + "_" + timestamp + ".mp4";
-			var url = BackendManager.fileUrl + fileName;
-
-			BackendManager.makeQuery('clips/create', JSON.stringify({
-				url: url,
-				title: this.state.title,
-				story_id: this.state.storyId,
-				duration: duration,
-				user_id: UserManager.id,
-			}))
-			.then(data => {
-				console.log(data);
-				var uuid = data.uuid;
-				var clipId = data.id;
-				if (data.success) {
-					BackendManager.makeQuery('trim/video', JSON.stringify({
-						url: this.state.url,
-						start_time: start,
-						duration: duration,
-						file_name: fileName,
-						clip_id: clipId,
-						email: UserManager.email,
-					}))
-					.then(data => {
-						localStorage.setItem('clip_uuid', uuid);
-						localStorage.setItem('clip_id', clipId);
-						localStorage.setItem('clip_url', url);
-						this.props.history.push('/publishing');
-					});
-				}
-			});
-		}	else {
-			this.props.showToast("Make sure you enter a title!", 'custom');
-		}
+		var start = this.state.start;
+		var end = this.state.end;
+		var duration = end - start;
+		BackendManager.makeQuery('trim/video', JSON.stringify({
+			url: this.state.url,
+			start_time: start,
+			duration: duration,
+			user_id: UserManager.id,
+		}))
+		.then(data => {
+			console.log(data);
+			if (data.success) {
+				var clipUrl = BackendManager.fileUrl + data.title;
+				this.setState({
+					start: 0,
+					end: this.state.duration,
+					seekStart: 0,
+				});
+				var video = {
+					url: clipUrl,
+				};
+				var videos = this.state.videos;
+				videos.push(video);
+				this.setState({
+					videos: videos
+				});
+			}
+		});
 	}
 
-	renderView(classes) {
+	renderView() {
 		return (
 			<div>
 				<div style={{float: 'left'}}>
         	{this.renderVideoPlayer()}
 				</div>
 				<div style={{marginLeft: 390}}>
-					{this.renderTrimmerView(classes)}
+					{this.renderTrimmerView()}
 				</div>
 			</div>
 		);
@@ -514,10 +471,10 @@ class TrimContentPage extends Component {
     const { classes } = this.props;
 		return (
       <div>
-				{this.renderView(classes)}
+				{this.renderView()}
       </div>
     )
   }
 }
 
-export default withStyles(styles)(TrimContentPage);
+export default CreateClipPage;

@@ -11,6 +11,7 @@ const textStyleBig = {
   fontSize: 16,
   marginRight: 10,
   paddingTop: 10,
+  fontWeight: 'bold',
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -39,8 +40,31 @@ class ClipItem extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      progress: 0,
+      thumbnail: "",
     };
+
+    this.renderThumbnail = this.renderThumbnail.bind(this);
+    this.setThumbnail = this.setThumbnail.bind(this);
+  }
+
+  setThumbnail(thumbnail) {
+    if (thumbnail) {
+      this.setState({
+        thumbnail: thumbnail
+      });
+    }
+  }
+
+  renderThumbnail() {
+    if (this.props.thumbnail) {
+      return (
+        <img style={{width: 75, height: 50}} src={this.props.thumbnail}/>
+      );
+    } else {
+      return (
+        <img style={{width: 75}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
+      )
+    }
   }
 
   render() {
@@ -51,13 +75,8 @@ class ClipItem extends React.Component {
             <Row>
               <div>
                 <div style={{paddingBottom: 10, paddingTop: 10}}>
-                  <div style={{height: 75, width: 100}}>
-                    <VideoThumbnail
-                      style={thumbnail}
-                      videoUrl={this.props.url}
-                      width={100}
-                      height={75}
-                      thumbnailHandler={(thumbnail) => console.log(thumbnail)}/>
+                  <div style={{marginLeft: 25, paddingBottom: 10, paddingTop: 10}}>
+                    {this.renderThumbnail()}
                   </div>
                 </div>
               </div>

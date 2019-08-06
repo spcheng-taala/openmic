@@ -12,7 +12,6 @@ const textStyleBig = {
   fontSize: 20,
   fontWeight: 'bold',
   marginLeft: 20,
-  marginRight: 10,
   paddingTop: 10,
 }
 
@@ -21,10 +20,6 @@ const textStyleMed = {
   fontFamily: 'Lato',
   fontSize: 17,
   marginLeft: 20,
-  marginRight: 10,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
 }
 
 const textStyleSmall = {
@@ -32,10 +27,16 @@ const textStyleSmall = {
   fontFamily: 'Lato',
   fontSize: 15,
   marginLeft: 20,
+  marginBottom: 5,  
+}
+
+const textStyleSmallRed = {
+  color: '#FF0081',
+  fontFamily: 'Lato',
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginLeft: 20,
   marginBottom: 10,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
 }
 
 const thumbnail = {
@@ -75,6 +76,7 @@ class ClipItem extends React.Component {
     super(props);
     this.state = {
       progress: 0,
+      thumbnail: "",
     };
 
     this.playPause = this.playPause.bind(this);
@@ -127,7 +129,7 @@ class ClipItem extends React.Component {
     }
     return (
       <div>
-        <CardActionArea onClick={() => this.props.handleClipClick(this.props.id)}>
+        <CardActionArea onClick={() => this.props.handleClick(this.props.id)}>
           <Paper elevation={1}>
             <div>
               <Row>
@@ -140,12 +142,15 @@ class ClipItem extends React.Component {
                   <Typography className="lineClamp" style={textBig}>
                     {this.props.title}
                   </Typography>
-                  <Typography className="lineClamp" style={textMed}>
-                    {"from: " + this.props.podcast}
+                  <Typography className="lineClamp" style={textStyleSmall}>
+                    {"clipped from " + this.props.podcast}
                   </Typography>
-                  <Typography className="lineClamp" style={textSmall}>
+                  <Typography className="lineClamp" style={textStyleSmall}>
                     {"clipped by " + this.props.name}
                   </Typography>
+                  {this.props.active == 0 ? <Typography className="lineClamp" style={textStyleSmallRed}>
+                    {"Not published yet. Click here to finish up."}
+                  </Typography> : <div/>}
                 </Col>
               </Row>
             </div>

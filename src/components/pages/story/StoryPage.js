@@ -1,10 +1,8 @@
 import React, { Component, useRef } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import WaveSurfer from 'wavesurfer.js';
+import { Slider, Rail, Handles, Tracks } from 'react-compound-slider';
 import Modal from 'react-modal';
-import './assets/index.scss';
-import "react-input-range/lib/css/index.css";
-import InputRange from 'react-input-range';
 import classNames from 'classnames';
 import ReactPlayer from 'react-player';
 import { withStyles } from '@material-ui/core/styles';
@@ -176,7 +174,6 @@ const mobileTextFieldStyle = {
 const playPauseButtonStyle = {
   width: 60,
   height: 60,
-  paddingLeft: 10,
   marginBottom: 10,
 }
 
@@ -190,9 +187,76 @@ const rightPanelText = {
   marginRight: 10,
 }
 
+const sliderStyle = {  // Give the slider some width
+  position: 'relative',
+  width: '100%',
+  height: 60,
+}
+
+const railStyle = {
+  position: 'absolute',
+  width: '100%',
+  height: 10,
+  marginTop: 35,
+  borderRadius: 5,
+  backgroundColor: '#8B9CB6',
+}
+
+export function Handle({ // your handle component
+  handle: { id, value, percent },
+  getHandleProps
+}) {
+  return (
+    <div
+      style={{
+        left: `${percent}%`,
+        position: 'absolute',
+        marginLeft: -15,
+        marginTop: 25,
+        zIndex: 2,
+        width: 30,
+        height: 30,
+        border: 0,
+        textAlign: 'center',
+        cursor: 'pointer',
+        borderRadius: '50%',
+        backgroundColor: '#2C4870',
+        color: '#333',
+      }}
+      {...getHandleProps(id)}
+    >
+    </div>
+  )
+}
+
+function Track({ source, target, getTrackProps }) { // your own track component
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        height: 10,
+        zIndex: 1,
+        marginTop: 35,
+        backgroundColor: '#546C91',
+        borderRadius: 5,
+        cursor: 'pointer',
+        left: `${source.percent}%`,
+        width: `${target.percent - source.percent}%`,
+      }}
+      {...getTrackProps()} // this will set up events if you want it to be clickeable (optional)
+    />
+  )
+}
+
 class StoryPage extends Component {
 
   componentDidMount() {
+    if (UserManager.id <= 0) {
+			var id = localStorage.getItem('id');
+			if (id != null) {
+				UserManager.id = id;
+			}
+		}
     window.scrollTo(0, 0);
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
@@ -200,11 +264,20 @@ class StoryPage extends Component {
       uuid: this.props.match.params.id,
     }))
     .then(data => {
+      console.log(data);
       if (data.success) {
         this.setState({
           show404: false,
           story: data.story
         });
+
+        if (!this.state.hasReceivedDeal) {
+          this.setState({
+            hasReceivedDeal: true
+          });
+          this.fetchDeals(data.story.id);
+        }
+
         if (data.story.type == 0) {
           var ctx = document.createElement('canvas').getContext('2d');
           var linGrad = ctx.createLinearGradient(0, 64, 0, 200);
@@ -261,7 +334,9 @@ class StoryPage extends Component {
 
   componentWillUnmount() {
     if (wavesurfer != null) {
-      wavesurfer.stop();
+      if (wavesurfer.isPlaying()) {
+        wavesurfer.stop();
+      }
     }
   }
 
@@ -301,6 +376,7 @@ class StoryPage extends Component {
       value: 0,
       scrubberShouldMove: true,
       isFinished: false,
+      hasReceivedDeal: false,
     };
 
     this.togglePlayPause = this.togglePlayPause.bind(this);
@@ -318,6 +394,8 @@ class StoryPage extends Component {
     this.setContributorsCommentId = this.setContributorsCommentId.bind(this);
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
 
+    this.fetchDeals = this.fetchDeals.bind(this);
+    this.sendDeal = this.sendDeal.bind(this);
     this.refreshComments = this.refreshComments.bind(this);
     this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
@@ -329,7 +407,11 @@ class StoryPage extends Component {
     this.fetchResponse = this.fetchResponse.bind(this);
     this.openClip = this.openClip.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
+    this.renderProgressStr = this.renderProgressStr.bind(this);
     this.handleVideoProgress = this.handleVideoProgress.bind(this);
+    this.renderSlider = this.renderSlider.bind(this);
+    this.handleSlideStart = this.handleSlideStart.bind(this);
+		this.handleSlideEnd = this.handleSlideEnd.bind(this);
     this.handleDurationChange = this.handleDurationChange.bind(this);
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
@@ -385,22 +467,16 @@ class StoryPage extends Component {
               <ReactPlayer
                 ref={this.ref}
                 style={{marginTop: 20}}
+                progressInterval={10}
                 url={this.state.story.url}
                 onProgress={this.handleVideoProgress}
                 onDuration={this.handleDurationChange}
                 playing={this.state.isPlaying} />
             </div>
             <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
-              <InputRange
-                draggableTrack
-                maxValue={this.state.duration}
-                minValue={0}
-                formatLabel={value => UtilsManager.createMinString(value)}
-                onChange={value => this.handleScrubberMove(value)}
-                onChangeComplete={value => this.playAtValue(value)}
-                value={this.state.value} />
-              {this.renderPlayPause()}
+              {this.renderSlider()}
             </div>
+            {this.renderPlayPause()}
           </div>
         </div>
       </div>
@@ -408,14 +484,11 @@ class StoryPage extends Component {
   }
 
   handleVideoProgress(state) {
-    var seconds = state.played * this.player.getDuration();
-    if (this.state.scrubberShouldMove) {
-      this.setState({
-        value: seconds,
-      });
-    }
+    this.setState({
+      value: state.playedSeconds,
+    });
 
-    if (seconds == this.state.duration) {
+    if (state.playedSeconds == this.state.duration) {
       this.setState({
         isPlaying: false,
         isFinished: true,
@@ -423,6 +496,75 @@ class StoryPage extends Component {
       });
     }
   }
+
+  handleSlideStart() {
+		this.setState({
+			isPlaying: false,
+		});
+	}
+
+	handleSlideEnd(state) {
+		if (state.length == 1) {
+			this.setState({
+				value: state[0],
+				isPlaying: true,
+			});
+		}
+
+		if (this.state.value < 1) {
+			var percentage = this.state.value / this.state.duration;
+			this.player.seekTo(percentage);
+		} else {
+			this.player.seekTo(this.state.value);
+		}
+	}
+
+  renderSlider() {
+		if (this.state.story) {
+			return (
+				<div>
+					<Slider
+						rootStyle={sliderStyle}
+						domain={[0, this.state.duration]}
+						step={0.01}
+						mode={1}
+						onSlideStart={this.handleSlideStart}
+						onSlideEnd={this.handleSlideEnd}
+						values={[this.state.value]}
+					>
+						<div style={railStyle} />
+						<Handles>
+							{({ handles, getHandleProps }) => (
+								<div className="slider-handles">
+									{handles.map(handle => (
+										<Handle
+											key={handle.id}
+											handle={handle}
+											getHandleProps={getHandleProps}
+										/>
+									))}
+								</div>
+							)}
+						</Handles>
+						<Tracks left={false} right={false}>
+							{({ tracks, getTrackProps }) => (
+								<div className="slider-tracks">
+									{tracks.map(({ id, source, target }) => (
+										<Track
+											key={id}
+											source={source}
+											target={target}
+											getTrackProps={getTrackProps}
+										/>
+									))}
+								</div>
+							)}
+						</Tracks>
+					</Slider>
+				</div>
+			);
+		}
+	}
 
   handleDurationChange(duration) {
     this.setState({
@@ -445,6 +587,27 @@ class StoryPage extends Component {
     });
     this.player.seekTo(parseFloat(value));
   }
+
+  fetchDeals(storyId) {
+		BackendManager.makeQuery('sponsors/story', JSON.stringify({
+			story_id: storyId,
+		}))
+		.then(data => {
+			if (data.success) {
+				for (var i = 0; i < data.sponsors.length; i++) {
+					this.sendDeal(data.sponsors[i].id, storyId);
+				}
+			}
+		});
+	}
+
+	sendDeal(dealId, storyId) {
+		BackendManager.makeQuery('sponsors/story', JSON.stringify({
+			user_id: UserManager.id,
+			sponsor_id: dealId,
+			story_id: storyId,
+		}));
+	}
 
   refreshComments() {
     if (this.state.story) {
@@ -714,10 +877,6 @@ class StoryPage extends Component {
               <a style={storyTextStyle} onClick={() => this.handleUserClick(this.state.story.user_id)} activeClassName="active">
                 {this.state.story.first_name + " " + this.state.story.last_name}
               </a>
-
-              <button className='button-green' onClick={() => this.openContributeGemsModal(0)}>
-                {"Follow"}
-              </button>
               {this.renderFollowButton()}
               <p style={{paddingLeft: 20, flex: 1}}>{this.state.story.bio}</p>
             </Container>
@@ -788,18 +947,13 @@ class StoryPage extends Component {
   }
 
   openClip() {
-    if (wavesurfer != null && this.state.story) {
+    if (this.state.story && this.state.story.type == 1) {
+      this.setState({
+        isPlaying: false,
+      });
       localStorage.setItem('url', this.state.story.url);
-      localStorage.setItem('clip_time', Math.floor(wavesurfer.getCurrentTime()));
-      localStorage.setItem('duration', wavesurfer.getDuration());
       localStorage.setItem('story_id', this.state.story.id);
-      if (wavesurfer.isPlaying()) {
-        wavesurfer.pause();
-        this.setState({
-          isPlaying: false,
-        });
-      }
-      window.open('/clip');
+      window.open('/editor');
     }
   }
 
@@ -817,6 +971,18 @@ class StoryPage extends Component {
     );
   }
 
+  renderProgressStr() {
+		return (
+			<div style={{display: 'inline-block', height: 30}}>
+        <div style={{display: 'table-cell', verticalAlign: 'middle'}}>
+          <div style={{fontFamily: 'Lato', color: 'white', fontSize: 15, marginTop: 5}}>
+            {UtilsManager.createMinString(this.state.value) + " / " + UtilsManager.createMinString(this.state.duration)}
+          </div>
+        </div>
+			</div>
+		);
+	}
+
   renderPlayPause() {
     if (this.state.story) {
       if (this.state.story.type == 0) {
@@ -832,33 +998,31 @@ class StoryPage extends Component {
       } else {
         if (this.state.isFinished) {
           return (
-            <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.replay()}>
+            <div style={{width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
               <img
-                style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+                style={{marginTop: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
                 src='../../../../../images/replay.png'
                 />
             </div>
           );
         } else {
+          var src = '../../../../../images/play_simple.png';
           if (this.state.isPlaying) {
-            return (
-              <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.togglePlayPause()}>
-                <img
-                  style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-                  src='../../../../../images/pause_simple.png'
-                  />
-              </div>
-            );
-          } else {
-            return (
-              <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.togglePlayPause()}>
-                <img
-                  style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-                  src='../../../../../images/play_simple.png'
-                  />
-              </div>
-            );
+            src = '../../../../../images/pause_simple.png';
           }
+
+          return (
+            <div>
+              <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10, display: 'inline-block'}} onClick={() => this.togglePlayPause()}>
+                <img
+                  style={{marginLeft: 10, marginTop: 10, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+                  src={src}
+                  />
+              </div>
+              {this.renderProgressStr()}
+              <button className='button-purple-small' style={{float: 'right', display: 'inline-block', marginRight: 20}} onClick={() => this.openClip()}>{'Create Clip'}</button>
+            </div>
+          );
         }
       }
     }
@@ -905,11 +1069,7 @@ class StoryPage extends Component {
       );
     } else {
       return (
-        <img
-          style={{height: 50, cursor: 'pointer', marginTop: 15, width: '50%', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
-          src='../../../../../images/create_clip.png'
-          onClick={() => this.openClip()}
-          />
+        <button className='button-purple' style={{display: 'block', marginLeft: 'auto', marginRight: 'auto'}} onClick={() => this.openClip()}>{"Create Clip"}</button>
       );
     }
   }
@@ -933,7 +1093,7 @@ class StoryPage extends Component {
   renderClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
+        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} thumbnail={item.thumbnail_url} handleClipClick={this.handleClipClick}/>
         <Divider />
       </div>
     );

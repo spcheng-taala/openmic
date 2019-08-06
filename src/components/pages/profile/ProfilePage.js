@@ -7,6 +7,30 @@ import BrokenPageSection from '../../sections/BrokenPageSection.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
+import ClipItem from './components/ClipItem.js';
+
+const STAGE_CLIPS = 0;
+const STAGE_PODCASTS = 1;
+
+const labelActiveStyle = {
+  cursor: 'pointer',
+  display: 'inline-block',
+  textAlign: 'center',
+  textDecoration: 'underline',
+  fontWeight: 'bold',
+  color: '#FF0081',
+  fontSize: 18,
+  margin: 10,
+}
+
+const labelInactiveStyle = {
+  cursor: 'pointer',
+  display: 'inline-block',
+  textAlign: 'center',
+  color: 'grey',
+  fontSize: 18,
+  margin: 10,
+}
 
 const titleStyle = {
   color: "#222225",
@@ -62,13 +86,22 @@ class ProfilePage extends Component {
     this.state = {
       show404: false,
       user: null,
+      clips: [],
+      podcasts: [],
+      stage: STAGE_CLIPS,
     };
 
     this.fetchUser = this.fetchUser.bind(this);
+    this.fetchClips = this.fetchClips.bind(this);
+    this.fetchPodcasts = this.fetchPodcasts.bind(this);
+    this.toggleStage = this.toggleStage.bind(this);
     this.renderName = this.renderName.bind(this);
     this.renderVerified = this.renderVerified.bind(this);
     this.renderMyProfile = this.renderMyProfile.bind(this);
     this.renderLeftPanel = this.renderLeftPanel.bind(this);
+    this.renderListItem = this.renderListItem.bind(this);
+    this.renderListView = this.renderListView.bind(this);
+    this.handleItemClick = this.handleItemClick.bind(this);
     this.logout = this.logout.bind(this);
     this.renderView = this.renderView.bind(this);
   }
@@ -81,11 +114,39 @@ class ProfilePage extends Component {
       if (data.success) {
         this.setState({
           user: data.info,
-        })
+        });
+        this.fetchClips(data.info.id);
+        this.fetchPodcasts(data.info.id);
       } else {
         this.setState({
           show404: true,
         });
+      }
+    });
+  }
+
+  fetchClips(id) {
+    BackendManager.makeQuery('clips/user', JSON.stringify({
+      user_id: id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+          clips: data.clips,
+        })
+      }
+    });
+  }
+
+  fetchPodcasts(id) {
+    BackendManager.makeQuery('stories/user', JSON.stringify({
+      user_id: id,
+    }))
+    .then(data => {
+      if (data.success) {
+        this.setState({
+          stories: data.stories,
+        })
       }
     });
   }
@@ -104,7 +165,7 @@ class ProfilePage extends Component {
   renderName() {
     if (this.state.user) {
       return (
-        <Row>
+        <Row style={{marginTop: 50}}>
           <h2 style={titleStyle}>{this.state.user.first_name + " " + this.state.user.last_name}</h2>
           {this.renderVerified()}
         </Row>
@@ -134,9 +195,9 @@ class ProfilePage extends Component {
       return (
         <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
           <Paper elevation={1} style={{backgroundColor: 'white'}}>
-            <div style={{margin: 10, padding: 20}}>
+            <div style={{margin: 10, padding: 10}}>
               <Avatar src={this.state.user.profile_picture} style={profileAvatar} />
-              <h3 style={usernameStyle}>{"@" + this.state.user.username}</h3>              
+              <h3 style={usernameStyle}>{"@" + this.state.user.username}</h3>
             </div>
           </Paper>
         </div>
@@ -147,6 +208,64 @@ class ProfilePage extends Component {
   logout() {
     this.props.logout();
     this.props.history.push('/');
+  }
+
+  renderListItem(item) {
+    return (
+      <div style={{marginBottom: 30}} key={item.id}>
+        <ClipItem
+          id={item.uuid}
+          url={item.url}
+          title={item.title}
+          thumbnail={item.thumbnail_url}
+          podcast={item.story_title}
+          name={item.username}
+          active={item.active}
+          handleClick={this.handleItemClick} />
+      </div>
+    );
+  }
+
+  handleItemClick(id) {
+    if (this.state.stage == STAGE_CLIPS) {
+      if (this.state.user.id == UserManager.id) {
+        this.props.history.push('/studio/' + id);
+      } else {
+        this.props.history.push('/clips/' + id);
+      }
+    } else {
+      this.props.history.push('/story/' + id);
+    }
+  }
+
+  renderListView() {
+    if (this.state.stage == STAGE_CLIPS) {
+      return (
+        <div>
+          <ul>
+            {this.state.clips.map((item) => {
+              return (this.renderListItem(item))
+            })}
+          </ul>
+        </div>
+      );
+    } else if (this.state.stage == STAGE_PODCASTS) {
+      return (
+        <div>
+          <ul>
+            {this.state.podcasts.map((item) => {
+              return (this.renderListItem(item))
+            })}
+          </ul>
+        </div>
+      );
+    }
+  }
+
+  toggleStage(stage) {
+    this.setState({
+      stage: stage
+    });
   }
 
   renderView() {
@@ -167,6 +286,12 @@ class ProfilePage extends Component {
               {this.state.user ? <p style={textStyle}>{this.state.user.bio}</p> : <div/>}
             </Col>
           </Row>
+          <div style={{width: '100%', height: 1, backgroundColor: 'grey', marginTop: 20}}/>
+          <div>
+            <p style={this.state.stage==STAGE_CLIPS ? labelActiveStyle : labelInactiveStyle} onClick={() => this.toggleStage(STAGE_CLIPS)}>{"Clips"}</p>
+            <p style={this.state.stage==STAGE_PODCASTS ? labelActiveStyle : labelInactiveStyle} onClick={() => this.toggleStage(STAGE_PODCASTS)}>{"Podcasts"}</p>
+          </div>
+          {this.renderListView()}
         </Container>
       );
     }

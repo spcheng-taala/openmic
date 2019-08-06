@@ -9,6 +9,10 @@ body {
   padding: 0;
 }
 
+input[readonly].default-cursor {
+    cursor: default;
+}
+
 .header {
     padding-top: 50px;
     padding-bottom: 50px;
@@ -173,7 +177,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 10px 30px;
   background: #42BCBB; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -189,7 +193,7 @@ h1, h2, h3, h4, p, span {
   padding: 10px 30px;
   margin-bottom: 20px;
   background: #42BCBB; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -205,7 +209,7 @@ h1, h2, h3, h4, p, span {
   padding: 10px 30px;
   margin-bottom: 20px;
   background: #42BCBB; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -221,7 +225,7 @@ h1, h2, h3, h4, p, span {
   padding: 10px 30px;
   margin-bottom: 20px;
   background: #6175E0; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -238,7 +242,8 @@ h1, h2, h3, h4, p, span {
   margin-bottom: 20px;
   background-color: white;
   color: #6175E0;
-  border: 2px solid #6175E0;border-radius: 40px;
+  border: 2px solid #6175E0;
+  border-radius: 5px;
   font-weight: 400;
   font-size: 20px;
   font-family: "Lato";
@@ -252,7 +257,7 @@ h1, h2, h3, h4, p, span {
   padding: 5px 20px;
   margin-bottom: 20px;
   background: #6175E0; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 15px;
@@ -268,7 +273,7 @@ h1, h2, h3, h4, p, span {
   padding: 5px 20px;
   margin-bottom: 20px;
   background: #818181; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 15px;
@@ -286,7 +291,7 @@ h1, h2, h3, h4, p, span {
   background-color: rgba(255, 255, 255, 0);
   color: #F0087D;
   border: 2px solid #F0087D;
-  border-radius: 40px;
+  border-radius: 5px;
   font-weight: 400;
   font-size: 15px;
   font-family: "Lato";
@@ -300,7 +305,7 @@ h1, h2, h3, h4, p, span {
   padding: 5px 20px;
   margin-bottom: 20px;
   background: #42BCBB; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 15px;
@@ -315,7 +320,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 10px 30px;
   background: grey; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -331,7 +336,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 10px 30px;
   background: #E1BE62; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -345,7 +350,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 10px 30px;
   background: #E1BE62; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -357,10 +362,38 @@ h1, h2, h3, h4, p, span {
 .button-purple {
   position: relative;
   display: block;
-  margin-top: 30px;
   padding: 10px 30px;
+  margin-top: 30px;
   background: #6175E0; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
+  color: white;
+  font-weight: 400;
+  font-size: 20px;
+  font-family: "Lato";
+  border: none;
+  cursor: pointer;
+}
+
+.button-purple-small {
+  position: relative;
+  display: block;
+  padding: 10px 20px;
+  background: #6175E0; /* For browsers that do not support gradients */
+  border-radius: 5px;
+  color: white;
+  font-weight: 400;
+  font-size: 15px;
+  font-family: "Lato";
+  border: none;
+  cursor: pointer;
+}
+
+.button-red {
+  position: relative;
+  display: block;
+  padding: 10px 30px;
+  background: #FF0081; /* For browsers that do not support gradients */
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -375,7 +408,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 10px 30px;
   background: #3ABCBC; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -391,7 +424,7 @@ h1, h2, h3, h4, p, span {
   margin-left: 70px;
   padding: 10px 30px;
   background: #3ABCBC; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -406,7 +439,7 @@ h1, h2, h3, h4, p, span {
   display: block;
   padding: 10px 30px;
   background: #6175E0; /* For browsers that do not support gradients */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -424,7 +457,7 @@ h1, h2, h3, h4, p, span {
   background-color: white;
   color: #6175E0;
   border: 2px solid #6175E0;
-  border-radius: 40px;
+  border-radius: 5px;
   font-weight: 400;
   font-size: 20px;
   font-family: "Lato";
@@ -498,7 +531,7 @@ h1, h2, h3, h4, p, span {
   margin-top: 30px;
   padding: 0.1px;
   background: #E7FEFF;
-  border-radius: 40px;
+  border-radius: 5px;
   color: #555555;
   text-align: center;
   font-size: 22px;
@@ -519,7 +552,7 @@ h1, h2, h3, h4, p, span {
   background: -o-linear-gradient(bottom right, #FBD381, #F8BA00); /* For Opera 11.1 to 12.0 */
   background: -moz-linear-gradient(bottom right, #FBD381, #F8BA00); /* For Firefox 3.6 to 15 */
   background: linear-gradient(to bottom right, #FBD381, #F8BA00); /* Standard syntax */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -540,7 +573,7 @@ h1, h2, h3, h4, p, span {
   background: -o-linear-gradient(bottom right, #ABD8CD, #57BE91); /* For Opera 11.1 to 12.0 */
   background: -moz-linear-gradient(bottom right, #ABD8CD, #57BE91); /* For Firefox 3.6 to 15 */
   background: linear-gradient(to bottom right, #ABD8CD, #57BE91); /* Standard syntax */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;
@@ -560,7 +593,7 @@ h1, h2, h3, h4, p, span {
   background: -o-linear-gradient(bottom right, #FF7E79, #D21100); /* For Opera 11.1 to 12.0 */
   background: -moz-linear-gradient(bottom right, #FF7E79, #D21100); /* For Firefox 3.6 to 15 */
   background: linear-gradient(to bottom right, #FF7E79, #D21100); /* Standard syntax */
-  border-radius: 40px;
+  border-radius: 5px;
   color: white;
   font-weight: 400;
   font-size: 20px;

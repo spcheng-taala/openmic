@@ -13,14 +13,84 @@ class UtilsManager {
     return dollars.toLocaleString("en-US", {style:"currency", currency:"USD"});
   }
 
-  createMinString(seconds) {
-    var minutes = Math.floor(seconds/60);
-    var remainingSeconds = seconds - minutes * 60;
-    if (remainingSeconds < 10) {
-      return minutes + ":0" + remainingSeconds;
-    } else {
-      return minutes + ":" + remainingSeconds;
+  createMinString(d) {
+    var h = Math.floor(d / 3600);
+    var m = Math.floor(d % 3600 / 60);
+    var s = Math.ceil(d % 3600 % 60);
+
+    var secondsString = "" + s;
+    if (s < 10) {
+      secondsString = "0" + s;
     }
+
+    var minutesString = "" + m;
+    if (m < 10) {
+      minutesString = "0" + m;
+    }
+
+    var hourString = "" + h;
+    if (h < 10) {
+      hourString = "0" + h;
+    }
+
+    if (d < 60) {
+      return "00:" + secondsString;
+    } else if (d < 3600) {
+      return minutesString + ":" + secondsString;
+    } else {
+      return hourString + ":" + minutesString + ":" + secondsString;
+    }
+  }
+
+  createTimeString(d) {
+    var h = Math.floor(d / 3600);
+    var m = Math.floor(d % 3600 / 60);
+    var s = (d % 3600 % 60).toFixed(2);
+
+    var secondsString = "" + s;
+    if (s < 10) {
+      secondsString = "0" + s;
+    }
+
+    var minutesString = "" + m;
+    if (m < 10) {
+      minutesString = "0" + m;
+    }
+
+    var hourString = "" + h;
+    if (h < 10) {
+      hourString = "0" + h;
+    }
+
+    if (d < 60) {
+      return secondsString;
+    } else if (d < 3600) {
+      return minutesString + ":" + secondsString;
+    } else {
+      return hourString + ":" + minutesString + ":" + secondsString;
+    }
+  }
+
+  base64ToBlob(base64, mime) {
+    mime = mime || '';
+    var sliceSize = 1024;
+    var byteChars = window.atob(base64);
+    var byteArrays = [];
+
+    for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+        var slice = byteChars.slice(offset, offset + sliceSize);
+
+        var byteNumbers = new Array(slice.length);
+        for (var i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        var byteArray = new Uint8Array(byteNumbers);
+
+        byteArrays.push(byteArray);
+    }
+
+    return new Blob(byteArrays, {type: mime});
   }
 
   buildHierarchy(arry, rootId) {

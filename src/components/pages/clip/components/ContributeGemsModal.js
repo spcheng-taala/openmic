@@ -30,6 +30,13 @@ const textStyle = {
   fontSize: 20,
 }
 
+const textStyleSmall = {
+  color: "#D4D2D8",
+  font: "Lato",
+  textAlign: "center",
+  fontSize: 15,
+}
+
 const topTextStyle = {
   fontWeight: 'bold',
   color: "#D4D2D8",
@@ -158,6 +165,8 @@ class ContributeGemsModal extends Component {
         </div>
         <button className="button-rounded-purple" onClick={() => window.open(UserManager.domain + 'howitworks/gems', "_blank")}>{"What are Gems?"}</button>
 				{this.renderBuySendGemsButton()}
+				<p style={textStyleSmall}>{'Gems are used to support creators. 1 gem is worth 1 cent USD.'}</p>
+				<p style={textStyleSmall}>{'A creator can only collect Gems when they respond.'}</p>
       </div>
     )
   }

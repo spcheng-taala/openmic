@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
-import './assets/index.scss';
-import "react-input-range/lib/css/index.css";
-import InputRange from 'react-input-range';
 import ReactTooltip from 'react-tooltip';
 import TwitterLogin from './components/TwitterLogin.js';
+import { Slider, Rail, Handles, Tracks } from 'react-compound-slider';
 import ReactPlayer from 'react-player';
 import Modal from 'react-modal';
 import { Row, Col } from 'react-grid-system';
@@ -174,9 +172,76 @@ const useStyles = theme => ({
   },
 });
 
+const sliderStyle = {  // Give the slider some width
+  position: 'relative',
+  width: '100%',
+  height: 60,
+}
+
+const railStyle = {
+  position: 'absolute',
+  width: '100%',
+  height: 10,
+  marginTop: 35,
+  borderRadius: 5,
+  backgroundColor: '#8B9CB6',
+}
+
+export function Handle({ // your handle component
+  handle: { id, value, percent },
+  getHandleProps
+}) {
+  return (
+    <div
+      style={{
+        left: `${percent}%`,
+        position: 'absolute',
+        marginLeft: -15,
+        marginTop: 25,
+        zIndex: 2,
+        width: 30,
+        height: 30,
+        border: 0,
+        textAlign: 'center',
+        cursor: 'pointer',
+        borderRadius: '50%',
+        backgroundColor: '#2C4870',
+        color: '#333',
+      }}
+      {...getHandleProps(id)}
+    >
+    </div>
+  )
+}
+
+function Track({ source, target, getTrackProps }) { // your own track component
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        height: 10,
+        zIndex: 1,
+        marginTop: 35,
+        backgroundColor: '#546C91',
+        borderRadius: 5,
+        cursor: 'pointer',
+        left: `${source.percent}%`,
+        width: `${target.percent - source.percent}%`,
+      }}
+      {...getTrackProps()} // this will set up events if you want it to be clickeable (optional)
+    />
+  )
+}
+
 class ClipPage extends Component {
 
   componentDidMount() {
+		if (UserManager.id <= 0) {
+			var id = localStorage.getItem('id');
+			if (id != null) {
+				UserManager.id = id;
+			}
+		}
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
     this.refreshClip();
@@ -209,14 +274,18 @@ class ClipPage extends Component {
       contributorsCommentId: 0,
       viewContributorsIsOpen: false,
 			currentResponseId: 0,
+			hasReceivedDeal: false,
     };
 
 		this.refreshClip = this.refreshClip.bind(this);
     this.refreshComments = this.refreshComments.bind(this);
     this.fetchReplies = this.fetchReplies.bind(this);
 		this.fetchResponse = this.fetchResponse.bind(this);
+		this.fetchDeals = this.fetchDeals.bind(this);
+		this.sendDeal = this.sendDeal.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
+		this.renderProgressStr = this.renderProgressStr.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.togglePlayPause = this.togglePlayPause.bind(this);
     this.handleVideoProgress = this.handleVideoProgress.bind(this);
@@ -224,6 +293,9 @@ class ClipPage extends Component {
     this.handleScrubberMove = this.handleScrubberMove.bind(this);
     this.playAtValue = this.playAtValue.bind(this);
     this.renderClipView = this.renderClipView.bind(this);
+		this.renderSlider = this.renderSlider.bind(this);
+		this.handleSlideStart = this.handleSlideStart.bind(this);
+		this.handleSlideEnd = this.handleSlideEnd.bind(this);
     this.onTwitterAuthSuccess = this.onTwitterAuthSuccess.bind(this);
     this.onTwitterAuthFailure = this.onTwitterAuthFailure.bind(this);
     this.copyToClipboard = this.copyToClipboard.bind(this);
@@ -257,13 +329,13 @@ class ClipPage extends Component {
 					show404: false,
           clip: data.clip,
         });
+				var storyId = data.clip.story_id;
         BackendManager.makeQuery('clips/others', JSON.stringify({
           clip_id: data.clip.id,
           story_id: data.clip.story_id,
         }))
         .then(data => {
           if (data.success) {
-            console.log(data.clips);
             this.setState({
               otherClips: data.clips,
             });
@@ -271,12 +343,39 @@ class ClipPage extends Component {
         });
 
 				this.refreshComments(data.clip.id);
+				if (!this.state.hasReceivedDeal) {
+					this.setState({
+						hasReceivedDeal: true
+					});
+					this.fetchDeals(storyId);
+				}
       } else {
 				this.setState({
 					show404: true,
 				});
 			}
     });
+	}
+
+	fetchDeals(storyId) {
+		BackendManager.makeQuery('sponsors/story', JSON.stringify({
+			story_id: storyId,
+		}))
+		.then(data => {
+			if (data.success) {
+				for (var i = 0; i < data.sponsors.length; i++) {
+					this.sendDeal(data.sponsors[i].id, storyId);
+				}
+			}
+		});
+	}
+
+	sendDeal(dealId, storyId) {
+		BackendManager.makeQuery('sponsors/story', JSON.stringify({
+			user_id: UserManager.id,
+			sponsor_id: dealId,
+			story_id: storyId,
+		}));
 	}
 
   refreshComments(clipId) {
@@ -450,48 +549,50 @@ class ClipPage extends Component {
     });
   }
 
+	renderProgressStr() {
+		return (
+			<div>
+				<p style={{color: 'white', fontSize: 15}}>{UtilsManager.createMinString(this.state.value) + " / " + UtilsManager.createMinString(this.state.duration)}</p>
+			</div>
+		);
+	}
+
   renderPlayPause() {
     if (this.state.isFinished) {
       return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.replay()}>
+        <div style={{width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
           <img
-            style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
+            style={{display: 'inline-block', width: 30, height: 30, cursor: 'pointer', top: '50%'}}
             src='../../../../../images/replay.png'
             />
+					{this.renderProgressStr()}
         </div>
       );
     } else {
+			var src = '../../../../../images/play_simple.png';
       if (this.state.isPlaying) {
-        return (
-          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 20}} onClick={() => this.togglePlayPause()}>
-            <img
-              style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-              src='../../../../../images/pause_simple.png'
-              />
-          </div>
-        );
-      } else {
-        return (
-          <div style={{width: 50, height: 50, cursor: 'pointer', marginLeft: 10, zIndex: 10}} onClick={() => this.togglePlayPause()}>
-            <img
-              style={{marginLeft: 20, width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-              src='../../../../../images/play_simple.png'
-              />
-          </div>
-        );
+				src = '../../../../../images/pause_simple.png';
       }
+			return (
+				<Row>
+					<div style={{marginTop: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.togglePlayPause()}>
+						<img
+							style={{width: 30, height: 30, cursor: 'pointer'}}
+							src={src}
+							/>
+					</div>
+					{this.renderProgressStr()}
+				</Row>
+			);
     }
   }
 
   handleVideoProgress(state) {
-    var seconds = state.played * this.player.getDuration();
-    if (this.state.scrubberShouldMove) {
-      this.setState({
-        value: seconds,
-      });
-    }
+		this.setState({
+			value: state.playedSeconds,
+		});
 
-    if (seconds == this.state.duration) {
+    if (state.playedSeconds == this.state.duration) {
       this.setState({
         isPlaying: false,
         isFinished: true,
@@ -536,20 +637,14 @@ class ClipPage extends Component {
                 <ReactPlayer
                   ref={this.ref}
                   style={{marginTop: 20}}
+									progressInterval={10}
                   url={this.state.clip.url}
                   onProgress={this.handleVideoProgress}
                   onDuration={this.handleDurationChange}
                   playing={this.state.isPlaying} />
               </div>
               <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
-                <InputRange
-                  draggableTrack
-                  maxValue={this.state.duration}
-                  minValue={0}
-                  formatLabel={value => UtilsManager.createMinString(value)}
-                  onChange={value => this.handleScrubberMove(value)}
-                  onChangeComplete={value => this.playAtValue(value)}
-                  value={this.state.value} />
+                {this.renderSlider()}
                 {this.renderPlayPause()}
               </div>
             </div>
@@ -559,6 +654,75 @@ class ClipPage extends Component {
       </div>
     );
   }
+
+	handleSlideStart() {
+		this.setState({
+			isPlaying: false,
+		});
+	}
+
+	handleSlideEnd(state) {
+		if (state.length == 1) {
+			this.setState({
+				value: state[0],
+				isPlaying: true,
+			});
+		}
+
+		if (this.state.value < 1) {
+			var percentage = this.state.value / this.state.duration;
+			this.player.seekTo(percentage);
+		} else {
+			this.player.seekTo(this.state.value);
+		}
+	}
+
+  renderSlider() {
+		if (this.state.clip) {
+			return (
+				<div>
+					<Slider
+						rootStyle={sliderStyle}
+						domain={[0, this.state.duration]}
+						step={0.01}
+						mode={1}
+						onSlideStart={this.handleSlideStart}
+						onSlideEnd={this.handleSlideEnd}
+						values={[this.state.value]}
+					>
+						<div style={railStyle} />
+						<Handles>
+							{({ handles, getHandleProps }) => (
+								<div className="slider-handles">
+									{handles.map(handle => (
+										<Handle
+											key={handle.id}
+											handle={handle}
+											getHandleProps={getHandleProps}
+										/>
+									))}
+								</div>
+							)}
+						</Handles>
+						<Tracks left={false} right={false}>
+							{({ tracks, getTrackProps }) => (
+								<div className="slider-tracks">
+									{tracks.map(({ id, source, target }) => (
+										<Track
+											key={id}
+											source={source}
+											target={target}
+											getTrackProps={getTrackProps}
+										/>
+									))}
+								</div>
+							)}
+						</Tracks>
+					</Slider>
+				</div>
+			);
+		}
+	}
 
   createComment(gems) {
     BackendManager.makeQuery('clips/comment', JSON.stringify({
@@ -771,7 +935,7 @@ class ClipPage extends Component {
   renderOtherClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} handleClipClick={this.handleClipClick}/>
+        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} thumbnail={item.thumbnail_url} handleClipClick={this.handleClipClick}/>
         <Divider />
       </div>
     );
