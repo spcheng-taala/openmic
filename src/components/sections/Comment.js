@@ -282,7 +282,7 @@ class Comment extends React.Component {
         <p style={responseVideoTitleStyle}>
           {response.username + " responded: "}
         </p>
-        <div style={{display: 'table', position: 'relative'}} onMouseEnter={this.handleMouseHover}
+        <div style={{display: 'table', position: 'relative', backgroundColor: 'black', borderRadius: 20}} onMouseEnter={this.handleMouseHover}
           onMouseLeave={this.handleMouseHover}>
           {this.renderPlayPauseButton(response)}
           <ReactPlayer

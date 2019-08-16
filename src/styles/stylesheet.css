@@ -948,6 +948,12 @@ div.left-panel:hover {
  box-shadow: 0 7px 14px rgba(50, 50, 93, .10), 0 3px 6px rgba(0, 0, 0, .08);
 }
 
+.coupon {
+  background-image: url("./images/coupon.png");
+  background-repeat:no-repeat;
+  height: 900px;
+}
+
 .co-input,
 .StripeElement {
  display: block;

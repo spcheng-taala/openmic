@@ -94,7 +94,6 @@ const animationRoot = {
   justifyContent: 'space-around',
   overflow: 'hidden',
   marginTop: 20,
-
 }
 
 const buttonRoot = {

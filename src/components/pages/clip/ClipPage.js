@@ -282,7 +282,6 @@ class ClipPage extends Component {
     this.fetchReplies = this.fetchReplies.bind(this);
 		this.fetchResponse = this.fetchResponse.bind(this);
 		this.fetchDeals = this.fetchDeals.bind(this);
-		this.sendDeal = this.sendDeal.bind(this);
     this.openContributeGemsModal = this.openContributeGemsModal.bind(this);
 		this.closeContributeGemsModal = this.closeContributeGemsModal.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
@@ -332,13 +331,25 @@ class ClipPage extends Component {
 				var storyId = data.clip.story_id;
         BackendManager.makeQuery('clips/others', JSON.stringify({
           clip_id: data.clip.id,
-          story_id: data.clip.story_id,
+          user_id: data.clip.creator_id,
         }))
         .then(data => {
           if (data.success) {
-            this.setState({
-              otherClips: data.clips,
-            });
+						if (data.clips.length > 0) {
+							this.setState({
+	              otherClips: data.clips,
+	            });
+						} else {
+							BackendManager.makeQuery('clips/all', JSON.stringify({
+					    }))
+					    .then(data => {
+					      if (data.success) {
+					        this.setState({
+					          otherClips: data.clips,
+					        });
+					      }
+					    });
+						}
           }
         });
 
@@ -359,23 +370,46 @@ class ClipPage extends Component {
 
 	fetchDeals(storyId) {
 		BackendManager.makeQuery('sponsors/story', JSON.stringify({
+			user_id: UserManager.id,
 			story_id: storyId,
 		}))
 		.then(data => {
+			console.log(data);
 			if (data.success) {
-				for (var i = 0; i < data.sponsors.length; i++) {
-					this.sendDeal(data.sponsors[i].id, storyId);
+				if (data.sponsors.length > 0) {
+					if (this.props.isLoggedIn) {
+						var sponsors = [];
+						for (var i = 0; i < data.sponsors.length; i++) {
+							var sponsor = {
+								user_id: UserManager.id,
+								sponsor_id: data.sponsors[i].sponsor_id,
+								story_id: storyId,
+							}
+							sponsors.push(sponsor);
+						}
+						BackendManager.makeQuery('sponsors/update', JSON.stringify({
+							sponsors: sponsors,
+						}));
+					}	else {
+						var sponsorsJson = localStorage.getItem('sponsors');
+						var sponsors = [];
+						if (sponsorsJson) {
+							var json = JSON.parse(sponsorsJson);
+							sponsors = json.sponsors;
+						}
+						for (var i = 0; i < data.sponsors.length; i++) {
+							sponsors.push(data.sponsors[i]);
+						}
+						var s = {
+							sponsors: sponsors,
+						};
+						localStorage.setItem('sponsors', JSON.stringify(s));
+					}
+					this.props.showToast('Congrats! You just earned some new deals! Click the gift icon to see them.', 'custom');
+					this.props.setNotification(true);
 				}
 			}
 		});
-	}
-
-	sendDeal(dealId, storyId) {
-		BackendManager.makeQuery('sponsors/story', JSON.stringify({
-			user_id: UserManager.id,
-			sponsor_id: dealId,
-			story_id: storyId,
-		}));
 	}
 
   refreshComments(clipId) {
@@ -433,7 +467,6 @@ class ClipPage extends Component {
     }))
     .then(data => {
       if (data.success) {
-        console.log(data.comments);
         var replies = [];
 				var index = -1;
         for (var i = 0; i < comments.length; i++) {

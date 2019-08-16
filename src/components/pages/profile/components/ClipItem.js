@@ -27,7 +27,7 @@ const textStyleSmall = {
   fontFamily: 'Lato',
   fontSize: 15,
   marginLeft: 20,
-  marginBottom: 5,  
+  marginBottom: 5,
 }
 
 const textStyleSmallRed = {
@@ -114,15 +114,15 @@ class ClipItem extends React.Component {
     }
   }
 
-  render() {
+  render() {    
     var thumbnailWidth = 200;
-    var thumbnailHeight= 150;
+    var thumbnailHeight= 113;
     var textBig = textStyleBig;
     var textMed = textStyleMed;
     var textSmall = textStyleSmall;
     if (this.props.isMobile) {
       thumbnailWidth = 100;
-      thumbnailHeight= 75;
+      thumbnailHeight= 56.5;
       textBig = textStyleBigMobile;
       textMed = textStyleMedMobile;
       textSmall = textStyleSmallMobile;

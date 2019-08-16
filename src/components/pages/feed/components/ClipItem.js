@@ -96,18 +96,18 @@ class ClipItem extends React.Component {
 
   renderThumbnail() {
     var thumbnailWidth = 200;
-    var thumbnailHeight= 150;
+    var thumbnailHeight= 113;
     if (this.props.isMobile) {
       thumbnailWidth = 100;
-      thumbnailHeight= 75;
+      thumbnailHeight= 56.5;
     }
     if (this.props.thumbnail) {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src={this.props.thumbnail}/>
+        <img style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden'}} src={this.props.thumbnail}/>
       );
     } else {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
+        <img style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden'}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
       )
     }
   }

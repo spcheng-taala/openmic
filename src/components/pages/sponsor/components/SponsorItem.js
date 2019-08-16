@@ -9,7 +9,7 @@ import Typography from '@material-ui/core/Typography';
 const textStyleBig = {
   color: '#2A2D34',
   fontFamily: 'Lato',
-  fontSize: 20,
+  fontSize: 24,
   fontWeight: 'bold',
   marginLeft: 20,
   paddingTop: 10,
@@ -133,7 +133,7 @@ class SponsorItem extends React.Component {
   render() {
     if (this.props.isMobile) {
       return (
-        <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => window.open(this.props.sponsor.link, "_blank")}>
+        <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => this.props.handleSponsorClick(this.props.sponsor)}>
           {this.renderImage()}
           {this.renderText()}
         </div>
@@ -141,7 +141,7 @@ class SponsorItem extends React.Component {
     } else {
       if (this.props.index % 2) {
         return (
-          <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => window.open(this.props.sponsor.link, "_blank")}>
+          <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => this.props.handleSponsorClick(this.props.sponsor)}>
             {this.renderImage()}
             <div style={{width: '50%', display: 'inline-block'}}>
               {this.renderText()}
@@ -150,7 +150,7 @@ class SponsorItem extends React.Component {
         );
       } else {
         return (
-          <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => window.open(this.props.sponsor.link, "_blank")}>
+          <div style={{height: '60%', cursor: 'pointer', backgroundColor: 'white'}} onClick={() => this.props.handleSponsorClick(this.props.sponsor)}>
             <div style={{width: '50%', display: 'inline-block'}}>
               {this.renderText()}
             </div>

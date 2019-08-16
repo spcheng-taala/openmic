@@ -3,7 +3,7 @@ import { Container, Row, Col } from 'react-grid-system';
 import Paper from '@material-ui/core/Paper';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
-import BrokenPageSection from '../../sections/BrokenPageSection.js';
+import SponsorWelcomeSection from './components/SponsorWelcomeSection.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
@@ -78,7 +78,15 @@ class MySponsorsPage extends Component {
     if (id) {
       UserManager.id = id;
       this.fetchSponsors(id);
+      this.props.setNotification(false);
+    } else {
+      this.props.openLoginModal();
     }
+
+    this.setState({
+      showWelcomePage: true,
+    });
+
 
     window.addEventListener('resize', this.resize.bind(this));
   }
@@ -99,7 +107,7 @@ class MySponsorsPage extends Component {
     super(props);
 
     this.state = {
-      show404: false,
+      showWelcomePage: false,
       isMobile: false,
       sponsors: [],
     };
@@ -108,6 +116,7 @@ class MySponsorsPage extends Component {
     this.renderListItem = this.renderListItem.bind(this);
     this.renderListView = this.renderListView.bind(this);
     this.renderView = this.renderView.bind(this);
+    this.handleSponsorClick = this.handleSponsorClick.bind(this);
   }
 
   fetchSponsors(id) {
@@ -116,17 +125,30 @@ class MySponsorsPage extends Component {
     }))
     .then(data => {
       if (data.success) {
+        var showWelcomePage = true;
+        if (data.sponsors.length > 0) {
+          showWelcomePage = false;
+        }
         this.setState({
           sponsors: data.sponsors,
+          showWelcomePage: showWelcomePage,
         });
       }
     });
   }
 
+  handleSponsorClick(sponsor) {
+    BackendManager.makeQuery('sponsors/click', JSON.stringify({
+      story_id: sponsor.story_id,
+      sponsor_id: sponsor.id,
+    }));
+    window.open(sponsor.link, "_blank");
+  }
+
   renderListItem(item, i) {
     return (
       <div style={{marginBottom: 30}} key={item.id}>
-        <SponsorItem isMobile={this.state.isMobile} index={i} sponsor={item} />
+        <SponsorItem isMobile={this.state.isMobile} index={i} sponsor={item} handleSponsorClick={this.handleSponsorClick}/>
       </div>
     );
   }
@@ -144,9 +166,12 @@ class MySponsorsPage extends Component {
   }
 
   renderView() {
-    if (this.state.show404) {
+    if (this.state.showWelcomePage) {
       return (
-        <BrokenPageSection />
+        <Container>
+          <h1 style={{fontWeight: 'bold', fontSize: 50}}>{'My Deals'}</h1>
+          <SponsorWelcomeSection signIn={this.props.openLoginModal} isLoggedIn={this.props.isLoggedIn}/>
+        </Container>
       );
     } else {
       return (

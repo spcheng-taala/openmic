@@ -107,6 +107,26 @@ class LoginModal extends Component {
         localStorage.setItem('expiration', data.expiration);
         localStorage.setItem('bio', data.bio);
         if (UserManager.id > 0) {
+          var sponsors = localStorage.getItem('sponsors');
+          var params = [];
+          if (sponsors) {
+            for (var i = 0; i < sponsors.length; i++) {
+              var value = {
+                user_id: UserManager.id,
+                story_id: sponsors[i].story_id,
+                sponsor_id: sponsors[i].sponsor_id,
+              };
+              params.push(value);
+              BackendManager.makeQuery('sponsors/update', JSON.stringify({
+          			sponsors: params
+          		}))
+              .then(data => {
+                if (data.success) {
+                  localStorage.removeItem('sponsors');
+                }
+              });
+            }
+          }
           this.props.closeModal();
           this.props.handleAuth();
           this.props.showToast("Welcome back!", 'custom');

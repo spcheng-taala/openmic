@@ -395,7 +395,6 @@ class StoryPage extends Component {
     this.closeViewContributorsModal = this.closeViewContributorsModal.bind(this);
 
     this.fetchDeals = this.fetchDeals.bind(this);
-    this.sendDeal = this.sendDeal.bind(this);
     this.refreshComments = this.refreshComments.bind(this);
     this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
@@ -591,22 +590,45 @@ class StoryPage extends Component {
   fetchDeals(storyId) {
 		BackendManager.makeQuery('sponsors/story', JSON.stringify({
 			story_id: storyId,
+      user_id: UserManager.id,
 		}))
 		.then(data => {
 			if (data.success) {
-				for (var i = 0; i < data.sponsors.length; i++) {
-					this.sendDeal(data.sponsors[i].id, storyId);
+        console.log(data);
+        if (data.sponsors.length > 0) {
+					if (this.props.isLoggedIn) {
+						var sponsors = [];
+						for (var i = 0; i < data.sponsors.length; i++) {
+							var sponsor = {
+								user_id: UserManager.id,
+								sponsor_id: data.sponsors[i].sponsor_id,
+								story_id: storyId,
+							}
+							sponsors.push(sponsor);
+						}
+						BackendManager.makeQuery('sponsors/update', JSON.stringify({
+							sponsors: sponsors,
+						}));
+					}	else {
+						var sponsorsJson = localStorage.getItem('sponsors');
+						var sponsors = [];
+						if (sponsorsJson) {
+							var json = JSON.parse(sponsorsJson);
+							sponsors = json.sponsors;
+						}
+						for (var i = 0; i < data.sponsors.length; i++) {
+							sponsors.push(data.sponsors[i]);
+						}
+						var s = {
+							sponsors: sponsors,
+						};
+						localStorage.setItem('sponsors', JSON.stringify(s));
+					}
+					this.props.showToast('Congrats! You just earned some new deals! Click the gift icon to see them.', 'custom');
+					this.props.setNotification(true);
 				}
 			}
 		});
-	}
-
-	sendDeal(dealId, storyId) {
-		BackendManager.makeQuery('sponsors/story', JSON.stringify({
-			user_id: UserManager.id,
-			sponsor_id: dealId,
-			story_id: storyId,
-		}));
 	}
 
   refreshComments() {

@@ -251,6 +251,11 @@ class MainPage extends React.Component {
 				this.refreshGems();
 				this.refreshDeals();
 			});
+		} else {
+			var sponsorsJson = localStorage.getItem('sponsors');
+			if (sponsorsJson) {
+				this.setNotification(true);
+			}
 		}
   }
 
@@ -279,6 +284,7 @@ class MainPage extends React.Component {
 			gemsText: "",
 			seconds: 4,
 			deals: [],
+			showNotification: false,
     };
 
 		this.timer = 0;
@@ -306,6 +312,7 @@ class MainPage extends React.Component {
 		this.renderAudio = this.renderAudio.bind(this);
 		this.uploadFile = this.uploadFile.bind(this);
     this.showToast = this.showToast.bind(this);
+		this.setNotification = this.setNotification.bind(this);
     this.logout = this.logout.bind(this);
 		this.setFollowing = this.setFollowing.bind(this);
   }
@@ -356,9 +363,21 @@ class MainPage extends React.Component {
 		}))
 		.then(data => {
 			if (data.success) {
-				this.setState({
-					deals: data.sponsors
-				});
+				if (data.sponsors.length > 0) {
+					if (data.sponsors[0].viewed == 0) {
+						this.setState({
+							showNotification: true,
+						});
+					} else {
+						this.setState({
+							showNotification: false,
+						});
+					}
+				} else {
+					this.setState({
+						showNotification: false,
+					});
+				}
 			}
 		});
 	}
@@ -555,6 +574,12 @@ class MainPage extends React.Component {
 		}
   }
 
+	setNotification(showNotification) {
+		this.setState({
+			showNotification: showNotification,
+		});
+	}
+
   logout() {
     localStorage.clear();
     this.setState({
@@ -665,12 +690,12 @@ class MainPage extends React.Component {
 								}
 								{this.state.isCreator ? <a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a> : <div/>}
 								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} onClick={() => this.openBuyGemsModal()}/>
-								{this.state.deals.length == 0 ?
-									<NavLink to={"/deals"}>
-										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals.png"}/>
-									</NavLink> :
+								{this.state.showNotification ?
 									<NavLink to={"/deals"}>
 										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals_notification.png"}/>
+									</NavLink> :
+									<NavLink to={"/deals"}>
+										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals.png"}/>
 									</NavLink>
 								}
                 {this.state.isLoggedIn ?
@@ -753,6 +778,7 @@ class MainPage extends React.Component {
 												isLoggedIn={this.state.isLoggedIn}
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
+												setNotification={this.setNotification}
 												openBuyGemsModal={this.openBuyGemsModal}
 												openGemGifModal={this.openGemGifModal}
 												refreshGems={this.refreshGems}
@@ -766,6 +792,7 @@ class MainPage extends React.Component {
                         isLoggedIn={this.state.isLoggedIn}
   											openLoginModal={this.openModal}
                         showToast={this.showToast}
+												setNotification={this.setNotification}
 												openBuyGemsModal={this.openBuyGemsModal}
 												openGemGifModal={this.openGemGifModal}
 												following={this.state.following}
@@ -800,6 +827,10 @@ class MainPage extends React.Component {
                     render={(props) =>
 											<MySponsorsPage
 	                      {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												openLoginModal={this.openModal}
+												setNotification={this.setNotification}
+												showToast={this.showToast}
 	                    />}
                   />
 									<Route
