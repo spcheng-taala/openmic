@@ -185,17 +185,22 @@ class Comment extends React.Component {
       src = '../../../../../images/gem_6_10x.png';
     }
 
-    var text = UtilsManager.convertToCommaString(gems) + " Added";
-    if (this.props.comment.stage == 1) {
-      text = UtilsManager.convertToCommaString(gems) + " Raised";
-    }
-
     return (
       <Row>
         <img style={gemIconStyle} src={src}/>
         <Typography style={style}>
-          {text}
+          {UtilsManager.convertToCommaString(gems) + " Donated"}
         </Typography>
+        <div className='tooltip'>
+          <Typography style={{marginLeft: 20, fontFamily: 'Lato', fontSize: 10, cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginTop: 3}}>
+            {"What are gems?"}
+          </Typography>
+          <span className="tooltiptext" style={{fontSize: 10}}>{`
+            Gems support our podcasters!
+            1 Gem is worth 1 cent            
+            `}
+          </span>
+        </div>
       </Row>
     );
   }

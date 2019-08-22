@@ -498,7 +498,7 @@ class ClipPage extends Component {
 				if (isCompleted) {
 					this.setState({
 						completedComments: comments,
-	        });					
+	        });
 				} else {
 					this.setState({
 	          comments: comments,
@@ -596,13 +596,15 @@ class ClipPage extends Component {
   renderPlayPause() {
     if (this.state.isFinished) {
       return (
-        <div style={{width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
-          <img
-            style={{display: 'inline-block', width: 30, height: 30, cursor: 'pointer', top: '50%'}}
-            src='../../../../../images/replay.png'
-            />
+				<Row>
+					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
+						<img
+							style={{width: 30, height: 30, cursor: 'pointer'}}
+							src='../../../../../images/replay.png'
+							/>
+					</div>
 					{this.renderProgressStr()}
-        </div>
+				</Row>        
       );
     } else {
 			var src = '../../../../../images/play_simple.png';

@@ -168,7 +168,7 @@ class ContributeGemsModal extends Component {
           />
         </div>
 				{this.renderBuySendGemsButton()}
-				<p style={textStyleSmall}>{'Gems support ' + this.props.name + '. 1 gem is worth 1 cent USD.'}</p>
+				<p style={textStyleSmall}>{'Gems support ' + this.props.name + '! 1 gem is worth 1 cent USD.'}</p>
 				<p style={textStyleSmall}>{'The more Gems a comment has, the more likely ' + this.props.name + ' will respond.'}</p>
 				<p style={textStyleSmall}>{this.props.name + ' can only collect Gems when they respond.'}</p>
       </div>
