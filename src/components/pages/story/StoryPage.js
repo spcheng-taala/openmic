@@ -317,6 +317,7 @@ class StoryPage extends Component {
         }))
         .then(data => {
           if (data.success) {
+            console.log(data.clips);
             this.setState({
     					clips: data.clips,
             });
@@ -977,21 +978,7 @@ class StoryPage extends Component {
       localStorage.setItem('story_id', this.state.story.id);
       window.open('/editor');
     }
-  }
-
-  renderClips() {
-    return (
-      <div>
-        <ul>
-          {this.state.clips.map((item, index) => {
-            return (<ClipItem index={index} id={item.id} title={item.title}
-              url={item.url} name={item.username} playClip={this.playClip}
-              duration={item.duration}/>)
-          })}
-        </ul>
-      </div>
-    );
-  }
+  }  
 
   renderProgressStr() {
 		return (
@@ -1115,7 +1102,16 @@ class StoryPage extends Component {
   renderClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} thumbnail={item.thumbnail_url} handleClipClick={this.handleClipClick}/>
+        <ClipItem
+          id={item.uuid}
+          url={item.url}
+          title={item.title}
+          podcast={item.story_title}
+          name={item.username}
+          thumbnail={item.thumbnail_url}
+          handleClipClick={this.handleClipClick}
+          duration={item.duration}
+        />
         <Divider />
       </div>
     );
@@ -1203,13 +1199,16 @@ class StoryPage extends Component {
             onRequestClose={this.closeContributeGemsModal}
             contentLabel="Contribute Gems"
           >
-            <ContributeGemsModal
-              comment={this.state.currentComment}
-              contributeGems={this.contributeGems}
-              createComment={this.createComment}
-              closeContributeGemsModal={this.closeContributeGemsModal}
-              openBuyGemsModal={this.props.openBuyGemsModal}
-            />
+            {this.state.story ?
+              <ContributeGemsModal
+                name={this.state.story.first_name + " " + this.state.story.last_name}
+                comment={this.state.currentComment}
+                contributeGems={this.contributeGems}
+                createComment={this.createComment}
+                closeContributeGemsModal={this.closeContributeGemsModal}
+                openBuyGemsModal={this.props.openBuyGemsModal}
+              /> : <div/>
+            }
           </Modal>
           <Modal
             isOpen={this.state.viewContributorsIsOpen}

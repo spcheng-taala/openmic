@@ -278,11 +278,11 @@ class Comment extends React.Component {
 
   renderResponseVideo(response) {
     return (
-      <div style={{cursor: 'pointer'}} onClick={() => this.props.handleResponseVideoClick(response.id)}>
+      <div style={{cursor: 'pointer', marginLeft: 10}} onClick={() => this.props.handleResponseVideoClick(response.id)}>
         <p style={responseVideoTitleStyle}>
           {response.username + " responded: "}
         </p>
-        <div style={{display: 'table', position: 'relative', backgroundColor: 'black', borderRadius: 20}} onMouseEnter={this.handleMouseHover}
+        <div style={{display: 'table', position: 'relative', backgroundColor: 'black', borderRadius: 10}} onMouseEnter={this.handleMouseHover}
           onMouseLeave={this.handleMouseHover}>
           {this.renderPlayPauseButton(response)}
           <ReactPlayer

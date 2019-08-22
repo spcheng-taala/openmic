@@ -5,6 +5,7 @@ import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -27,7 +28,6 @@ const textStyleSmall = {
   fontFamily: 'Lato',
   fontSize: 13,
   marginLeft: 20,
-  marginBottom: 10,
 }
 
 const thumbnail = {
@@ -72,7 +72,7 @@ class ClipItem extends React.Component {
 
   render() {
     return (
-      <div>
+      <div style={{paddingTop: 10, paddingBottom: 10}}>
         <CardActionArea onClick={() => this.props.handleClipClick(this.props.id)}>
           <div>
             <Row>
@@ -87,6 +87,9 @@ class ClipItem extends React.Component {
                 </Typography>
                 <Typography className="lineClamp" style={textStyleSmall}>
                   {"clipped by " + this.props.name}
+                </Typography>
+                <Typography className="lineClamp" style={textStyleSmall}>
+                  {UtilsManager.createMinString(this.props.duration)}
                 </Typography>
               </Col>
             </Row>

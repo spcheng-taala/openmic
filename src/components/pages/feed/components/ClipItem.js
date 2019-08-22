@@ -5,6 +5,7 @@ import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -145,6 +146,9 @@ class ClipItem extends React.Component {
                   </Typography>
                   <Typography className="lineClamp" style={textSmall}>
                     {"clipped by " + this.props.name}
+                  </Typography>
+                  <Typography className="lineClamp" style={textSmall}>
+                    {UtilsManager.createMinString(this.props.duration)}
                   </Typography>
                 </Col>
               </Row>

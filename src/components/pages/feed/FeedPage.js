@@ -122,6 +122,7 @@ class FeedPage extends Component {
       clipsCount: 0,
       isMobile: false,
       referralCode: "",
+      recommendedPodcast: "",
     };
 
     this.renderFeed = this.renderFeed.bind(this);
@@ -131,6 +132,8 @@ class FeedPage extends Component {
     this.renderFreeGems = this.renderFreeGems.bind(this);
     this.handleReferralChange = this.handleReferralChange.bind(this);
     this.handleReferralCodeClick = this.handleReferralCodeClick.bind(this);
+    this.handleRecommendedPodcastChange = this.handleRecommendedPodcastChange.bind(this);
+    this.handleRecommendedPodcastClick = this.handleRecommendedPodcastClick.bind(this);
   }
 
   handleClipClick(id) {
@@ -138,9 +141,19 @@ class FeedPage extends Component {
   }
 
   renderListItem(item) {
+    console.log(item);
     return (
       <div style={cardStyle}>
-        <ClipItem isMobile={this.state.isMobile} id={item.uuid} url={item.url} title={item.title} thumbnail={item.thumbnail_url} podcast={item.podcast_title} name={item.username} handleClipClick={this.handleClipClick} />
+        <ClipItem
+          isMobile={this.state.isMobile}
+          id={item.uuid}
+          url={item.url}
+          title={item.title}
+          thumbnail={item.thumbnail_url}
+          podcast={item.podcast_title}
+          name={item.username}
+          duration={item.duration}
+          handleClipClick={this.handleClipClick} />
       </div>
     );
   }
@@ -157,20 +170,35 @@ class FeedPage extends Component {
     )
   }
 
-  renderRightPanel() {
+  renderRightPanel(classes) {
     return (
       <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
         <Paper elevation={1} style={{backgroundColor: 'white'}}>
           <div>
             <img style={{margin: 10, width: 230}} src='../../../../../images/community_bg.png'/>
             <Typography style={textStyleBig}>
-              {"Join the Riptide community!"}
+              {"Recommend a podcast episode!"}
             </Typography>
             <Typography style={textStyleSmall}>
-              {"Interact with your favorite creators and their fans!"}
+              {"Type your favorite podcast/podcast episode that you want us to post!"}
             </Typography>
-            <button className='button-rounded-green' onClick={() => this.props.history.push('/community')}>
-              {"Start Now!"}
+            <div style={{margin: 10}}>
+              <TextField
+                id="outlined-adornment-amount"
+                placeholder="Podcast Episode"
+                fullWidth
+                inputProps={{min: 0, style: { textAlign: 'center' }}}
+                InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+                InputLabelProps={{
+                  FormLabelClasses: {
+                    root: classes.textFieldLabelRoot
+                  }
+                }}
+                value={this.state.recommendedPodcast}
+                onChange={this.handleRecommendedPodcastChange} />
+            </div>
+            <button className='button-rounded-green' onClick={() => this.handleRecommendedPodcastClick()}>
+              {"Done!"}
             </button>
             <div style={{paddingBottom: 10}}>
             </div>
@@ -266,6 +294,16 @@ class FeedPage extends Component {
     }
   }
 
+  handleRecommendedPodcastChange(e) {
+    this.setState({
+      recommendedPodcast: e.target.value
+    });
+  }
+
+  handleRecommendedPodcastClick() {
+
+  }
+
   renderFreeGems(classes) {
     return (
       <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
@@ -316,7 +354,7 @@ class FeedPage extends Component {
             </Col>
             <Col md={4}>
               {this.renderFreeGems(classes)}
-              {this.renderRightPanel()}
+              {this.renderRightPanel(classes)}
               {this.renderBottomRightPanel()}
             </Col>
           </Row>

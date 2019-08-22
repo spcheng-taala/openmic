@@ -16,7 +16,7 @@ class Comments extends React.Component {
 
   renderComment() {
     var self = this;
-    var marginLeft = 0;
+    var marginLeft = 10;
 
     if (this.props.isChild) {
       marginLeft = 50;

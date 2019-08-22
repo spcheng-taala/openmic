@@ -35,6 +35,10 @@ const textStyleSmall = {
   font: "Lato",
   textAlign: "center",
   fontSize: 15,
+	marginTop: 5,
+	marginBottom: 5,
+	marginLeft: 20,
+	marginRight: 20,
 }
 
 const topTextStyle = {
@@ -78,7 +82,7 @@ class ContributeGemsModal extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      amount: 1,
+      amount: 0,
       gemCount: 0,
     }
 
@@ -163,10 +167,10 @@ class ContributeGemsModal extends Component {
             margin="normal"
           />
         </div>
-        <button className="button-rounded-purple" onClick={() => window.open(UserManager.domain + 'howitworks/gems', "_blank")}>{"What are Gems?"}</button>
 				{this.renderBuySendGemsButton()}
-				<p style={textStyleSmall}>{'Gems are used to support creators. 1 gem is worth 1 cent USD.'}</p>
-				<p style={textStyleSmall}>{'A creator can only collect Gems when they respond.'}</p>
+				<p style={textStyleSmall}>{'Gems support ' + this.props.name + '. 1 gem is worth 1 cent USD.'}</p>
+				<p style={textStyleSmall}>{'The more Gems a comment has, the more likely ' + this.props.name + ' will respond.'}</p>
+				<p style={textStyleSmall}>{this.props.name + ' can only collect Gems when they respond.'}</p>
       </div>
     )
   }

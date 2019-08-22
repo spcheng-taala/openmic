@@ -140,22 +140,25 @@ const aboutTextSmall = {
 }
 
 const textStyleBig = {
-  color: '#2D2D31',
+  color: 'white',
   fontFamily: "Lato",
   textAlign: 'left',
   fontSize: 20,
-  marginLeft: 25,
   marginRight: 20,
+	whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 const textStyleSmall = {
-  color: '#2D2D31',
+  color: 'white',
   fontFamily: "Lato",
   textAlign: 'left',
   fontSize: 15,
-  marginLeft: 25,
   marginRight: 20,
-  marginBottom: 20,
+	whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 const useStyles = theme => ({
@@ -450,7 +453,7 @@ class ClipPage extends Component {
           }
           if (comment.id != null) {
             comments.push(comment);
-            this.fetchReplies(comment.id, comments, true);
+            // this.fetchReplies(comment.id, comments, true);
 						this.fetchResponse(comment.id);
           }
         }
@@ -495,7 +498,7 @@ class ClipPage extends Component {
 				if (isCompleted) {
 					this.setState({
 						completedComments: comments,
-	        });
+	        });					
 				} else {
 					this.setState({
 	          comments: comments,
@@ -608,7 +611,7 @@ class ClipPage extends Component {
       }
 			return (
 				<Row>
-					<div style={{marginTop: 10, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.togglePlayPause()}>
+					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.togglePlayPause()}>
 						<img
 							style={{width: 30, height: 30, cursor: 'pointer'}}
 							src={src}
@@ -661,29 +664,41 @@ class ClipPage extends Component {
   }
 
   renderVideoPlayer() {
+		var width = '70%';
+		if (this.state.isMobile) {
+			width = '50%';
+		}
     return (
       <div>
-        <div style={{margin: 20}}>
-          <Card>
-            <div style={{backgroundColor: '#0F0D12'}}>
-              <div style={root}>
-                <ReactPlayer
-                  ref={this.ref}
-                  style={{marginTop: 20}}
-									progressInterval={10}
-                  url={this.state.clip.url}
-                  onProgress={this.handleVideoProgress}
-                  onDuration={this.handleDurationChange}
-                  playing={this.state.isPlaying} />
-              </div>
-              <div style={{marginTop: 20, marginRight: 25, marginLeft: 25}}>
-                {this.renderSlider()}
-                {this.renderPlayPause()}
-              </div>
-            </div>
-            {this.renderBottomVideoPlayer()}
-          </Card>
+        <div style={{marginTop: 20, marginLeft: 20, marginRight: 20, height: 160, backgroundColor: '#232831'}}>
+					<div style={{display: 'inline-block', height: 160, width: 160}}>
+						<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.thumbnail_url}/>
+					</div>
+					<div style={{display: 'inline-block', marginLeft: 25, marginRight: 20, width: width}}>
+						<Typography style={textStyleBig}>
+							{this.state.clip.title}
+						</Typography>
+						<Typography style={textStyleSmall}>
+							{"Clipped by " + this.state.clip.username}
+						</Typography>
+						{this.renderSlider()}
+						<div style={{padding: 5}}>
+							{this.renderPlayPause()}
+						</div>
+					</div>
         </div>
+				<div>
+					<ReactPlayer
+						ref={this.ref}
+						width={0}
+						height={0}
+						style={{display: 'hidden'}}
+						progressInterval={10}
+						url={this.state.clip.url}
+						onProgress={this.handleVideoProgress}
+						onDuration={this.handleDurationChange}
+						playing={this.state.isPlaying} />
+				</div>
       </div>
     );
   }
@@ -890,26 +905,29 @@ class ClipPage extends Component {
           <Row>
             <Col md={8}>
               {this.renderVideoPlayer()}
-							<div style={{width: textFieldWidth, border: '2px solid #4E5CD8', marginLeft: 10, paddingBottom: 20, borderRadius: 15, marginRight: 20}}>
-	              <Row>
-	                <TextField
-	                  label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
-	                  id="outlined-adornment-amount"
-	                  placeholder="What do you want to say?"
-	                  fullWidth
-	                  style={textFieldStyle}
-										InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-										InputLabelProps={{
-						          FormLabelClasses: {
-						            root: classes.textFieldLabelRoot
-						          }
-						        }}
-	                  value={this.state.name}
-	                  onChange={this.handleCommentChange} />
-	                <button className='button-green' onClick={() => this.openContributeGemsModal(null)}>
-	                  {"Send"}
-	                </button>
-	              </Row>
+							<div style={{marginLeft: 20, marginRight: 20}}>
+								<TextField
+									label={"Chat with " + this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
+									id="outlined-adornment-amount"
+									placeholder="What do you want to say?"
+									fullWidth
+									multiline
+									rows="2"
+									InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+									InputLabelProps={{
+										FormLabelClasses: {
+											root: classes.textFieldLabelRoot
+										}
+									}}
+									variant="outlined"
+									margin="normal"
+									value={this.state.name}
+									onChange={this.handleCommentChange} />
+								<div style={{float: 'right'}}>
+									<button className='button-rounded-green-no-mar-small' onClick={() => this.openContributeGemsModal(null)}>
+										{"Send"}
+									</button>
+								</div>
 							</div>
               <Comments
                 isLoggedIn={this.props.isLoggedIn}
@@ -968,7 +986,16 @@ class ClipPage extends Component {
   renderOtherClipsListItem(item) {
     return (
       <div>
-        <ClipItem id={item.uuid} url={item.url} title={item.title} podcast={item.story_title} name={item.username} thumbnail={item.thumbnail_url} handleClipClick={this.handleClipClick}/>
+        <ClipItem
+					id={item.uuid}
+					url={item.url}
+					title={item.title}
+					podcast={item.story_title}
+					name={item.username}
+					thumbnail={item.thumbnail_url}
+					duration={item.duration}
+					handleClipClick={this.handleClipClick}
+				/>
         <Divider />
       </div>
     );
@@ -1107,13 +1134,16 @@ class ClipPage extends Component {
 	          onRequestClose={this.closeContributeGemsModal}
 	          contentLabel="Contribute Gems"
 	        >
-	          <ContributeGemsModal
+					{this.state.clip ?
+						<ContributeGemsModal
+							name={this.state.clip.creator_first_name + " " + this.state.clip.creator_last_name}
 	            comment={this.state.currentComment}
 	            contributeGems={this.contributeGems}
 	            createComment={this.createComment}
 	            closeContributeGemsModal={this.closeContributeGemsModal}
 	            openBuyGemsModal={this.props.openBuyGemsModal}
-	          />
+	          /> : <div/>
+					}
 	        </Modal>
 	        <Modal
 	          isOpen={this.state.viewContributorsIsOpen}

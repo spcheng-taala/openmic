@@ -67,7 +67,7 @@ class PublishingPage extends Component {
         <div style={animationRoot}>
           <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
         </div>
-        <p style={{color: 'grey', textAlign: 'center'}}>{"Publishing your clip!"}</p>
+        <p style={{color: 'grey', textAlign: 'center'}}>{"Creating your clip!"}</p>
         <ReactPlayer
           key={this.state.key}
           width={350}
