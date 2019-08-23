@@ -429,7 +429,7 @@ class ClipDetailsPage extends Component {
       console.log(jpegBlob);
       const formData = new FormData();
       formData.append('file', jpegBlob, "clip.jpg");
-      axios.post(`http://localhost:8080/pp/upload`, formData, {
+      axios.post(`https://api.mypokadot.com/pp/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

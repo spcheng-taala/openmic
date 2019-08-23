@@ -350,6 +350,9 @@ class FeedPage extends Component {
         <Container>
           <Row>
             <Col md={8}>
+              <p style={{marginTop: 10, width: 100, borderStyle: 'solid', borderRadius: 10, borderWidth: 2, borderColor: '#6175E0', textAlign: 'center', padding: 10, color: '#6175E0', fontSize: 15, fontWeight: 'bold'}}>
+                {'Trending'}
+              </p>
               {this.renderFeed()}
             </Col>
             <Col md={4}>

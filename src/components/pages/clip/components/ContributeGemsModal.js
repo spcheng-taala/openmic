@@ -84,6 +84,7 @@ class ContributeGemsModal extends Component {
     this.state = {
       amount: 0,
       gemCount: 0,
+			username: '',
     }
 
     this.renderTitleText = this.renderTitleText.bind(this);
@@ -91,6 +92,7 @@ class ContributeGemsModal extends Component {
 		this.renderBuySendGemsButton = this.renderBuySendGemsButton.bind(this);
     this.sendGems = this.sendGems.bind(this);
 		this.buyGems = this.buyGems.bind(this);
+		this.handleUsernameChange = this.handleUsernameChange.bind(this);
   }
 
   renderTitleText() {
@@ -119,26 +121,58 @@ class ContributeGemsModal extends Component {
 	}
 
   sendGems() {
-    if (/^\+?(0|[1-9]\d*)$/.test(this.state.amount)) {
-      if (this.props.comment) {
-        this.props.contributeGems(this.props.comment.id, this.state.amount, this.props.comment.comment);
-      } else {
-        this.props.createComment(this.state.amount);
-      }
-    }
+		// CODE FOR HOUSTON ----------------------------------------------------------------------------
+		var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
+    var profilePicture = "https://riptide-defaults.s3-us-west-2.amazonaws.com/default_profile_picture_" + profPicNumber + ".png";
+		BackendManager.makeQuery('users/create/email', JSON.stringify({
+			first_name: this.state.username,
+      last_name: ' ',
+      email: this.state.username + '@theopenmic.fm',
+      password: this.state.username,
+      username: this.state.username,
+      profile_picture: profilePicture,
+		}))
+		.then(data => {
+			if (data.success) {
+				if (/^\+?(0|[1-9]\d*)$/.test(this.state.amount)) {
+		      if (this.props.comment) {
+		        this.props.contributeGems(data.id, this.props.comment.id, this.state.amount, this.props.comment.comment);
+		      } else {
+		        this.props.createComment(data.id, this.state.amount);
+		      }
+		    }
+			}
+		});
+		// -----------------------------------------------------------------------------------------------
+    // if (/^\+?(0|[1-9]\d*)$/.test(this.state.amount)) {
+    //   if (this.props.comment) {
+    //     this.props.contributeGems(this.props.comment.id, this.state.amount, this.props.comment.comment);
+    //   } else {
+    //     this.props.createComment(this.state.amount);
+    //   }
+    // }
   }
 
 	renderBuySendGemsButton() {
-		if (this.state.gemCount < this.state.amount) {
-			return (
-				<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.buyGems()}>{"Buy Gems"}</button>
-			);
-		} else {
-			return (
-				<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.sendGems()}>{"Send Gems"}</button>
-			);
-		}
+		// if (this.state.gemCount < this.state.amount) {
+		// 	return (
+		// 		<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.buyGems()}>{"Buy Gems"}</button>
+		// 	);
+		// } else {
+		// 	return (
+		// 		<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.sendGems()}>{"Send Gems"}</button>
+		// 	);
+		// }
+		return (
+			<button className="button-rounded-green" style={{marginTop: 20}} onClick={() => this.sendGems()}>{"Send Gems"}</button>
+		);
 	}
+
+	handleUsernameChange(e) {
+    this.setState({
+      username: e.target.value
+    });
+  }
 
   render() {
     const { classes } = this.props;
@@ -171,6 +205,25 @@ class ContributeGemsModal extends Component {
 				<p style={textStyleSmall}>{'Gems support ' + this.props.name + '! 1 gem is worth 1 cent USD.'}</p>
 				<p style={textStyleSmall}>{'The more Gems a comment has, the more likely ' + this.props.name + ' will respond.'}</p>
 				<p style={textStyleSmall}>{this.props.name + ' can only collect Gems when they respond.'}</p>
+				<TextField
+					label={"Username"}
+					id="outlined-adornment-amount"
+					placeholder="Username"
+					variant="outlined"
+					margin="normal"
+					InputProps={{
+						classes: {
+							input: classes.textField
+						},
+					}}
+					InputLabelProps={{
+						shrink: true,
+						FormLabelClasses: {
+							root: classes.placeholder
+						}
+					}}
+					value={this.state.username}
+					onChange={this.handleUsernameChange} />
       </div>
     )
   }

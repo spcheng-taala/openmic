@@ -125,7 +125,6 @@ class ContributorsModal extends Component {
         <Container style={{marginTop: 10}}>
           <Row>
             {this.renderBadge(i)}
-            <Avatar src={user.profile_picture} style={{marginBottom: 10, marginLeft: 10, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
             <Col>
               <div style={centerVertical}>
                 <Typography style={titleStyle}>

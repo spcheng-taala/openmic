@@ -604,7 +604,7 @@ class ClipPage extends Component {
 							/>
 					</div>
 					{this.renderProgressStr()}
-				</Row>        
+				</Row>
       );
     } else {
 			var src = '../../../../../images/play_simple.png';
@@ -774,10 +774,10 @@ class ClipPage extends Component {
 		}
 	}
 
-  createComment(gems) {
+  createComment(userId, gems) {
     BackendManager.makeQuery('clips/comment', JSON.stringify({
       clip_id: this.state.clip.id,
-      user_id: UserManager.id,
+      user_id: userId,
       comment: this.state.comment,
     }))
     .then(data => {
@@ -785,16 +785,16 @@ class ClipPage extends Component {
 				this.setState({
 					comment: ""
 				});
-        this.contributeGems(data.id, gems, this.state.comment)
+        this.contributeGems(userId, data.id, gems, this.state.comment)
       }
     });
   }
 
-  contributeGems(commentId, gems, comment) {
+  contributeGems(userId, commentId, gems, comment) {
     this.closeContributeGemsModal();
     BackendManager.makeQuery('clips/comments/gem/add', JSON.stringify({
       comment_id: commentId,
-      user_id: UserManager.id,
+      user_id: userId,
       gems: gems,
 			comment: comment,
 			creator_email: this.state.clip.creator_email,
@@ -805,7 +805,7 @@ class ClipPage extends Component {
         this.refreshComments(this.state.clip.id);
         BackendManager.makeQuery('gems/user/update', JSON.stringify({
           gem_count: (-1 * gems),
-          user_id: UserManager.id,
+          user_id: userId,
         }))
         .then(data => {
           if (data.success) {

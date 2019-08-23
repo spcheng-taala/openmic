@@ -708,7 +708,7 @@ class MainPage extends React.Component {
               </Toolbar>
             </AppBar>
 
-            <main className={classes.content}>
+            <main className={classes.content} style={{backgroundColor: '#F4F3F6'}}>
               <div className={classes.toolbar} />
                 <div className="content">
 								<Switch>
