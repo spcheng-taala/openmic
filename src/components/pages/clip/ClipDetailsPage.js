@@ -6,11 +6,15 @@ import { Slider, Rail, Handles, Tracks } from 'react-compound-slider'
 import { Container, Row, Col } from 'react-grid-system';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
+import Paper from '@material-ui/core/Paper';
+import InputBase from '@material-ui/core/InputBase';
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import GridListTileBar from '@material-ui/core/GridListTileBar';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
-import '../../sections/video-thumbnail.css';
-import VideoThumbnail from 'react-video-thumbnail';
+import InfiniteScroll from 'react-infinite-scroller';
 
 const customStyles = {
 	overlay: {
@@ -86,7 +90,17 @@ const styles = theme => ({
   },
   textFieldLabelRoot: {
     fontFamily: 'Lato',
-  }
+  },
+	root: {
+    marginTop: 20,
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    overflow: 'hidden',
+  },
+  gridList: {
+    width: '60%',
+  },
 });
 
 export function Handle({ // your handle component
@@ -137,18 +151,8 @@ function Track({ source, target, getTrackProps }) { // your own track component
 
 class ClipDetailsPage extends Component {
 
-  static defaultProps = {
-    isDraggable: true,
-    isResizable: true,
-    compactType: 'horizontal',
-    // verticalCompact: false,
-    rowHeight: 30,
-    cols: 100,
-    onLayoutChange: function() {},
-  };
-
   componentDidMount() {
-    BackendManager.makeQuery('clips/details', JSON.stringify({
+    BackendManager.makeQuery('clips/any', JSON.stringify({
       uuid: this.props.match.params.id,
     }))
     .then(data => {
@@ -158,27 +162,31 @@ class ClipDetailsPage extends Component {
           clip: data.clip,
           title: data.clip.title,
         });
+
+				BackendManager.makeQuery('genres/clip', JSON.stringify({
+					clip_id: data.clip.id,
+				}))
+		    .then(data => {
+		      console.log(data);
+		      if (data.success) {
+		        this.setState({
+		          selectedGenres: data.genres,
+		        });
+		      }
+		    });
       }
     });
-  }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.clip) {
-      if (!this.state.snapshot && !this.state.hasSetSnapshot) {
-        const { metadataLoaded, dataLoaded, suspended, seeked, snapshot } = this.state;
-
-        // check if all 3 required events fired
-        if (metadataLoaded && dataLoaded && suspended) {
-          if (!this.refs.videoEl.currentTime || this.refs.videoEl.currentTime < 2) {
-            this.refs.videoEl.currentTime = 0;
-          }
-        }
-
-        if (seeked && !snapshot) {
-          this.getSnapShot();
-        }
+		BackendManager.makeQuery('genres/all', JSON.stringify({}))
+    .then(data => {
+      console.log(data);
+      if (data.success) {
+        this.setState({
+          allGenres: data.genres,
+          displayedGenres: data.genres,
+        });
       }
-    }
+    });
   }
 
   constructor(props) {
@@ -188,15 +196,12 @@ class ClipDetailsPage extends Component {
 			isPlaying: true,
 			seekStart: 0,
 			duration: 0,
-      metadataLoaded: false,
-      dataLoaded: false,
-      suspended: false,
-      seeked: false,
-      snapshot: null,
-      snapshotUrl: null,
-      hasSetSnapshot: false,
       title: "",
       active: 1,
+			selectedGenres: [],
+			allGenres: [],
+			displayedGenres: [],
+			searchedGenre: '',
     };
 
 		this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
@@ -208,9 +213,11 @@ class ClipDetailsPage extends Component {
 		this.renderPlayPause = this.renderPlayPause.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
 		this.handleDoneClick = this.handleDoneClick.bind(this);
+		this.renderGenresView = this.renderGenresView.bind(this);
 		this.renderView = this.renderView.bind(this);
-    this.renderThumbnailView = this.renderThumbnailView.bind(this);
 		this.handleTitleChange = this.handleTitleChange.bind(this);
+		this.handleSearchGenreChange = this.handleSearchGenreChange.bind(this);
+		this.renderCreateNewGenre = this.renderCreateNewGenre.bind(this);
   }
 
 	ref = player => {
@@ -221,10 +228,11 @@ class ClipDetailsPage extends Component {
     if (this.state.clip) {
       return (
         <div style={{margin: 20}}>
+					<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.podcast_thumbnail}/>
           <ReactPlayer
 						ref={this.ref}
-						width={350}
-						height={200}
+						width={0}
+						height={0}
 						progressInterval={10}
 						url={this.state.clip.url}
 						onDuration={this.handleDurationChange}
@@ -246,32 +254,6 @@ class ClipDetailsPage extends Component {
 		this.setState({
 			seekStart: state.playedSeconds,
 		});
-  }
-
-
-  renderThumbnailView() {
-    if (this.state.clip) {
-      if (this.state.snapshot) {
-        return (
-          <div style={{marginLeft: 10}}>
-            <p style={{color: 'white', fontSize: 10}}>{'Thumbnail Image'}</p>
-            <img style={{width: 100}} src={this.state.snapshot}/>
-          </div>
-        );
-      } else {
-        return (
-          <div style={{marginLeft: 10}}>
-            <p style={{color: 'white', fontSize: 10}}>{'Loading Thumbnail Image...'}</p>
-            <div style={{width: 100, height: 75}}>
-              <VideoThumbnail
-                cors={false}
-                videoUrl={this.state.clip.url}
-                thumbnailHandler={(thumbnail) => this.setState({snapshot: thumbnail})}/>
-            </div>
-          </div>
-        );
-      }
-    }
   }
 
 	renderTrimmerView(classes) {
@@ -302,7 +284,7 @@ class ClipDetailsPage extends Component {
 							variant="outlined"
 						/>
 					</div>
-          {this.renderThumbnailView()}
+					{this.renderGenresView(classes)}
           <div style={{paddingBottom: 10}}/>
 					<button className="button-red" style={{margin: 20, float: 'right'}} onClick={() => this.handleDoneClick()}>{"Publish"}</button>
 				</div>
@@ -448,7 +430,75 @@ class ClipDetailsPage extends Component {
         // handle your error
       });
     }
+	}
 
+	handleSearchGenreChange(e) {
+		this.setState({
+			searchedGenre: e.target.value,
+		});
+		if (e.target.value == '') {
+			this.setState({
+				displayedGenres: this.state.allGenres,
+			});
+		} else {
+			var displayedGenres = this.state.allGenres.filter(function (genre) {
+			  return genre.name.toLowerCase().startsWith(e.target.value.toLowerCase());
+			});
+			this.setState({
+				displayedGenres: displayedGenres,
+			});
+		}
+	}
+
+	renderGenresView(classes) {
+		return (
+			<div>
+				<div className={classes.root}>
+					<p style={{margin: 20, color: '#FFFFFF', width: '100%', textAlign: 'center'}}>{"Add Genres"}</p>
+					<GridList cellHeight={50} className={classes.gridList} cols={6}>
+						{this.state.selectedGenres.map(genre => (
+							<GridListTile key={genre.id} style={{cursor: 'pointer'}}>
+								<button className='button-rounded-no-mar' style={{background: '#42BCBB'}}>
+									{genre.name}
+								</button>
+							</GridListTile>
+						))}
+					</GridList>
+					<div style={{backgroundColor: 'white', width: '100%', margin: 20, height: 1}} />
+					<Paper style={{width: '100%', paddingTop: 5, paddingBottom: 5, paddingLeft: 10, paddingRight: 10, marginLeft: 50, marginRight: 50, marginBottom: 10}}>
+	          <InputBase
+	            className={classes.textFieldInputRoot}
+	            fullWidth
+	            placeholder="Search Podcasts"
+	            onChange={this.handleSearchGenreChange}
+	          />
+	        </Paper>
+					<GridList cellHeight={50} className={classes.gridList} cols={6}>
+						{this.state.displayedGenres.map(genre => (
+							<GridListTile key={genre.id} style={{cursor: 'pointer'}}>
+								<button className='button-rounded-no-mar' style={{background: '#42BCBB'}}>
+									{genre.name}
+								</button>
+							</GridListTile>
+						))}
+					</GridList>
+					{this.renderCreateNewGenre()}
+				</div>
+			</div>
+		);
+	}
+
+	renderCreateNewGenre() {
+		if (this.state.searchedGenre != '') {
+			return (
+				<div>
+					<p style={{margin: 20, color: '#FFFFFF', textSize: 12}}>{"Don't see the genre you want? Click Create New!"}</p>
+					<button className='button-rounded-purple-no-mar'>
+						{'Create New'}
+					</button>
+				</div>
+			);
+		}
 	}
 
 	renderView(classes) {
@@ -457,7 +507,7 @@ class ClipDetailsPage extends Component {
 				<div style={{float: 'left'}}>
         	{this.renderVideoPlayer()}
 				</div>
-				<div style={{marginLeft: 390}}>
+				<div style={{marginLeft: 200}}>
 					{this.renderTrimmerView(classes)}
 				</div>
 			</div>

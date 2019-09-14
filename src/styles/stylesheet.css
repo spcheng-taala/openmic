@@ -217,6 +217,21 @@ h1, h2, h3, h4, p, span {
   border: none;
 }
 
+.button-rounded-no-mar {
+  cursor: pointer;
+  position: relative;
+  display: block;
+  height: 30px;
+  padding: 5px 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  color: white;
+  font-weight: 400;
+  font-size: 14px;
+  font-family: "Lato";
+  border: none;
+}
+
 .button-rounded-purple-no-mar {
   cursor: pointer;
   position: relative;
@@ -454,7 +469,7 @@ h1, h2, h3, h4, p, span {
   display: block;
   margin-top: 30px;
   padding: 10px 30px;
-  background-color: white;
+  background-color: transparent;
   color: #6175E0;
   border: 2px solid #6175E0;
   border-radius: 5px;
@@ -666,11 +681,9 @@ hr {
   margin-left:-150px;
 }
 
-.fab {
-  position:fixed;
-  bottom:0;
-  right:0;
-  z-index: 100;
+.select {
+  font-family: 'Lato';
+  color: #2A2D34;
 }
 
 .share {
@@ -863,12 +876,9 @@ input[type="file"] {
 
 .lineClamp {
   overflow: hidden;
-  text-overflow: ellipsis;
   display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* number of lines to show */
-  line-height: 17;        /* fallback */
-  max-height: 34;
 }
 
 @keyframes floating {
@@ -1021,6 +1031,48 @@ div.left-panel:hover {
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
   visibility: visible;
+}
+
+
+.block-with-text {
+  /* hide text if it more than N lines  */
+  overflow: hidden;
+  /* for set '...' in absolute position */
+  position: relative;
+  /* use this value to count block height */
+  line-height: 1.5em;
+  /* max-height = line-height (1.2) * lines max number (3) */
+  max-height: 4.5em;
+  /* fix problem when last visible word doesn't adjoin right side  */
+  text-align: justify;
+  /* place for '...' */
+  margin-right: -1em;
+  padding-right: 1em;
+}
+/* create the ... */
+.block-with-text:before {
+  /* points in the end */
+  content: '...';
+  /* absolute position */
+  position: absolute;
+  /* set position to right bottom corner of block */
+  right: 0;
+  bottom: 0;
+}
+/* hide ... if we have text, which is less than or equal to max lines */
+.block-with-text:after {
+  /* points in the end */
+  content: '';
+  /* absolute position */
+  position: absolute;
+  /* set position to right bottom corner of text */
+  right: 0;
+  /* set width and height */
+  width: 1em;
+  height: 1em;
+  margin-top: 0.2em;
+  /* bg color = bg color under block */
+  background: white;
 }
 
 /* width */

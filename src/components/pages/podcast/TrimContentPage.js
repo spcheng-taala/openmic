@@ -145,14 +145,20 @@ class TrimContentPage extends Component {
   };
 
   componentDidMount() {
-		var storyId = localStorage.getItem('story_id');
+		var podcastId = localStorage.getItem('podcast_id');
+		var podcastTitle = localStorage.getItem('podcast_title');
+		var thumbnail = localStorage.getItem('podcast_thumbnail');
     var url = localStorage.getItem('url');
-		if (storyId && url) {
+		if (podcastId && url && thumbnail && podcastTitle) {
 			this.setState({
-				storyId: storyId,
+				podcastId: podcastId,
+				podcastTitle: podcastTitle,
+				thumbnail: thumbnail,
 				url: url
 			});
-			localStorage.removeItem('story_id');
+			localStorage.removeItem('podcast_id');
+			localStorage.removeItem('podcast_title');
+			localStorage.removeItem('podcast_thumbnail');
       localStorage.removeItem('url');
 		} else {
 			this.props.history.push('/');
@@ -162,7 +168,9 @@ class TrimContentPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
-			storyId: 0,
+			podcastId: "",
+			podcastTitle: "",
+			thumbnail: "",
       url: "",
 			isPlaying: true,
 			seekStart: 0,
@@ -197,10 +205,11 @@ class TrimContentPage extends Component {
     if (this.state.url != "") {
       return (
         <div style={{margin: 20}}>
+					<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.thumbnail}/>
           <ReactPlayer
 						ref={this.ref}
-						width={350}
-						height={200}
+						width={0}
+						height={0}
 						progressInterval={10}
 						url={this.state.url}
 						onDuration={this.handleDurationChange}
@@ -461,13 +470,15 @@ class TrimContentPage extends Component {
 			var end = this.state.end;
 			var duration = end - start;
 			const timestamp = Date.now().toString();
-			var fileName = UserManager.id + "_" + timestamp + ".mp4";
+			var fileName = UserManager.id + "_" + timestamp + ".mp3";
 			var url = BackendManager.fileUrl + fileName;
 
 			BackendManager.makeQuery('clips/create', JSON.stringify({
 				url: url,
 				title: this.state.title,
-				story_id: this.state.storyId,
+				podcast_id: this.state.podcastId,
+				podcast_title: this.state.podcastTitle,
+				podcast_thumbnail: this.state.thumbnail,
 				duration: duration,
 				user_id: UserManager.id,
 			}))
@@ -476,7 +487,7 @@ class TrimContentPage extends Component {
 				var uuid = data.uuid;
 				var clipId = data.id;
 				if (data.success) {
-					BackendManager.makeQuery('trim/video', JSON.stringify({
+					BackendManager.makeQuery('trim/audio', JSON.stringify({
 						url: this.state.url,
 						start_time: start,
 						duration: duration,

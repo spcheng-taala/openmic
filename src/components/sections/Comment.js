@@ -161,7 +161,7 @@ class Comment extends React.Component {
     this.handleCollectClick = this.handleCollectClick.bind(this);
   }
 
-  renderGem(gems) {
+  renderGem(gems, comment) {
     var style = gemLabelStyle1;
     var src = '../../../../../images/gem_1_10x.png';
 
@@ -185,24 +185,32 @@ class Comment extends React.Component {
       src = '../../../../../images/gem_6_10x.png';
     }
 
-    return (
-      <Row>
-        <img style={gemIconStyle} src={src}/>
-        <Typography style={style}>
-          {UtilsManager.convertToCommaString(gems) + " Donated"}
-        </Typography>
-        <div className='tooltip'>
-          <Typography style={{marginLeft: 20, fontFamily: 'Lato', fontSize: 10, cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginTop: 3}}>
-            {"What are gems?"}
-          </Typography>
-          <span className="tooltiptext" style={{fontSize: 10}}>{`
-            Gems support our podcasters!
-            1 Gem is worth 1 cent            
-            `}
-          </span>
+    if (gems > 0) {
+      return (
+        <div>
+          <Row>
+            <img style={gemIconStyle} src={src}/>
+            <Typography style={style}>
+              {UtilsManager.convertToCommaString(gems) + " Donated"}
+            </Typography>
+            <div className='tooltip'>
+              <Typography style={{marginLeft: 20, fontFamily: 'Lato', fontSize: 10, cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginTop: 3}}>
+                {"What are gems?"}
+              </Typography>
+              <span className="tooltiptext" style={{fontSize: 10}}>{`
+                Gems support our podcasters!
+                1 Gem is worth 1 cent
+                `}
+              </span>
+            </div>
+          </Row>
+          <div>
+            <p style={{display:'inline-block', fontStyle: 'italic', marginLeft: 30, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045'}}>{"( " + comment.count + " contributors )"}</p>
+            <p style={{display:'inline-block', textDecoration: 'underline', marginLeft: 10, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045', cursor: 'pointer'}} onClick={() => this.handleViewContributorsClick()}>{"View All"}</p>
+          </div>
         </div>
-      </Row>
-    );
+      );
+    }
   }
 
   handleReplyClick(isReplying) {
@@ -335,22 +343,12 @@ class Comment extends React.Component {
     return (
       <div style={tier0Style}>
         {!comment.root ? <div>
-          {this.renderGem(comment.gems)}
-          <div>
-            <p style={{display:'inline-block', fontStyle: 'italic', marginLeft: 30, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045'}}>{"( " + comment.count + " contributors )"}</p>
-            <p style={{display:'inline-block', textDecoration: 'underline', marginLeft: 10, marginTop: 5, marginBottom: 0, fontSize: 10, textAlign: 'left', color: '#880045', cursor: 'pointer'}} onClick={() => this.handleViewContributorsClick()}>{"View All"}</p>
+          {this.renderGem(comment.gems, comment)}
           </div>
-        </div> :
-        <div style={{backgroundColor: '#DDDDDD', borderRadius: '5px 5px 0px 0px', width: '60%'}}>
-          <p style={replyingToStyle}>
-            {'Replying to: '}
-          </p>
-          <p style={parentTextStyle}>
-            {comment.parent_comment}
-          </p>
-        </div>
+         :
+        <div/>
         }
-        <p style={{marginLeft: 30, marginTop: 10, marginBottom: 0, fontWeight: 'bold'}}>{comment.comment}</p>
+        <p style={{marginLeft: 30, marginTop: 10, marginBottom: 0}}>{comment.comment}</p>
         <p style={tier0NameStyle}>
           {"Posted by: " + comment.username}
         </p>

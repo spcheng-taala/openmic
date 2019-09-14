@@ -1,10 +1,15 @@
 class BackendManager {
   constructor() {
-    this.domain = "https://api.mypokadot.com/pp/";
-    // this.domain = "http://localhost:8080/pp/";
+    // this.domain = "https://api.mypokadot.com/pp/";
+    this.domain = "http://localhost:8080/";
+
+    this.searchDomain = "https://listen-api.listennotes.com/api/v2/search?q=";
+    this.episodesDomain = "https://listen-api.listennotes.com/api/v2/podcasts/";
+    this.episodeDomain = "https://listen-api.listennotes.com/api/v2/episodes/";
+
     // this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-files/";
-    // this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
-    this.fileUrl = "https://s3-us-west-2.amazonaws.com/riptide-clips/";
+    this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+    // this.fileUrl = "https://s3-us-west-2.amazonaws.com/riptide-clips/";
     // this.gifUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
     this.gifUrl = "https://s3-us-west-2.amazonaws.com/riptide-gifs/";
     this.refreshToken = "";
@@ -91,6 +96,58 @@ class BackendManager {
     .then(data => {
       return data;
     })
+  }
+
+  searchPodcast(podcast, offset) {
+    return fetch(this.searchDomain + podcast + '&type=podcast&offset=' + offset, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-ListenAPI-Key': 'db265fdaafa944b8b856a2d4a20466f9',
+      },
+    })
+    .then((resp) => resp.json())
+    .then(data => {
+      return data;
+    });
+  }
+
+  getEpisodes(podcastId, pubDate) {
+    var query = this.episodesDomain + podcastId;
+    if (pubDate) {
+      query += "?next_episode_pub_date=" + pubDate + "&sort=recent_first";
+    } else {
+      query += "?sort=recent_first";
+    }
+    return fetch(query, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-ListenAPI-Key': 'db265fdaafa944b8b856a2d4a20466f9',
+      },
+    })
+    .then((resp) => resp.json())
+    .then(data => {
+      return data;
+    });
+  }
+
+  getEpisode(episodeId) {
+    var query = this.episodeDomain + episodeId;
+    return fetch(query, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-ListenAPI-Key': 'db265fdaafa944b8b856a2d4a20466f9',
+      },
+    })
+    .then((resp) => resp.json())
+    .then(data => {
+      return data;
+    });
   }
 }
 

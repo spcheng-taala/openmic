@@ -10,44 +10,41 @@ import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
 import Toolbar from '@material-ui/core/Toolbar';
+import InputBase from '@material-ui/core/InputBase';
+import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
+import GenreSelect from './components/GenreSelect.js';
+import SearchComponent from './components/SearchComponent.js';
 import Notifications, {notify} from 'react-notify-toast';
 
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
+import * as Constants from '../../singletons/Constants.js';
 
 import FeedPage from '../feed/FeedPage.js';
-import CommunityPage from '../about/CommunityPage.js';
-import AboutPage from '../about/AboutPage.js';
-import WhatAreGemsPage from '../about/WhatAreGemsPage.js';
-import HowItWorksPage from '../about/HowItWorksPage.js';
-import StoryPage from '../story/StoryPage.js';
 import ProfilePage from '../profile/ProfilePage.js';
 import EditProfilePage from '../profile/EditProfilePage.js';
-import CheckOutPage from '../checkout/CheckOutPage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
 import ClipAudioPage from '../story/ClipAudioPage.js';
 import TranscribePage from '../story/TranscribePage.js';
 import ClipPage from '../clip/ClipPage.js';
 import EditClipPage from '../story/EditClipPage.js';
-import TrimContentPage from '../story/TrimContentPage.js';
+import TrimContentPage from '../podcast/TrimContentPage.js';
 import CreateClipPage from '../story/CreateClipPage.js';
 import EditorPage from '../story/EditorPage.js';
 import PublishingPage from '../story/PublishingPage.js';
-import ClipDetailsPage from '../story/ClipDetailsPage.js';
+import ClipDetailsPage from '../clip/ClipDetailsPage.js';
 import MySponsorsPage from '../sponsor/MySponsorsPage.js';
 import TwitterSharePage from '../clip/TwitterSharePage.js';
+import EpisodesPage from '../episodes/EpisodesPage.js';
+import PodcastPage from '../podcast/PodcastPage.js';
+import PodcastGalleryPage from './PodcastGalleryPage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
-import UploadModal from './components/UploadModal.js';
-import UploadSuccessModal from './components/UploadSuccessModal.js';
-import LoadingModal from './components/LoadingModal.js';
-import BuyGemsModal from './components/BuyGemsModal.js';
-import ContributeGifAnimationModal from './components/ContributeGifAnimationModal.js';
 
 const drawerWidth = 240;
 
@@ -141,7 +138,7 @@ const logoStyle = {
 const styles = theme => ({
 	main: {
 		overflowY: 'hidden',
-		backgroundColor: '#FAFAFA',
+		backgroundColor: '#F4F3F6',
 	},
 
   root: {
@@ -150,7 +147,7 @@ const styles = theme => ({
     overflow: 'hidden',
     position: 'relative',
     display: 'flex',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F4F3F6',
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
@@ -161,6 +158,7 @@ const styles = theme => ({
     fontSize: 22,
     fontWeight: 'bold',
     marginLeft: 10,
+		marginRight: 20,
   },
   content: {
     flexGrow: 1,
@@ -194,9 +192,6 @@ const styles = theme => ({
     cursor: 'pointer',
   },
   toolbar: theme.mixins.toolbar,
-  card: {
-    maxWidth: 745,
-  },
   media: {
     ...theme.mixins.gutters(),
     paddingTop: 70,
@@ -236,26 +231,8 @@ class MainPage extends React.Component {
 				profilePicture: profilePicture,
 			});
 			BackendManager.refreshToken = localStorage.getItem('refresh_token');
-			BackendManager.updateToken().then(data => {
-				BackendManager.makeQuery('users/basic', JSON.stringify({
-		      user_id: id,
-		    }))
-		    .then(data => {
-		      if (data.success) {
-		        this.setState({
-							isCreator: data.is_creator,
-		        });
-		      }
-		    });
-				this.refreshFollowing();
-				this.refreshGems();
-				this.refreshDeals();
-			});
-		} else {
-			var sponsorsJson = localStorage.getItem('sponsors');
-			if (sponsorsJson) {
-				this.setNotification(true);
-			}
+			BackendManager.updateToken();
+			this.refreshGenres();
 		}
   }
 
@@ -265,121 +242,157 @@ class MainPage extends React.Component {
     this.state = {
 			hideDrawer: false,
       modalIsOpen: false,
-			uploadModalIsOpen: false,
-			uploadSuccessModalIsOpen: false,
-      loadingModalIsOpen: false,
-			buyGemsModalIsOpen: false,
-			gemGifModalIsOpen: false,
 			profilePicture: "",
-			uploadedStoryId: 0,
-			uploadedStoryTitle: "",
-			following: [],
       isSignUp: true,
       isLoggedIn: false,
       signUpText: "Have an account? Login",
-			isCreator: false,
-			selectedFile: null,
-			gems: 0,
-			gemsAdded: 0,
-			gemsText: "",
-			seconds: 4,
-			deals: [],
+			genres: [],
+			currentGenre: {
+				value: 'All',
+				label: 'All',
+			},
+			clipType: Constants.CLIP_TYPE_TRENDING,
+			clipCount: 0,
+			clips: [],
 			showNotification: false,
     };
 
-		this.timer = 0;
-
-		this.refreshFollowing = this.refreshFollowing.bind(this);
-		this.refreshGems = this.refreshGems.bind(this);
-		this.refreshDeals = this.refreshDeals.bind(this);
+		this.refreshGenres = this.refreshGenres.bind(this);
+		this.setGenre = this.setGenre.bind(this);
+		this.setClipType = this.setClipType.bind(this);
+		this.refreshClips = this.refreshClips.bind(this);
+		this.getMoreClips = this.getMoreClips.bind(this);
 
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
-		this.openUploadModal = this.openUploadModal.bind(this);
-		this.closeUploadModal = this.closeUploadModal.bind(this);
-		this.openUploadSuccessModal = this.openUploadSuccessModal.bind(this);
-		this.closeUploadSuccessModal = this.closeUploadSuccessModal.bind(this);
-    this.openLoadingModal = this.openLoadingModal.bind(this);
-    this.closeLoadingModal = this.closeLoadingModal.bind(this);
-		this.openBuyGemsModal = this.openBuyGemsModal.bind(this);
-		this.closeBuyGemsModal = this.closeBuyGemsModal.bind(this);
-		this.openGemGifModal = this.openGemGifModal.bind(this);
-		this.countDown = this.countDown.bind(this);
+
     this.handleAuth = this.handleAuth.bind(this);
 		this.setProfilePicture = this.setProfilePicture.bind(this);
     this.toggleSignUp = this.toggleSignUp.bind(this);
-		this.renderAudio = this.renderAudio.bind(this);
-		this.uploadFile = this.uploadFile.bind(this);
     this.showToast = this.showToast.bind(this);
 		this.setNotification = this.setNotification.bind(this);
     this.logout = this.logout.bind(this);
-		this.setFollowing = this.setFollowing.bind(this);
   }
 
-	refreshFollowing() {
-		BackendManager.makeQuery('followers/following', JSON.stringify({
-			user_id: UserManager.id,
+	refreshGenres() {
+		BackendManager.makeQuery('genres/all', JSON.stringify({
 		}))
 		.then(data => {
 			if (data.success) {
-				this.setState({
-					following: data.following,
-				});
+				console.log(data);
+				var genres = [];
+	      for (var i = 0; i < data.genres.length; i++) {
+	        var genre = {
+	          value: data.genres[i],
+	          label: data.genres[i].name,
+	        };
+	        genres.push(genre);
+	      }
+	      var genre = {
+	        value: 'All',
+	        label: 'All',
+	      };
+	      if (genres.length > 0) {
+	        genre = genres[0];
+	      }
+	      this.setState({
+	        genres: genres,
+	        currentGenre: genre,
+	      });
+
+				this.refreshClips(genre, this.state.clipType);
 			}
 		});
 	}
 
-	refreshGems() {
-		BackendManager.makeQuery('gems/user', JSON.stringify({
-			user_id: UserManager.id,
-		}))
-		.then(data => {
-			if (data.success) {
-				if (data.gem_count < 0) {
-					BackendManager.makeQuery('gems/user/create', JSON.stringify({
-						user_id: UserManager.id,
-						gem_count: 0,
-					}))
-					.then(data => {
-						if (data.success) {
-							this.setState({
-								gems: 0,
-							});
-						}
-					});
-				} else {
+	setGenre(genre) {
+		this.setState({
+			currentGenre: genre
+		});
+
+		this.refreshClips(genre, this.state.clipType);
+	}
+
+	setClipType(clipType) {
+		this.setState({
+			clipType: clipType
+		});
+
+		this.refreshClips(this.state.currentGenre, clipType);
+	}
+
+	refreshClips(genre, clipType) {
+		if (genre.value.id) {
+			BackendManager.makeQuery('clips/genre/count', JSON.stringify({
+				genre_id: genre.value.id
+			}))
+			.then(data => {
+				if (data.success) {
 					this.setState({
-						gems: data.gem_count,
+						clipCount: data.count,
 					});
 				}
-			}
-		});
-	}
+			});
 
-	refreshDeals() {
-		BackendManager.makeQuery('sponsors/user', JSON.stringify({
-			user_id: UserManager.id,
-		}))
-		.then(data => {
-			if (data.success) {
-				if (data.sponsors.length > 0) {
-					if (data.sponsors[0].viewed == 0) {
+			if (clipType == Constants.CLIP_TYPE_TRENDING) {
+				BackendManager.makeQuery('clips/genre/trending', JSON.stringify({
+					genre_id: genre.value.id
+				}))
+				.then(data => {
+					if (data.success) {
 						this.setState({
-							showNotification: true,
-						});
-					} else {
-						this.setState({
-							showNotification: false,
+							clips: data.clips,
 						});
 					}
-				} else {
-					this.setState({
-						showNotification: false,
-					});
-				}
+				});
+			}	else {
+				BackendManager.makeQuery('clips/genre/new', JSON.stringify({
+					genre_id: genre.value.id
+				}))
+				.then(data => {
+					if (data.success) {
+						this.setState({
+							clips: data.clips,
+						});
+					}
+				});
 			}
-		});
+		}
+	}
+
+	getMoreClips() {
+		if (this.state.currentGenre.value.id) {
+			if (this.state.clipType == Constants.CLIP_TYPE_TRENDING) {
+				BackendManager.makeQuery('clips/genre/trending/cont', JSON.stringify({
+					genre_id: this.state.currentGenre.value.id,
+					score: this.state.clips[this.state.clips.length - 1].score,
+				}))
+				.then(data => {
+					if (data.success) {
+						var clips = this.state.clips;
+						clips.push.apply(clips, data.clips);
+						this.setState({
+							clips: clips,
+						});
+					}
+				});
+			}	else {
+				BackendManager.makeQuery('clips/genre/new/cont', JSON.stringify({
+					genre_id: this.state.currentGenre.value.id,
+					clip_id: this.state.clips[this.state.clips.length - 1].id,
+				}))
+				.then(data => {
+					if (data.success) {
+						var clips = this.state.clips;
+						clips.push.apply(clips, data.clips);
+						this.setState({
+							clips: clips,
+						});
+					}
+				});
+			}
+		}
 	}
 
 	hideDrawer(t) {
@@ -398,89 +411,6 @@ class MainPage extends React.Component {
     this.setState({
       modalIsOpen: false,
     });
-  }
-
-	openUploadModal() {
-    if (this.state.isLoggedIn) {
-      this.setState({
-        uploadModalIsOpen: true,
-      });
-    } else {
-      this.openModal();
-    }
-  }
-
-	closeUploadModal() {
-    this.setState({
-      uploadModalIsOpen: false,
-    });
-  }
-
-	openUploadSuccessModal() {
-		this.setState({
-			uploadSuccessModalIsOpen: true
-		});
-	}
-
-	closeUploadSuccessModal() {
-		this.setState({
-			uploadSuccessModalIsOpen: false
-		});
-	}
-
-  openLoadingModal() {
-    this.setState({
-      loadingModalIsOpen: true
-    });
-  }
-
-  closeLoadingModal() {
-    this.setState({
-      loadingModalIsOpen: false
-    });
-  }
-
-	openBuyGemsModal() {
-		this.setState({
-			buyGemsModalIsOpen: true
-		});
-	}
-
-	closeBuyGemsModal() {
-		this.setState({
-			buyGemsModalIsOpen: false
-		});
-	}
-
-	openGemGifModal(gems, text) {
-		this.setState({
-			seconds: 4,
-			gemsAdded: gems,
-			gemsText: text,
-			gemGifModalIsOpen: true,
-		});
-		this.timer = 0;
-		if (this.timer == 0 && this.state.seconds > 0) {
-      this.timer = setInterval(this.countDown, 1000);
-    }
-	}
-
-	countDown() {
-    // Remove one second, set state so a re-render happens.
-    let seconds = this.state.seconds - 1;
-    this.setState({
-      seconds: seconds,
-    });
-
-    // Check if we're at zero.
-    if (seconds == 0) {
-      clearInterval(this.timer);
-			this.timer = 0;
-			this.setState({
-				gemGifModalIsOpen: false,
-				seconds: 4,
-			});
-    }
   }
 
   handleAuth() {
@@ -502,67 +432,6 @@ class MainPage extends React.Component {
 			signUpText = "Don't have an account? Sign Up";
 		}
 		this.setState({isSignUp: signUp, signUpText: signUpText});
-	}
-
-	renderAudio() {
-		if (this.state.selectedFile != null) {
-			return (
-				<audio src={URL.createObjectURL(this.state.selectedFile)} onLoadedMetadata={this.handleMetadata}></audio>
-			);
-		}
-	}
-
-	handleMetadata(e) {
-    const duration = e.currentTarget.duration;
-		alert(duration);
-		this.setState({
-			duration: duration,
-		});
-  }
-
-	uploadFile(file, title, seconds) {
-    if (this.state.isLoggedIn) {
-      if (file != null) {
-        this.openLoadingModal();
-    		var ext = file.name.substr(file.name.lastIndexOf('.') + 1);
-    		if (ext == "m4a") {
-    			ext = "mp4";
-    		}
-        const formData = new FormData();
-        formData.append('file', file);
-        axios.post(`https://api.mypokadot.com/pp/upload/`, formData, {
-        }).then(data => {
-    			this.closeLoadingModal();
-    			if (data.data.success) {
-    				var storyUrl = BackendManager.fileUrl + data.data.title.split(' ').join('+');
-    				BackendManager.makeQuery('stories/create', JSON.stringify({
-    					title: title,
-    					url: storyUrl,
-    					public: 1,
-    					user_id: UserManager.id,
-    					duration: seconds,
-    				}))
-    				.then(data => {
-    					if (data.success) {
-    						this.setState({
-    							uploadedStoryId: data.id,
-    							uploadedStoryTitle: title,
-    						});
-    						this.closeUploadModal();
-    						this.openUploadSuccessModal();
-    					}
-    				});
-    			}
-        }).catch(error => {
-          // handle your error
-        });
-      } else {
-        alert("Oops! Looks like a file isn't attached! Make sure you select a file before uploading.");
-      }
-    } else {
-      this.openModal();
-    }
-
 	}
 
   showToast(toast, type) {
@@ -587,23 +456,6 @@ class MainPage extends React.Component {
     });
   }
 
-	setFollowing(isFollowing, userId) {
-		var stage = 1;
-		if (isFollowing) {
-			stage = 0;
-		}
-		BackendManager.makeQuery('followers/update', JSON.stringify({
-			follower_id: UserManager.id,
-			user_id: userId,
-			stage: stage,
-		}))
-		.then(data => {
-			if (data.success) {
-				this.refreshFollowing();
-			}
-		});
-	}
-
   render() {
     const { classes } = this.props;
     const content = this.props.content;
@@ -611,7 +463,6 @@ class MainPage extends React.Component {
     return (
       <BrowserRouter className={classes.main}>
         <div className={classes.main}>
-					{this.renderAudio()}
           <Modal
             isOpen={this.state.modalIsOpen}
             onRequestClose={this.closeModal}
@@ -624,80 +475,14 @@ class MainPage extends React.Component {
               {this.state.signUpText}
             </button>
           </Modal>
-					<Modal
-            isOpen={this.state.uploadModalIsOpen}
-            onRequestClose={this.closeUploadModal}
-            style={customStyles}
-            contentLabel="Upload a story"
-          >
-            <UploadModal uploadFile={this.uploadFile}/>
-          </Modal>
-					<Modal
-            isOpen={this.state.uploadSuccessModalIsOpen}
-            onRequestClose={this.closeUploadSuccessModal}
-            style={customStyles}
-            contentLabel="Upload Success"
-          >
-            <UploadSuccessModal
-							storyId={this.state.uploadedStoryId}
-							title={this.state.uploadedStoryTitle}
-							closeUploadSuccessModal={this.closeUploadSuccessModal}
-							handleStoryClick={this.handleStoryClick}
-						/>
-          </Modal>
-          <Modal
-            isOpen={this.state.loadingModalIsOpen}
-            style={customStyles}
-            contentLabel="Uploading..."
-          >
-            <LoadingModal/>
-          </Modal>
-					<Modal
-            isOpen={this.state.buyGemsModalIsOpen}
-						onRequestClose={this.closeBuyGemsModal}
-            style={customStyles}
-            contentLabel="Buy Gems"
-          >
-            <BuyGemsModal
-							isLoggedIn={this.state.isLoggedIn}
-							isMobile={this.state.isMobile}
-							openLoginModal={this.openModal}
-							closeBuyGemsModal={this.closeBuyGemsModal}
-						/>
-          </Modal>
-					<Modal
-            isOpen={this.state.gemGifModalIsOpen}
-            style={customStylesLight}
-            contentLabel="Woot!"
-          >
-            <ContributeGifAnimationModal
-							gems={this.state.gemsAdded}
-							text={this.state.gemsText}
-						/>
-          </Modal>
           <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
                 <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"}/></NavLink>
                 <NavLink exact to="/" className={classes.titleText}>Riptide</NavLink>
+								<GenreSelect genres={this.state.genres} genre={this.state.currentGenre} setGenre={this.setGenre}/>
+								<SearchComponent setGenre={this.setGenre}/>
 								<div className={classes.flex}/>
-								{this.state.isLoggedIn ?
-									<div style={{marginRight: 20}}>
-										<p style={{color: '#FFFFFF', display: 'inline', marginRight: 5}}>{UtilsManager.convertToCommaString(this.state.gems)}</p>
-										<img style={{width: 15, display: 'inline'}} src={"../../../../../../images/gem_3_10x.png"}/>
-									</div>
-									: <div/>
-								}
-								{this.state.isCreator ? <a onClick={() => this.openUploadModal()}	className={classes.menuText}>Upload</a> : <div/>}
-								<img style={{width: 100, cursor: 'pointer'}} src={"../../../../../../images/get_gems.png"} onClick={() => this.openBuyGemsModal()}/>
-								{this.state.showNotification ?
-									<NavLink to={"/deals"}>
-										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals_notification.png"}/>
-									</NavLink> :
-									<NavLink to={"/deals"}>
-										<img style={{width: 25, cursor: 'pointer', marginLeft: 10}} src={"../../../../../../images/deals.png"}/>
-									</NavLink>
-								}
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.username}>
@@ -718,49 +503,16 @@ class MainPage extends React.Component {
                       <FeedPage {...props}
 												isLoggedIn={this.state.isLoggedIn}
 												openLoginModal={this.openModal}
-												openGemGifModal={this.openGemGifModal}
 												showToast={this.showToast}
+												clipType={this.state.clipType}
+												setClipType={this.setClipType}
+												clipCount={this.state.clipCount}
+												clips={this.state.clips}
+												getMoreClips={this.getMoreClips}
                       />}
                   />
-                  <Route path="/about" render={(props) =>
-										<AboutPage {...props}
-											hideDrawer={this.hideDrawer}
-										/>}
-									/>
-									<Route path="/community" render={(props) =>
-										<CommunityPage {...props}
-											hideDrawer={this.hideDrawer}
-										/>}
-									/>
-									<Route path="/howitworks/clip" render={(props) =>
-										<HowItWorksPage {...props}
-											hideDrawer={this.hideDrawer}
-										/>}
-									/>
-									<Route path="/howitworks/gems" render={(props) =>
-										<WhatAreGemsPage {...props}
-											isLoggedIn={this.state.isLoggedIn}
-											hideDrawer={this.hideDrawer}
-											openLoginModal={this.openModal}
-										/>}
-									/>
-									<Route path="/share/t"
-										render={(props) =>
-											<TwitterSharePage {...props}
-												showToast={this.showToast}
-											/>}
-									/>
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
-									<Route
-										exact path='/checkout'
-										render={(props) =>
-											<CheckOutPage {...props}
-												openGemGifModal={this.openGemGifModal}
-												refreshGems={this.refreshGems}
-											/>
-										}
-									/>
 									<Route
                     exact path='/edit'
                     render={(props) =>
@@ -768,7 +520,6 @@ class MainPage extends React.Component {
 												isLoggedIn={this.state.isLoggedIn}
 												setProfilePicture={this.setProfilePicture}
                         showToast={this.showToast}
-												openGemGifModal={this.openGemGifModal}
                       />}
                   />
 									<Route
@@ -779,27 +530,28 @@ class MainPage extends React.Component {
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
 												setNotification={this.setNotification}
-												openBuyGemsModal={this.openBuyGemsModal}
-												openGemGifModal={this.openGemGifModal}
-												refreshGems={this.refreshGems}
 											/>}
                   />
-                  <Route
-                    path="/story/:id"
+									<Route
+                    path="/podcast/:id"
                     render={(props) =>
-                      <StoryPage
-                        {...props}
-                        isLoggedIn={this.state.isLoggedIn}
-  											openLoginModal={this.openModal}
-                        showToast={this.showToast}
+                      <PodcastPage {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												openLoginModal={this.openModal}
+												showToast={this.showToast}
 												setNotification={this.setNotification}
-												openBuyGemsModal={this.openBuyGemsModal}
-												openGemGifModal={this.openGemGifModal}
-												following={this.state.following}
-												setFollowing={this.setFollowing}
-												refreshGems={this.refreshGems}
-                      />}
+											/>}
                   />
+									<Route exact path="/search"
+										render={(props) =>
+											<PodcastGalleryPage {...props}
+											/>}
+									/>
+									<Route exact path="/episodes"
+										render={(props) =>
+											<EpisodesPage {...props}
+											/>}
+									/>
                   <Route
                     path="/profile/:id"
                     render={(props) => <ProfilePage
@@ -820,17 +572,6 @@ class MainPage extends React.Component {
                     render={(props) =>
 											<PublishingPage
 	                      {...props}
-	                    />}
-                  />
-									<Route
-                    path="/deals"
-                    render={(props) =>
-											<MySponsorsPage
-	                      {...props}
-												isLoggedIn={this.state.isLoggedIn}
-												openLoginModal={this.openModal}
-												setNotification={this.setNotification}
-												showToast={this.showToast}
 	                    />}
                   />
 									<Route

@@ -89,6 +89,7 @@ class ContributeGemsModal extends Component {
     this.renderTitleText = this.renderTitleText.bind(this);
     this.handleGemAmountChange = this.handleGemAmountChange.bind(this);
 		this.renderBuySendGemsButton = this.renderBuySendGemsButton.bind(this);
+		this.renderNotNowButton = this.renderNotNowButton.bind(this);
     this.sendGems = this.sendGems.bind(this);
 		this.buyGems = this.buyGems.bind(this);
   }
@@ -100,7 +101,7 @@ class ContributeGemsModal extends Component {
       );
     } else {
       return (
-        <p style={topTextStyle}>{'How many Gems do you want to send?'}</p>
+        <p style={topTextStyle}>{'Do you want to add some Gems?'}</p>
       );
     }
   }
@@ -140,6 +141,18 @@ class ContributeGemsModal extends Component {
 		}
 	}
 
+	renderNotNowButton() {
+		if (this.props.comment) {
+			return (
+				<button className="button-rounded-purple-empty" style={{marginTop: 10}} onClick={() => this.props.closeContributeGemsModal()}>{"Not Now"}</button>
+			);
+		} else {
+			return (
+				<button className="button-rounded-purple-empty" style={{marginTop: 10}} onClick={() => this.props.createComment(UserManager.id, 0)}>{"Not Now"}</button>
+			);
+		}
+	}
+
   render() {
     const { classes } = this.props;
 		return (
@@ -168,6 +181,7 @@ class ContributeGemsModal extends Component {
           />
         </div>
 				{this.renderBuySendGemsButton()}
+				{this.renderNotNowButton()}
 				<p style={textStyleSmall}>{'Gems support ' + this.props.name + '! 1 gem is worth 1 cent USD.'}</p>
 				<p style={textStyleSmall}>{'The more Gems a comment has, the more likely ' + this.props.name + ' will respond.'}</p>
 				<p style={textStyleSmall}>{this.props.name + ' can only collect Gems when they respond.'}</p>

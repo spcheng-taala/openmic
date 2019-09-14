@@ -122,7 +122,7 @@ function Track({ source, target, getTrackProps }) { // your own track component
   )
 }
 
-class ClipPage extends Component {
+class PodcastPage extends Component {
 
   componentDidMount() {
 		if (UserManager.id <= 0) {
@@ -133,12 +133,12 @@ class ClipPage extends Component {
 		}
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
-    this.refreshClip();
+    this.refreshPodcast();
   }
 
   componentDidUpdate() {
-    if (this.state.clip == null || this.props.match.params.id != this.state.clip.uuid) {
-      this.refreshClip();
+    if (this.state.podcast == null || this.props.match.params.id != this.state.podcast.id) {
+      this.refreshPodcast();
     }
   }
 
@@ -148,7 +148,7 @@ class ClipPage extends Component {
     this.state = {
 			show404: false,
       isMobile: false,
-      clip: null,
+      podcast: null,
       isPlaying: true,
       value: 0,
       duration: 0,
@@ -156,7 +156,7 @@ class ClipPage extends Component {
       otherClips: [],
     };
 
-		this.refreshClip = this.refreshClip.bind(this);
+		this.refreshPodcast = this.refreshPodcast.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
     this.togglePlayPause = this.togglePlayPause.bind(this);
@@ -175,47 +175,35 @@ class ClipPage extends Component {
     this.renderOtherClipsListItem = this.renderOtherClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
 		this.renderView = this.renderView.bind(this);
+    this.openClip = this.openClip.bind(this);
+    this.savePodcast = this.savePodcast.bind(this);
   }
 
-	refreshClip() {
-		BackendManager.makeQuery('clips/info', JSON.stringify({
-      uuid: this.props.match.params.id,
-    }))
+	refreshPodcast() {
+		BackendManager.getEpisode(this.props.match.params.id)
     .then(data => {
-      if (data.success) {
+      const regex = /(<([^>]+)>)/ig;
+      if (data.id) {
+        var description = data.description.replace(regex, '');
+        var podcast = {
+          id: data.id,
+          audio: data.audio,
+          image: data.image,
+          title: data.title,
+          descrpition: description,
+          podcast: data.podcast.title,
+          podcastId: data.podcast.id,
+          duration: data.audio_length_sec,
+        };
         this.setState({
-					show404: false,
-          clip: data.clip,
-        });
-				var storyId = data.clip.story_id;
-        BackendManager.makeQuery('clips/others', JSON.stringify({
-          clip_id: data.clip.id,
-          user_id: data.clip.creator_id,
-        }))
-        .then(data => {
-          if (data.success) {
-						if (data.clips.length > 0) {
-							this.setState({
-	              otherClips: data.clips,
-	            });
-						} else {
-							BackendManager.makeQuery('clips/all', JSON.stringify({
-					    }))
-					    .then(data => {
-					      if (data.success) {
-					        this.setState({
-					          otherClips: data.clips,
-					        });
-					      }
-					    });
-						}
-          }
+          show404: false,
+          podcast: podcast,
         });
       } else {
-				this.setState({
-					show404: true,
-				});
-			}
+        this.setState({
+          show404: true,
+        });
+      }
     });
 	}
 
@@ -326,14 +314,14 @@ class ClipPage extends Component {
       <div>
         <div style={{marginTop: 20, marginLeft: 20, marginRight: 20, height: 160, backgroundColor: '#232831'}}>
 					<div style={{display: 'inline-block', height: 160, width: 160}}>
-						<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.thumbnail_url}/>
+						<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.podcast.image}/>
 					</div>
 					<div style={{display: 'inline-block', marginLeft: 25, marginRight: 20, width: width}}>
 						<Typography style={textStyleBig}>
-							{this.state.clip.title}
+							{this.state.podcast.title}
 						</Typography>
 						<Typography style={textStyleSmall}>
-							{"Clipped by " + this.state.clip.username}
+							{"From: " + this.state.podcast.title}
 						</Typography>
 						{this.renderSlider()}
 						<div style={{padding: 5}}>
@@ -348,14 +336,27 @@ class ClipPage extends Component {
 						height={0}
 						style={{display: 'hidden'}}
 						progressInterval={10}
-						url={this.state.clip.url}
+						url={this.state.podcast.audio}
 						onProgress={this.handleVideoProgress}
 						onDuration={this.handleDurationChange}
 						playing={this.state.isPlaying} />
 				</div>
-				<button className='button-purple-small' style={{float: 'right', display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.props.history.push('/podcast/' + this.state.clip.podcast_id)}>{'Listen to podcast'}</button>
+        <button className='button-purple-small' style={{float: 'right', display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.openClip()}>{'Create Clip'}</button>
       </div>
     );
+  }
+
+  openClip() {
+    if (this.state.podcast) {
+      this.setState({
+        isPlaying: false,
+      });
+      localStorage.setItem('url', this.state.podcast.audio);
+      localStorage.setItem('podcast_id', this.props.match.params.id);
+      localStorage.setItem('podcast_title', this.state.podcast.title);
+      localStorage.setItem('podcast_thumbnail', this.state.podcast.image);
+      window.open('/editor');
+    }
   }
 
 	handleSlideStart() {
@@ -381,7 +382,7 @@ class ClipPage extends Component {
 	}
 
   renderSlider() {
-		if (this.state.clip) {
+		if (this.state.podcast) {
 			return (
 				<div>
 					<Slider
@@ -432,7 +433,7 @@ class ClipPage extends Component {
 		if (this.state.isMobile) {
 			textFieldWidth = '95%';
 		}
-    if (this.state.clip != null) {
+    if (this.state.podcast != null) {
       return (
         <div>
           <Row>
@@ -507,22 +508,22 @@ class ClipPage extends Component {
 
 		return (
 			<div>
-				<div style={{marginTop: 20, marginLeft: marginLeft, marginRight: 20}}>
-					<Paper elevation={1} style={{backgroundColor: '#6175E0'}}>
-						<div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_uuid)}>
-							<Row>
-								<Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
-								<Col>
-									<div style={centerVertical}>
-										<Typography style={topPanelText}>
-											{"Save podcast for listen later"}
-										</Typography>
-									</div>
-								</Col>
-							</Row>
-						</div>
-					</Paper>
-				</div>
+        <div style={{marginTop: 20, marginLeft: marginLeft, marginRight: 20}}>
+          <Paper elevation={1} style={{backgroundColor: '#6175E0'}}>
+            <div style={{cursor: 'pointer'}} onClick={() => this.savePodcast()}>
+              <Row>
+                <Avatar src={this.state.podcast.image} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
+                <Col>
+                  <div style={centerVertical}>
+                    <Typography style={topPanelText}>
+                      {"Save Podcast For Later"}
+                    </Typography>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+          </Paper>
+        </div>
 				{this.renderRightPanelContent(this.state.otherClips.length > 0)}
 			</div>
 		);
@@ -532,6 +533,38 @@ class ClipPage extends Component {
     this.copyRef.current.select();
     document.execCommand('copy');
     this.props.showToast('Copied!', 'custom');
+  }
+
+  savePodcast() {
+    if (this.props.isLoggedIn) {
+      BackendManager.makeQuery('podcasts/playlist/check', JSON.stringify({
+        user_id: UserManager.id,
+        podcast_id: this.state.podcast.id,
+      }))
+      .then(data => {
+        console.log(data);
+        if (data.success) {
+          if (data.inPlaylist) {
+            this.props.showToast('This podcast is already in your playlist!', 'custom');
+          } else {
+            BackendManager.makeQuery('podcasts/playlist/add', JSON.stringify({
+              user_id: UserManager.id,
+              podcast_id: this.state.podcast.id,
+              podcast_title: this.state.podcast.title,
+              podcast_thumbnail: this.state.podcast.image,
+              podcast_duration: this.state.podcast.duration,
+              podcast_url: this.state.podcast.audio,
+            }))
+            .then(data => {
+              console.log(data);
+              if (data.success) {
+                this.props.showToast('Saved!', 'custom');
+              }
+            });
+          }
+        }
+      });
+    }
   }
 
 	renderView(classes) {
@@ -558,4 +591,4 @@ class ClipPage extends Component {
   }
 }
 
-export default ClipPage;
+export default PodcastPage;

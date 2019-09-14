@@ -85,28 +85,7 @@ class SignUpModal extends Component {
         localStorage.setItem('refresh_token', data.refresh_token);
         localStorage.setItem('expiration', date);
         localStorage.setItem('bio', "Nothing here yet!");
-        var sponsorsJson = localStorage.getItem('sponsors');
-        if (sponsorsJson) {
-          var json = JSON.parse(sponsorsJson);
-          var sponsors = json.sponsors;
-          var params = [];
-          for (var i = 0; i < sponsors.length; i++) {
-            var value = {
-              user_id: UserManager.id,
-              story_id: sponsors[i].story_id,
-              sponsor_id: sponsors[i].sponsor_id,
-            };
-            params.push(value);
-            BackendManager.makeQuery('sponsors/update', JSON.stringify({
-        			sponsors: params
-        		}))
-            .then(data => {
-              if (data.success) {
-                localStorage.removeItem('sponsors');
-              }
-            });
-          }
-        }
+                
         this.props.closeModal();
         this.props.setProfilePicture(data.profile_picture);
         this.props.handleAuth();

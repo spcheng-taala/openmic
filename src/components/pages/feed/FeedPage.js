@@ -7,6 +7,7 @@ import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
+import * as Constants from '../../singletons/Constants.js';
 import ClipItem from './components/ClipItem.js';
 
 const styles = theme => ({
@@ -18,15 +19,37 @@ const styles = theme => ({
   }
 });
 
-const textFieldStyle = {
-  color: '#222225',
+const clipTypeActive = {
   marginTop: 10,
-  marginLeft: 10,
-  marginRight: 10,
+  width: 100,
+  borderStyle: 'solid',
+  borderRadius: 10,
+  borderWidth: 2,
+  borderColor: '#6175E0',
+  backgroundColor: '#6175E0',
+  textAlign: 'center',
+  padding: 10,
+  color: 'white',
+  fontSize: 15,
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  marginLeft: 5,
 }
 
-const cardStyle = {
-  marginBottom: 30,
+const clipTypeInactive = {
+  marginTop: 10,
+  width: 100,
+  borderStyle: 'solid',
+  borderRadius: 10,
+  borderWidth: 2,
+  borderColor: '#6175E0',
+  textAlign: 'center',
+  padding: 10,
+  color: '#6175E0',
+  fontSize: 15,
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  marginLeft: 5,
 }
 
 const textStyleBig = {
@@ -51,26 +74,6 @@ const textStyleSmall = {
 
 class FeedPage extends Component {
   componentDidMount() {
-    BackendManager.makeQuery('clips/all/count', JSON.stringify({
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-          clipsCount: data.count,
-        });
-      }
-    });
-
-    BackendManager.makeQuery('clips/all', JSON.stringify({
-    }))
-    .then(data => {
-      if (data.success) {
-        this.setState({
-          clips: data.clips,
-        });
-      }
-    });
-
     window.addEventListener('resize', this.resize.bind(this));
     window.addEventListener('scroll', this.onScroll, false);
     this.resize();
@@ -82,21 +85,9 @@ class FeedPage extends Component {
 
   onScroll = () => {
     if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 500)) {
-      if (this.state.clips.length < this.state.clipsCount) {
-        if (this.state.clips[this.state.clips.length - 1] != null) {
-          BackendManager.makeQuery('clips/all/cont', JSON.stringify({
-            clip_id: this.state.clips[this.state.clips.length - 1].id,
-          }))
-          .then(data => {
-            console.log(data);
-            var clips = this.state.clips;
-            clips.push.apply(clips, data.clips);
-            if (data.success) {
-              this.setState({
-                clips: clips,
-              });
-            }
-          });
+      if (this.props.clips.length < this.props.clipsCount) {
+        if (this.props.clips[this.state.props.length - 1] != null) {
+          this.props.getMoreClips();
         }
       }
     }
@@ -118,22 +109,15 @@ class FeedPage extends Component {
     super(props);
 
     this.state = {
-      clips: [],
-      clipsCount: 0,
       isMobile: false,
-      referralCode: "",
       recommendedPodcast: "",
     };
 
+    this.renderClipType = this.renderClipType.bind(this);
     this.renderFeed = this.renderFeed.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderBottomRightPanel = this.renderBottomRightPanel.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
-    this.renderFreeGems = this.renderFreeGems.bind(this);
-    this.handleReferralChange = this.handleReferralChange.bind(this);
-    this.handleReferralCodeClick = this.handleReferralCodeClick.bind(this);
-    this.handleRecommendedPodcastChange = this.handleRecommendedPodcastChange.bind(this);
-    this.handleRecommendedPodcastClick = this.handleRecommendedPodcastClick.bind(this);
   }
 
   handleClipClick(id) {
@@ -141,9 +125,8 @@ class FeedPage extends Component {
   }
 
   renderListItem(item) {
-    console.log(item);
     return (
-      <div style={cardStyle}>
+      <div style={{marginBottom: 30}}>
         <ClipItem
           isMobile={this.state.isMobile}
           id={item.uuid}
@@ -153,6 +136,7 @@ class FeedPage extends Component {
           podcast={item.podcast_title}
           name={item.username}
           duration={item.duration}
+          firstName={item.first_name}
           handleClipClick={this.handleClipClick} />
       </div>
     );
@@ -162,7 +146,7 @@ class FeedPage extends Component {
     return (
       <div>
         <ul>
-          {this.state.clips.map((item) => {
+          {this.props.clips.map((item) => {
             return (this.renderListItem(item))
           })}
         </ul>
@@ -177,10 +161,10 @@ class FeedPage extends Component {
           <div>
             <img style={{margin: 10, width: 230}} src='../../../../../images/community_bg.png'/>
             <Typography style={textStyleBig}>
-              {"Recommend a podcast episode!"}
+              {"Recommend a podcast!"}
             </Typography>
             <Typography style={textStyleSmall}>
-              {"Type your favorite podcast/podcast episode that you want us to post!"}
+              {"Is there a podcast that you love that you think other people should know? Tell us the name and we'll try to add it!"}
             </Typography>
             <div style={{margin: 10}}>
               <TextField
@@ -194,12 +178,8 @@ class FeedPage extends Component {
                     root: classes.textFieldLabelRoot
                   }
                 }}
-                value={this.state.recommendedPodcast}
-                onChange={this.handleRecommendedPodcastChange} />
+                value={this.state.recommendedPodcast}/>
             </div>
-            <button className='button-rounded-green' onClick={() => this.handleRecommendedPodcastClick()}>
-              {"Done!"}
-            </button>
             <div style={{paddingBottom: 10}}>
             </div>
           </div>
@@ -231,117 +211,31 @@ class FeedPage extends Component {
     )
   }
 
-  handleReferralChange(e) {
-    this.setState({
-      referralCode: e.target.value
-    });
-  }
-
-  handleReferralCodeClick() {
-    if (this.props.isLoggedIn) {
-      BackendManager.makeQuery('codes/check/code', JSON.stringify({
-        name: this.state.referralCode,
-      }))
-      .then(data => {
-        this.setState({
-          referralCode: ""
-        });
-        if (data.success) {
-          var code = data.code;
-          BackendManager.makeQuery('codes/check/user', JSON.stringify({
-            user_id: UserManager.id,
-            code_id: code.id,
-          }))
-          .then(data => {
-            if (data.success) {
-              BackendManager.makeQuery('codes/count', JSON.stringify({
-                code_id: code.id,
-              }))
-              .then(data => {
-                if (data.success) {
-                  if (code.limit > data.count) {
-                    BackendManager.makeQuery('codes/user/add', JSON.stringify({
-                      user_id: UserManager.id,
-                      code_id: code.id
-                    }))
-                    .then(data => {
-                      if (data.success) {
-                        BackendManager.makeQuery('gems/user/update', JSON.stringify({
-                          gem_count: code.amount,
-                          user_id: UserManager.id
-                        }))
-                        .then(data => {
-                          if (data.success) {
-                            var text = "You just received " + code.amount + " Gems!";
-                            this.props.openGemGifModal(code.amount, text);
-                          }
-                        });
-                      }
-                    });
-                  } else {
-                    this.props.showToast("This referral has expired :(", 'error');
-                  }
-                }
-              });
-            } else {
-              this.props.showToast("Oops! Looks like you've already used this referral code", 'error');
-            }
-          });
-        } else {
-          this.props.showToast("Hmm, this referral code doesn't seem to exist", 'error');
-        }
-      });
+  renderClipType() {
+    if (this.props.clipType == Constants.CLIP_TYPE_TRENDING) {
+      return (
+        <Row>
+          <p style={clipTypeActive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_TRENDING)}>
+            {'Trending'}
+          </p>
+          <p style={clipTypeInactive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_NEW)}>
+            {'New'}
+          </p>
+        </Row>
+      );
+    } else {
+      return (
+        <Row>
+          <p style={clipTypeInactive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_TRENDING)}>
+            {'Trending'}
+          </p>
+          <p style={clipTypeActive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_NEW)}>
+            {'New'}
+          </p>
+        </Row>
+      );
     }
   }
-
-  handleRecommendedPodcastChange(e) {
-    this.setState({
-      recommendedPodcast: e.target.value
-    });
-  }
-
-  handleRecommendedPodcastClick() {
-
-  }
-
-  renderFreeGems(classes) {
-    return (
-      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
-        <Paper elevation={1} style={{backgroundColor: 'white'}}>
-          <div>
-            <div style={{paddingTop: 10}}/>
-            <Typography style={textStyleBig}>
-              {"Enter a referral code!"}
-            </Typography>
-            <Typography style={textStyleSmall}>
-              {"Have a referral code? Enter it here to get free gems!"}
-            </Typography>
-            <div style={{margin: 10}}>
-              <TextField
-                id="outlined-adornment-amount"
-                placeholder="Enter Code"
-                fullWidth
-                inputProps={{min: 0, style: { textAlign: 'center' }}}
-                InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-                InputLabelProps={{
-                  FormLabelClasses: {
-                    root: classes.textFieldLabelRoot
-                  }
-                }}
-                value={this.state.referralCode}
-                onChange={this.handleReferralChange} />
-            </div>
-            <button className='button-rounded-purple' onClick={() => this.handleReferralCodeClick()}>
-              {"Done!"}
-            </button>
-            <div style={{paddingBottom: 10}}>
-            </div>
-          </div>
-        </Paper>
-      </div>
-    )
-  }
-
 
   render() {
     const { classes } = this.props;
@@ -350,13 +244,10 @@ class FeedPage extends Component {
         <Container>
           <Row>
             <Col md={8}>
-              <p style={{marginTop: 10, width: 100, borderStyle: 'solid', borderRadius: 10, borderWidth: 2, borderColor: '#6175E0', textAlign: 'center', padding: 10, color: '#6175E0', fontSize: 15, fontWeight: 'bold'}}>
-                {'Trending'}
-              </p>
+              {this.renderClipType()}
               {this.renderFeed()}
             </Col>
             <Col md={4}>
-              {this.renderFreeGems(classes)}
               {this.renderRightPanel(classes)}
               {this.renderBottomRightPanel()}
             </Col>

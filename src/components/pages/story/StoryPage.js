@@ -978,7 +978,7 @@ class StoryPage extends Component {
       localStorage.setItem('story_id', this.state.story.id);
       window.open('/editor');
     }
-  }  
+  }
 
   renderProgressStr() {
 		return (
@@ -1167,9 +1167,12 @@ class StoryPage extends Component {
           this.setState({
             comment: "",
           });
-          var text = "You just contributed " + gems + " Gems!";
+          if (gems > 0) {
+            var text = "You just contributed " + gems + " Gems!";
+            this.props.openGemGifModal(gems, text);
+          }
+
           this.props.refreshGems();
-          this.props.openGemGifModal(gems, text);
         });
       }
     });

@@ -144,6 +144,9 @@ class ClipItem extends React.Component {
                   <Typography className="lineClamp" style={textMed}>
                     {"from: " + this.props.podcast}
                   </Typography>
+                  <Typography className="lineClamp" style={textMed}>
+                    {"Podcast: " + this.props.firstName}
+                  </Typography>
                   <Typography className="lineClamp" style={textSmall}>
                     {"clipped by " + this.props.name}
                   </Typography>

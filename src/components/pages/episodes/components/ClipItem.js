@@ -5,6 +5,7 @@ import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import UtilsManager from '../../../singletons/UtilsManager.js';
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -12,30 +13,25 @@ const textStyleBig = {
   fontSize: 20,
   fontWeight: 'bold',
   marginLeft: 20,
+  marginRight: 10,
   paddingTop: 10,
 }
 
-const textStyleMed = {
+const textStyleSmall = {
   color: '#2A2D34',
   fontFamily: 'Lato',
-  fontSize: 17,
+  fontSize: 14,
   marginLeft: 20,
+  marginRight: 20,
+  marginBottom: 10,
 }
 
-const textStyleSmall = {
+const textStyleDuration = {
   color: '#868994',
   fontFamily: 'Lato',
-  fontSize: 15,
+  fontSize: 14,
   marginLeft: 20,
-  marginBottom: 5,
-}
-
-const textStyleSmallRed = {
-  color: '#FF0081',
-  fontFamily: 'Lato',
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginLeft: 20,
+  marginRight: 20,
   marginBottom: 10,
 }
 
@@ -55,14 +51,15 @@ const textStyleBigMobile = {
   paddingTop: 10,
 }
 
-const textStyleMedMobile = {
+const textStyleSmallMobile = {
   color: '#2A2D34',
   fontFamily: 'Lato',
-  fontSize: 14,
+  fontSize: 12,
   marginLeft: 20,
+  marginBottom: 10,
 }
 
-const textStyleSmallMobile = {
+const textStyleDurationMobile = {
   color: '#868994',
   fontFamily: 'Lato',
   fontSize: 12,
@@ -76,16 +73,11 @@ class ClipItem extends React.Component {
     super(props);
     this.state = {
       progress: 0,
-      thumbnail: "",
     };
 
-    this.playPause = this.playPause.bind(this);
     this.renderThumbnail = this.renderThumbnail.bind(this);
     this.setThumbnail = this.setThumbnail.bind(this);
-  }
-
-  playPause() {
-    this.props.playClip(this.props.index);
+    this.getDescription = this.getDescription.bind(this);
   }
 
   setThumbnail(thumbnail) {
@@ -97,39 +89,34 @@ class ClipItem extends React.Component {
   }
 
   renderThumbnail() {
-    var thumbnailWidth = 200;
-    var thumbnailHeight= 150;
-    if (this.props.isMobile) {
-      thumbnailWidth = 100;
-      thumbnailHeight= 75;
-    }
     if (this.props.thumbnail) {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src={this.props.thumbnail}/>
+        <img style={{width: 100, height: 100, overflow: 'hidden'}} src={this.props.thumbnail}/>
       );
     } else {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
+        <img style={{width: 100, height: 100, overflow: 'hidden'}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
       )
     }
   }
 
+  getDescription(description) {
+    const regex = /(<([^>]+)>)/ig;
+    return description.replace(regex, '');
+  }
+
   render() {
-    var thumbnailWidth = 200;
-    var thumbnailHeight= 113;
     var textBig = textStyleBig;
-    var textMed = textStyleMed;
     var textSmall = textStyleSmall;
+    var textDuration = textStyleDuration
     if (this.props.isMobile) {
-      thumbnailWidth = 100;
-      thumbnailHeight= 56.5;
       textBig = textStyleBigMobile;
-      textMed = textStyleMedMobile;
       textSmall = textStyleSmallMobile;
+      textDuration = textStyleDurationMobile
     }
     return (
       <div>
-        <CardActionArea onClick={() => this.props.handleClick(this.props.id)}>
+        <CardActionArea>
           <Paper elevation={1}>
             <div>
               <Row>
@@ -142,15 +129,12 @@ class ClipItem extends React.Component {
                   <Typography className="lineClamp" style={textBig}>
                     {this.props.title}
                   </Typography>
-                  <Typography className="lineClamp" style={textStyleSmall}>
-                    {"From: " + this.props.podcast}
+                  <Typography className="block-with-text" style={textSmall}>
+                    {this.getDescription(this.props.description)}
                   </Typography>
-                  <Typography className="lineClamp" style={textStyleSmall}>
-                    {"By: " + this.props.name}
+                  <Typography style={textDuration}>
+                    {UtilsManager.createMinString(this.props.duration)}
                   </Typography>
-                  {this.props.active == 0 ? <Typography className="lineClamp" style={textStyleSmallRed}>
-                    {"Not published yet. Click here to finish up."}
-                  </Typography> : <div/>}
                 </Col>
               </Row>
             </div>
