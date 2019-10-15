@@ -1,19 +1,12 @@
 import React from 'react';
-import { Route, NavLink, BrowserRouter, Link,
+import { Route, NavLink, BrowserRouter,
    Switch, Redirect } from 'react-router-dom';
-import { Container, Row, Col } from 'react-grid-system';
 import PropTypes from 'prop-types';
 import Modal from 'react-modal';
-import axios from 'axios';
 import { withStyles } from '@material-ui/core/styles';
-import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
 import Toolbar from '@material-ui/core/Toolbar';
-import InputBase from '@material-ui/core/InputBase';
-import IconButton from '@material-ui/core/IconButton';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
 import GenreSelect from './components/GenreSelect.js';
 import SearchComponent from './components/SearchComponent.js';
 import Notifications, {notify} from 'react-notify-toast';
@@ -24,52 +17,26 @@ import UtilsManager from '../../singletons/UtilsManager.js';
 import * as Constants from '../../singletons/Constants.js';
 
 import FeedPage from '../feed/FeedPage.js';
+import CreateClipPage from '../feed/CreateClipPage.js';
 import ProfilePage from '../profile/ProfilePage.js';
 import EditProfilePage from '../profile/EditProfilePage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
-import ClipAudioPage from '../story/ClipAudioPage.js';
-import TranscribePage from '../story/TranscribePage.js';
+import HowItWorksPage from '../about/HowItWorksPage.js';
 import ClipPage from '../clip/ClipPage.js';
-import EditClipPage from '../story/EditClipPage.js';
 import TrimContentPage from '../podcast/TrimContentPage.js';
-import CreateClipPage from '../story/CreateClipPage.js';
-import EditorPage from '../story/EditorPage.js';
-import PublishingPage from '../story/PublishingPage.js';
 import ClipDetailsPage from '../clip/ClipDetailsPage.js';
-import MySponsorsPage from '../sponsor/MySponsorsPage.js';
-import TwitterSharePage from '../clip/TwitterSharePage.js';
 import EpisodesPage from '../episodes/EpisodesPage.js';
 import PodcastPage from '../podcast/PodcastPage.js';
+import PublishingPage from '../podcast/PublishingPage.js';
+import PlaylistPage from '../playlist/PlaylistPage.js';
+import GenresPage from '../genres/GenresPage.js';
 import PodcastGalleryPage from './PodcastGalleryPage.js';
 
 import SignUpModal from './components/SignUpModal.js';
 import LoginModal from './components/LoginModal.js';
 
 const drawerWidth = 240;
-
-const customStylesLight = {
-	overlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 5,
-    backgroundColor: 'rgba(19, 18, 24, 0.75)',
-		maxHeight: '100%',
-    overflowY: 'auto',
-  },
-  content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-		background: 'rgba(255, 255, 255, 1)',
-    transform: 'translate(-50%, -50%)'
-  },
-};
 
 const customStylesSignUp = {
 	overlay: {
@@ -96,43 +63,20 @@ const customStylesSignUp = {
   },
 };
 
-const customStyles = {
-	overlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 5,
-    backgroundColor: 'rgba(19, 18, 24, 0.75)',
-		maxHeight: '100%',
-    overflowY: 'auto',
-  },
-  content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-		background: '#18161B',
-    transform: 'translate(-50%, -50%)'
-  },
-};
-
-const panelTitleText = {
-	color: '#B8B5BF',
-	fontFamily: 'Lato',
-	fontSize: 20,
-	paddingTop: 15,
-	textAlign: 'center',
-	fontWeight: 'bold',
-}
-
 const logoStyle = {
   width: 30,
   height: 30,
 	marginLeft: 10,
+	marginRight: 10,
 	cursor: "pointer",
+}
+
+const likeCountText = {
+	color: '#D14C85',
+	fontSize: 14,
+	marginLeft: 10,
+	marginRight: 5,
+	fontWeight: 'bold'
 }
 
 const styles = theme => ({
@@ -157,7 +101,6 @@ const styles = theme => ({
     color: 'white',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 10,
 		marginRight: 20,
   },
   content: {
@@ -185,10 +128,9 @@ const styles = theme => ({
 		font: 'Lato',
   },
   menuSignInText: {
-    marginRight: 10,
     color: 'white',
     fontWeight: 'bold',
-    marginLeft: 30,
+    marginLeft: 20,
     cursor: 'pointer',
   },
   toolbar: theme.mixins.toolbar,
@@ -232,23 +174,50 @@ class MainPage extends React.Component {
 			});
 			BackendManager.refreshToken = localStorage.getItem('refresh_token');
 			BackendManager.updateToken();
-			this.refreshGenres();
+			this.refreshTotalLikeCount();
 		}
+
+		this.refreshGenres();
+		window.addEventListener('resize', this.resize.bind(this));
+		this.resize();
+  }
+
+	componentWillUnmount() {
+    window.removeEventListener('resize', this.resize, false);
+  }
+
+	resize() {
+    if (window.innerWidth <= 760) {
+      this.setState({
+        isMobile: true,
+      });
+    } else {
+      this.setState({
+        isMobile: false,
+      })
+    }
   }
 
   constructor(props) {
     super(props);
 
     this.state = {
+			isMobile: false,
 			hideDrawer: false,
       modalIsOpen: false,
 			profilePicture: "",
       isSignUp: true,
       isLoggedIn: false,
+			totalLikeCount: 0,
       signUpText: "Have an account? Login",
+			allGenres: [],
+			followedGenres: [],
 			genres: [],
 			currentGenre: {
-				value: 'All',
+				value: {
+					id: -1,
+					name: 'All'
+				},
 				label: 'All',
 			},
 			clipType: Constants.CLIP_TYPE_TRENDING,
@@ -258,10 +227,12 @@ class MainPage extends React.Component {
     };
 
 		this.refreshGenres = this.refreshGenres.bind(this);
+		this.refreshTopGenres = this.refreshTopGenres.bind(this);
+		this.refreshTotalLikeCount = this.refreshTotalLikeCount.bind(this);
 		this.setGenre = this.setGenre.bind(this);
-		this.setClipType = this.setClipType.bind(this);
-		this.refreshClips = this.refreshClips.bind(this);
-		this.getMoreClips = this.getMoreClips.bind(this);
+
+		this.addGenre = this.addGenre.bind(this);
+		this.handleFollowGenreClick = this.handleFollowGenreClick.bind(this);
 
 		this.hideDrawer = this.hideDrawer.bind(this);
     this.openModal = this.openModal.bind(this);
@@ -276,32 +247,93 @@ class MainPage extends React.Component {
   }
 
 	refreshGenres() {
-		BackendManager.makeQuery('genres/all', JSON.stringify({
+		if (this.state.genres.length === 0) {
+			if (UserManager.id == 0) {
+				this.refreshTopGenres([]);
+			} else {
+				BackendManager.makeQuery('genres/user', JSON.stringify({
+					user_id: UserManager.id,
+				}))
+				.then(data => {
+					if (data.success) {
+						this.setState({
+							followedGenres: data.genres,
+						});
+						this.refreshTopGenres(data.genres);
+					}
+				});
+			}
+		}
+	}
+
+	refreshTopGenres(genres) {
+		BackendManager.makeQuery('genres/top', JSON.stringify({
+			genres: genres,
 		}))
 		.then(data => {
 			if (data.success) {
-				console.log(data);
-				var genres = [];
-	      for (var i = 0; i < data.genres.length; i++) {
-	        var genre = {
-	          value: data.genres[i],
-	          label: data.genres[i].name,
-	        };
-	        genres.push(genre);
-	      }
-	      var genre = {
-	        value: 'All',
-	        label: 'All',
-	      };
-	      if (genres.length > 0) {
-	        genre = genres[0];
-	      }
-	      this.setState({
-	        genres: genres,
-	        currentGenre: genre,
-	      });
+				var topGenres = [];
+				for (var i = 0; i < data.genres.length; i++) {
+					var genre = {
+						value: data.genres[i],
+						label: data.genres[i].name,
+					};
+					topGenres.push(genre);
+				}
 
-				this.refreshClips(genre, this.state.clipType);
+				topGenres.push({
+					value: {
+						id: -1,
+						name: "View all genres"
+					},
+					label: "View all genres"
+				});
+				if (genres.length > 0) {
+					var followedGenres = [];
+					for (var i = 0; i < genres.length; i++) {
+						followedGenres.push({
+							label: genres[i].name,
+							value: {id: genres[i].id, name: genres[i].name}
+						});
+					}
+					this.setState({
+						allGenres: [
+							{
+								options: followedGenres,
+								label: 'Subscribed',
+							},
+							{
+								options: topGenres,
+								label: 'Top Genres',
+							},
+						]
+					});
+				} else {
+					this.setState({
+						allGenres: [
+							{
+								options: topGenres,
+								label: 'Top Genres',
+							}
+						]
+					})
+				}
+				this.setState({
+					genres: topGenres,
+				});
+			}
+		});
+	}
+
+	refreshTotalLikeCount() {
+		BackendManager.makeQuery('clips/like/total', JSON.stringify({
+			user_id: UserManager.id
+		}))
+		.then(data => {
+			if (data.success) {
+				this.setState({
+					totalLikeCount: data.like_count,
+				});
 			}
 		});
 	}
@@ -310,89 +342,91 @@ class MainPage extends React.Component {
 		this.setState({
 			currentGenre: genre
 		});
-
-		this.refreshClips(genre, this.state.clipType);
 	}
 
-	setClipType(clipType) {
+	addGenre(genre) {
+		var genres = this.state.genres;
+		genres.push(genre);
 		this.setState({
-			clipType: clipType
+			genres: genres,
 		});
-
-		this.refreshClips(this.state.currentGenre, clipType);
 	}
 
-	refreshClips(genre, clipType) {
-		if (genre.value.id) {
-			BackendManager.makeQuery('clips/genre/count', JSON.stringify({
-				genre_id: genre.value.id
-			}))
-			.then(data => {
-				if (data.success) {
-					this.setState({
-						clipCount: data.count,
-					});
+	handleFollowGenreClick(genre) {
+		var followedGenres = this.state.followedGenres;
+		var hasGenre = false;
+		var index = 0;
+		for (var i = 0; i < followedGenres.length; i++) {
+			if (followedGenres[i].id == genre.id) {
+				hasGenre = true;
+				index = i;
+			}
+		}
+		var active = 1;
+		if (hasGenre) {
+			active = 0;
+		}
+		BackendManager.makeQuery('genres/user/create', JSON.stringify({
+			user_id: UserManager.id,
+			genre_id: genre.id,
+			active: active,
+		}))
+		.then(data => {
+			if (data.success) {
+				var topGenres = this.state.genres;
+				if (hasGenre) {
+					followedGenres.splice(index, 1);
+					var g = {label: genre.name, value: {id: genre.id, name: genre.name}};
+					topGenres.splice(topGenres.length - 1, 0, g);
+				} else {
+					followedGenres.push(genre);
+					var isInTop = false;
+					var i = 0;
+					for (var i = 0; i < topGenres.length; i++) {
+						if (topGenres[i].value.id == genre.id) {
+							isInTop = true;
+							index = i;
+						}
+					}
+					if (isInTop) {
+						topGenres.splice(index, 1);
+					}
 				}
-			});
-
-			if (clipType == Constants.CLIP_TYPE_TRENDING) {
-				BackendManager.makeQuery('clips/genre/trending', JSON.stringify({
-					genre_id: genre.value.id
-				}))
-				.then(data => {
-					if (data.success) {
-						this.setState({
-							clips: data.clips,
+				if (followedGenres.length > 0) {
+					var genres = [];
+					for (var i = 0; i < followedGenres.length; i++) {
+						genres.push({
+							label: followedGenres[i].name,
+							value: {id: followedGenres[i].id, name: followedGenres[i].name}
 						});
 					}
-				});
-			}	else {
-				BackendManager.makeQuery('clips/genre/new', JSON.stringify({
-					genre_id: genre.value.id
-				}))
-				.then(data => {
-					if (data.success) {
-						this.setState({
-							clips: data.clips,
-						});
-					}
-				});
-			}
-		}
-	}
-
-	getMoreClips() {
-		if (this.state.currentGenre.value.id) {
-			if (this.state.clipType == Constants.CLIP_TYPE_TRENDING) {
-				BackendManager.makeQuery('clips/genre/trending/cont', JSON.stringify({
-					genre_id: this.state.currentGenre.value.id,
-					score: this.state.clips[this.state.clips.length - 1].score,
-				}))
-				.then(data => {
-					if (data.success) {
-						var clips = this.state.clips;
-						clips.push.apply(clips, data.clips);
-						this.setState({
-							clips: clips,
-						});
-					}
-				});
-			}	else {
-				BackendManager.makeQuery('clips/genre/new/cont', JSON.stringify({
-					genre_id: this.state.currentGenre.value.id,
-					clip_id: this.state.clips[this.state.clips.length - 1].id,
-				}))
-				.then(data => {
-					if (data.success) {
-						var clips = this.state.clips;
-						clips.push.apply(clips, data.clips);
-						this.setState({
-							clips: clips,
-						});
-					}
+					this.setState({
+						allGenres: [
+							{
+								options: genres,
+								label: 'Subscribed',
+							},
+							{
+								options: topGenres,
+								label: 'Top Genres',
+							},
+						]
+					});
+				} else {
+					this.setState({
+						allGenres: [
+							{
+								options: topGenres,
+								label: 'Top Genres',
+							}
+						]
+					})
+				}
+				this.setState({
+					followedGenres: followedGenres
 				});
 			}
-		}
+		});
 	}
 
 	hideDrawer(t) {
@@ -435,7 +469,7 @@ class MainPage extends React.Component {
 	}
 
   showToast(toast, type) {
-		if (type == "custom") {
+		if (type === "custom") {
 			let customColor = { background: '#6175E0', text: "#FFFFFF" };
 			notify.show(toast, "custom", 5000, customColor);
 		} else {
@@ -458,7 +492,6 @@ class MainPage extends React.Component {
 
   render() {
     const { classes } = this.props;
-    const content = this.props.content;
 
     return (
       <BrowserRouter className={classes.main}>
@@ -478,11 +511,24 @@ class MainPage extends React.Component {
           <div className={classes.root}>
             <AppBar position="fixed" className={classes.appBar}>
               <Toolbar>
-                <NavLink exact to="/"><img style={logoStyle} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"}/></NavLink>
-                <NavLink exact to="/" className={classes.titleText}>Riptide</NavLink>
-								<GenreSelect genres={this.state.genres} genre={this.state.currentGenre} setGenre={this.setGenre}/>
+                <NavLink exact to="/"><img style={logoStyle} alt={"logo"} src={"https://s3-us-west-2.amazonaws.com/pokadotmedia/icon_1024.png"}/></NavLink>
+								{this.state.isMobile ?
+									<div/> : <NavLink exact to="/" className={classes.titleText}>Riptide</NavLink>
+								}
+								<GenreSelect isMobile={this.state.isMobile} genres={this.state.allGenres} genre={this.state.currentGenre} setGenre={this.setGenre}/>
 								<SearchComponent setGenre={this.setGenre}/>
-								<div className={classes.flex}/>
+								{this.state.isLoggedIn ?
+									<NavLink exact to="/playlist" style={{paddingTop: 20}}>
+										<button className='button-rounded-no-mar-bordered' style={{marginLeft: 10}}>{'Playlist'}</button>
+									</NavLink>
+									: <div/>
+								}
+								{this.state.isLoggedIn ?
+									<p style={likeCountText}>{UtilsManager.createNumberString(this.state.totalLikeCount)}</p> : <div/>
+								}
+								{this.state.isLoggedIn ?
+									<img style={{width: 25, height: 25}} src={'../../../../../images/heart_filled.png'} alt={'likes'} /> : <div/>
+								}
                 {this.state.isLoggedIn ?
 									<div>
 										<NavLink to={"/profile/" + UserManager.username}>
@@ -493,7 +539,7 @@ class MainPage extends React.Component {
               </Toolbar>
             </AppBar>
 
-            <main className={classes.content} style={{backgroundColor: '#F4F3F6'}}>
+            <main className={classes.content} style={{backgroundColor: '#F4F3F6', marginTop: 10, height: '100%'}}>
               <div className={classes.toolbar} />
                 <div className="content">
 								<Switch>
@@ -504,13 +550,12 @@ class MainPage extends React.Component {
 												isLoggedIn={this.state.isLoggedIn}
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
-												clipType={this.state.clipType}
-												setClipType={this.setClipType}
-												clipCount={this.state.clipCount}
-												clips={this.state.clips}
-												getMoreClips={this.getMoreClips}
+												setGenre={this.setGenre}
+												followedGenres={this.state.followedGenres}
+												handleFollowGenreClick={this.handleFollowGenreClick}
                       />}
                   />
+									<Route path="/howitworks" component={HowItWorksPage}/>
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route
@@ -530,6 +575,8 @@ class MainPage extends React.Component {
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
 												setNotification={this.setNotification}
+												genre={this.state.currentGenre}
+												showToast={this.showToast}
 											/>}
                   />
 									<Route
@@ -540,6 +587,7 @@ class MainPage extends React.Component {
 												openLoginModal={this.openModal}
 												showToast={this.showToast}
 												setNotification={this.setNotification}
+												genre={this.state.currentGenre}
 											/>}
                   />
 									<Route exact path="/search"
@@ -568,17 +616,59 @@ class MainPage extends React.Component {
 	                    />}
                   />
 									<Route
-                    path="/publishing"
-                    render={(props) =>
-											<PublishingPage
-	                      {...props}
-	                    />}
-                  />
-									<Route
                     path="/studio/:id"
                     render={(props) =>
 											<ClipDetailsPage
 	                      {...props}
+												showToast={this.showToast}
+	                    />}
+                  />
+									<Route
+                    path="/genres"
+                    render={(props) =>
+											<GenresPage
+	                      {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												showToast={this.showToast}
+	                    />}
+                  />
+									<Route
+                    path="/g/:name"
+                    render={(props) =>
+											<FeedPage {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												openLoginModal={this.openModal}
+												showToast={this.showToast}
+												setGenre={this.setGenre}
+												followedGenres={this.state.followedGenres}
+												handleFollowGenreClick={this.handleFollowGenreClick}
+                      />}
+                  />
+									<Route
+                    path="/playlist"
+                    render={(props) =>
+											<PlaylistPage
+	                      {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												showToast={this.showToast}
+	                    />}
+                  />
+									<Route
+                    path="/publishing"
+                    render={(props) =>
+											<PublishingPage
+	                      {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												showToast={this.showToast}
+	                    />}
+                  />
+									<Route
+                    path="/submit"
+                    render={(props) =>
+											<CreateClipPage
+	                      {...props}
+												isLoggedIn={this.state.isLoggedIn}
+												showToast={this.showToast}
 	                    />}
                   />
 									<Redirect from='*' to='/' />

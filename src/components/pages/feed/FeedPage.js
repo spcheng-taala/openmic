@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
+import InfiniteScroll from 'react-infinite-scroller';
 import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import UserManager from '../../singletons/UserManager.js';
+import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import * as Constants from '../../singletons/Constants.js';
 import ClipItem from './components/ClipItem.js';
@@ -74,21 +75,74 @@ const textStyleSmall = {
 
 class FeedPage extends Component {
   componentDidMount() {
+    if (this.props.match.params.name) {
+      BackendManager.makeQuery('genres/check', JSON.stringify({
+        name: decodeURIComponent(this.props.match.params.name)
+      }))
+      .then(data => {
+        if (data.success && data.exists) {
+          var genre = {
+            value: data.genre,
+            label: data.genre.name,
+          };
+          this.setState({
+            genre: data.genre,
+          });
+          this.refreshClips(data.genre, this.state.clipType);
+          this.props.setGenre(genre);
+        }
+      });
+    } else {
+      this.setState({
+        genre: {id: -1, name: 'All'}
+      });
+      var genre = {
+        value: {id: -1, name: "All"},
+        label: "All",
+      };
+      this.refreshClips({id: -1, name: 'All'}, this.state.clipType);
+      this.props.setGenre(genre);
+    }
     window.addEventListener('resize', this.resize.bind(this));
-    window.addEventListener('scroll', this.onScroll, false);
     this.resize();
   }
 
   componentWillUnmount() {
-    window.removeEventListener('scroll', this.onScroll, false);
+    window.removeEventListener('resize', this.resize, false);
   }
 
-  onScroll = () => {
-    if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 500)) {
-      if (this.props.clips.length < this.props.clipsCount) {
-        if (this.props.clips[this.state.props.length - 1] != null) {
-          this.props.getMoreClips();
-        }
+  componentDidUpdate() {
+    if (this.props.match.params.name && this.state.genre) {
+      if (decodeURIComponent(this.props.match.params.name.toLowerCase()) !== this.state.genre.name.toLowerCase()) {
+        BackendManager.makeQuery('genres/check', JSON.stringify({
+          name: decodeURIComponent(this.props.match.params.name)
+        }))
+        .then(data => {
+          if (data.success && data.exists) {
+            var genre = {
+              value: data.genre,
+              label: data.genre.name,
+            };
+            this.setState({
+              genre: data.genre,
+            });
+
+            this.refreshClips(data.genre, this.state.clipType);
+            this.props.setGenre(genre);
+          }
+        });
+      }
+    } else if (!this.props.match.params.name) {
+      if (!this.state.genre || this.state.genre.id > 0) {
+        this.setState({
+          genre: {id: -1, name: 'All'}
+        });
+        var genre = {
+          value: {id: -1, name: "All"},
+          label: "All",
+        };
+        this.refreshClips({id: -1, name: 'All'}, this.state.clipType);
+        this.props.setGenre(genre);
       }
     }
   }
@@ -110,14 +164,178 @@ class FeedPage extends Component {
 
     this.state = {
       isMobile: false,
-      recommendedPodcast: "",
+      genre: null,
+      clipType: Constants.CLIP_TYPE_TRENDING,
+      clipCount: 0,
+      clips: [],
     };
 
+    this.renderHelmet = this.renderHelmet.bind(this);
+    this.refreshClips = this.refreshClips.bind(this);
+    this.getMoreClips = this.getMoreClips.bind(this);
     this.renderClipType = this.renderClipType.bind(this);
+    this.setClipType = this.setClipType.bind(this);
     this.renderFeed = this.renderFeed.bind(this);
+    this.renderSubscribeButton = this.renderSubscribeButton.bind(this);
+    this.renderTopRightPanel = this.renderTopRightPanel.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
-    this.renderBottomRightPanel = this.renderBottomRightPanel.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
+    this.handleCreateClipClick = this.handleCreateClipClick.bind(this);
+  }
+
+  renderHelmet() {
+    if (this.props.match.params.name) {
+      return (
+        <Helmet>
+          <title>{this.props.match.params.name + " - Riptide"}</title>
+        </Helmet>
+      );
+    } else {
+      return (
+        <Helmet>
+          <title>{"Riptide"}</title>
+        </Helmet>
+      );
+    }
+  }
+
+  refreshClips(genre, clipType) {
+    if (genre.id > 0) {
+      BackendManager.makeQuery('clips/genre/count', JSON.stringify({
+				genre_id: genre.id
+			}))
+			.then(data => {
+				if (data.success) {
+					this.setState({
+						clipCount: data.count,
+					});
+				}
+			});
+
+      if (clipType == Constants.CLIP_TYPE_TRENDING) {
+        BackendManager.makeQuery('clips/genre/trending', JSON.stringify({
+          genre_id: genre.id
+        }))
+        .then(data => {
+          if (data.success) {
+            this.setState({
+              clips: data.clips,
+            });
+            console.log(data.clips);
+          }
+        });
+      }	else {
+        BackendManager.makeQuery('clips/genre/new', JSON.stringify({
+          genre_id: genre.id
+        }))
+        .then(data => {
+          if (data.success) {
+            this.setState({
+              clips: data.clips,
+            });
+          }
+        });
+      }
+    } else {
+      BackendManager.makeQuery('clips/top/count', JSON.stringify({
+  		}))
+  		.then(data => {
+  			if (data.success) {
+  				this.setState({
+  					clipCount: data.count,
+  				});
+  			}
+  		});
+
+      if (clipType == Constants.CLIP_TYPE_TRENDING) {
+        BackendManager.makeQuery('clips/top', JSON.stringify({
+        }))
+        .then(data => {
+          if (data.success) {
+            this.setState({
+              clips: data.clips,
+            });
+          }
+        });
+      } else {
+        BackendManager.makeQuery('clips/new', JSON.stringify({
+        }))
+        .then(data => {
+          if (data.success) {
+            this.setState({
+              clips: data.clips,
+            });
+          }
+        });
+      }
+    }
+  }
+
+  getMoreClips() {
+    if (this.state.clips.length < this.state.clipCount) {
+      if (this.state.clips.length > 0) {
+        if (this.state.genre && this.state.genre.id > 0) {
+    			if (this.state.clipType == Constants.CLIP_TYPE_TRENDING) {
+    				BackendManager.makeQuery('clips/genre/trending/cont', JSON.stringify({
+    					genre_id: this.state.genre.id,
+    					score: this.state.clips[this.state.clips.length - 1].score,
+    				}))
+    				.then(data => {
+    					if (data.success) {
+    						var clips = this.state.clips;
+    						clips.push.apply(clips, data.clips);
+    						this.setState({
+    							clips: clips,
+    						});
+    					}
+    				});
+    			}	else {
+    				BackendManager.makeQuery('clips/genre/new/cont', JSON.stringify({
+    					genre_id: this.state.genre.id,
+    					clip_id: this.state.clips[this.state.clips.length - 1].id,
+    				}))
+    				.then(data => {
+    					if (data.success) {
+    						var clips = this.state.clips;
+    						clips.push.apply(clips, data.clips);
+    						this.setState({
+    							clips: clips,
+    						});
+    					}
+    				});
+    			}
+    		} else {
+    			if (this.state.clipType == Constants.CLIP_TYPE_TRENDING) {
+            console.log('here');
+    				BackendManager.makeQuery('clips/top/cont', JSON.stringify({
+    					score: this.state.clips[this.state.clips.length - 1].score,
+    				}))
+    				.then(data => {
+    					if (data.success) {
+    						var clips = this.state.clips;
+    						clips.push.apply(clips, data.clips);
+    						this.setState({
+    							clips: clips,
+    						});
+    					}
+    				});
+    			} else {
+    				BackendManager.makeQuery('clips/new/cont', JSON.stringify({
+    					clip_id: this.state.clips[this.state.clips.length - 1].id,
+    				}))
+    				.then(data => {
+    					if (data.success) {
+    						var clips = this.state.clips;
+    						clips.push.apply(clips, data.clips);
+    						this.setState({
+    							clips: clips,
+    						});
+    					}
+    				});
+    			}
+    		}
+      }
+    }
   }
 
   handleClipClick(id) {
@@ -126,17 +344,17 @@ class FeedPage extends Component {
 
   renderListItem(item) {
     return (
-      <div style={{marginBottom: 30}}>
+      <div key={item.uuid} style={{marginBottom: 30}}>
         <ClipItem
           isMobile={this.state.isMobile}
           id={item.uuid}
           url={item.url}
           title={item.title}
-          thumbnail={item.thumbnail_url}
+          thumbnail={item.podcast_thumbnail}
           podcast={item.podcast_title}
           name={item.username}
           duration={item.duration}
-          firstName={item.first_name}
+          likeCount={item.like_count}
           handleClipClick={this.handleClipClick} />
       </div>
     );
@@ -144,43 +362,80 @@ class FeedPage extends Component {
 
   renderFeed() {
     return (
-      <div>
+      <InfiniteScroll
+        pageStart={0}
+        loadMore={this.getMoreClips}
+        hasMore={this.state.clips.length < this.state.clipCount}
+        loader={<div className="loader" key={0}>Loading ...</div>}
+      >
         <ul>
-          {this.props.clips.map((item) => {
+          {this.state.clips.map((item) => {
             return (this.renderListItem(item))
           })}
         </ul>
-      </div>
-    )
+      </InfiniteScroll>
+    );
   }
 
-  renderRightPanel(classes) {
+  renderSubscribeButton() {
+    if (this.state.genre && this.state.genre.id > 0) {
+      var hasGenre = false;
+      for (var i = 0; i < this.props.followedGenres.length; i++) {
+        if (this.props.followedGenres[i].id == this.state.genre.id) {
+          hasGenre = true;
+        }
+      }
+      if (hasGenre) {
+        return (
+          <button className='button-rounded-green-bordered' style={{marginTop: 20}} onClick={() => this.props.handleFollowGenreClick(this.state.genre)}>
+            {"Unsubscribe"}
+          </button>
+        );
+      } else {
+        return (
+          <button className='button-rounded-green' style={{marginTop: 20}} onClick={() => this.props.handleFollowGenreClick(this.state.genre)}>
+            {"Subscribe"}
+          </button>
+        );
+      }
+    }
+  }
+
+  renderTopRightPanel() {
+    if (this.state.genre && this.state.genre.id > 0) {
+      return (
+        <div style={{marginTop: 20, marginLeft: 20, width: 250, paddingBottom: 20}}>
+          <Paper elevation={1} style={{backgroundColor: 'white'}}>
+            <div>
+              <div style={{paddingTop: 20}}/>
+              <Typography style={textStyleBig}>
+                {this.state.genre.name}
+              </Typography>
+              {this.renderSubscribeButton()}
+              <div style={{paddingBottom: 20}}/>
+            </div>
+          </Paper>
+        </div>
+      );
+    }
+  }
+
+  renderRightPanel() {
     return (
-      <div style={{marginTop: 20, marginLeft: 20, width: 250}}>
+      <div style={{marginTop: 20, marginLeft: 20, width: 250, paddingBottom: 20}}>
         <Paper elevation={1} style={{backgroundColor: 'white'}}>
           <div>
-            <img style={{margin: 10, width: 230}} src='../../../../../images/community_bg.png'/>
+            <img alt={"clip"} style={{margin: 10, width: 230}} src='../../../../../images/clip_bg.png'/>
             <Typography style={textStyleBig}>
-              {"Recommend a podcast!"}
+              {"Be a part of the community!"}
             </Typography>
             <Typography style={textStyleSmall}>
-              {"Is there a podcast that you love that you think other people should know? Tell us the name and we'll try to add it!"}
+              {"Create your own clips from your favorite podcasts and share it with others!"}
             </Typography>
-            <div style={{margin: 10}}>
-              <TextField
-                id="outlined-adornment-amount"
-                placeholder="Podcast Episode"
-                fullWidth
-                inputProps={{min: 0, style: { textAlign: 'center' }}}
-                InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-                InputLabelProps={{
-                  FormLabelClasses: {
-                    root: classes.textFieldLabelRoot
-                  }
-                }}
-                value={this.state.recommendedPodcast}/>
-            </div>
-            <div style={{paddingBottom: 10}}>
+            <button className='button-rounded-purple' onClick={() => this.handleCreateClipClick()}>
+              {"Create Clip!"}
+            </button>
+            <div style={{paddingBottom: 30}}>
             </div>
           </div>
         </Paper>
@@ -188,37 +443,22 @@ class FeedPage extends Component {
     );
   }
 
-  renderBottomRightPanel() {
-    return (
-      <div style={{marginTop: 20, marginLeft: 20, width: 250, paddingBottom: 20}}>
-        <Paper elevation={1} style={{backgroundColor: 'white'}}>
-          <div>
-            <img style={{margin: 10, width: 230}} src='../../../../../images/clip_bg.png'/>
-            <Typography style={textStyleBig}>
-              {"Be part of a fanbase!"}
-            </Typography>
-            <Typography style={textStyleSmall}>
-              {"Create your own highlight clips from your favorite podcasts to interact and showcase with our creators and fans!"}
-            </Typography>
-            <button className='button-rounded-purple' onClick={() => this.props.history.push('/howitworks/clip')}>
-              {"Learn More!"}
-            </button>
-            <div style={{paddingBottom: 30}}>
-            </div>
-          </div>
-        </Paper>
-      </div>
-    )
+  handleCreateClipClick() {
+    if (this.props.isLoggedIn) {
+      this.props.history.push('/submit');
+    } else {
+      this.props.openLoginModal();
+    }
   }
 
   renderClipType() {
-    if (this.props.clipType == Constants.CLIP_TYPE_TRENDING) {
+    if (this.state.clipType === Constants.CLIP_TYPE_TRENDING) {
       return (
         <Row>
-          <p style={clipTypeActive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_TRENDING)}>
+          <p style={clipTypeActive} onClick={() => this.setClipType(Constants.CLIP_TYPE_TRENDING)}>
             {'Trending'}
           </p>
-          <p style={clipTypeInactive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_NEW)}>
+          <p style={clipTypeInactive} onClick={() => this.setClipType(Constants.CLIP_TYPE_NEW)}>
             {'New'}
           </p>
         </Row>
@@ -226,10 +466,10 @@ class FeedPage extends Component {
     } else {
       return (
         <Row>
-          <p style={clipTypeInactive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_TRENDING)}>
+          <p style={clipTypeInactive} onClick={() => this.setClipType(Constants.CLIP_TYPE_TRENDING)}>
             {'Trending'}
           </p>
-          <p style={clipTypeActive} onClick={() => this.props.setClipType(Constants.CLIP_TYPE_NEW)}>
+          <p style={clipTypeActive} onClick={() => this.setClipType(Constants.CLIP_TYPE_NEW)}>
             {'New'}
           </p>
         </Row>
@@ -237,19 +477,27 @@ class FeedPage extends Component {
     }
   }
 
+  setClipType(clipType) {
+    this.setState({
+      clipType: clipType
+    });
+    this.refreshClips(this.state.genre, clipType);
+  }
+
   render() {
     const { classes } = this.props;
 		return (
       <div style={{backgroundColor: '#F4F3F6', paddingBottom: 50}}>
+        {this.renderHelmet()}
         <Container>
+          {this.renderClipType()}
           <Row>
             <Col md={8}>
-              {this.renderClipType()}
               {this.renderFeed()}
             </Col>
             <Col md={4}>
-              {this.renderRightPanel(classes)}
-              {this.renderBottomRightPanel()}
+              {this.renderTopRightPanel()}
+              {this.renderRightPanel()}
             </Col>
           </Row>
         </Container>

@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
-import ReactTooltip from 'react-tooltip';
-import { Slider, Rail, Handles, Tracks } from 'react-compound-slider';
+import { Slider, Handles, Tracks } from 'react-compound-slider';
 import ReactPlayer from 'react-player';
 import { Row, Col } from 'react-grid-system';
+import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
 import Avatar from '@material-ui/core/Avatar';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import { Helmet } from 'react-helmet';
 import ClipItem from './components/ClipItem.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
@@ -37,6 +39,24 @@ const rightPanelText = {
   marginTop: 20,
   marginBottom: 20,
   marginRight: 10,
+}
+
+const likeCountTextGrey = {
+  color: '#878A8C',
+  fontFamily: 'Lato',
+  textAlign: 'left',
+  fontSize: 17,
+  marginTop: 15,
+  cursor: 'pointer',
+}
+
+const likeCountTextRed = {
+  color: '#D14C85',
+  fontFamily: 'Lato',
+  textAlign: 'left',
+  fontSize: 17,
+  marginTop: 15,
+  cursor: 'pointer',
 }
 
 const textStyleBig = {
@@ -75,6 +95,19 @@ const railStyle = {
   borderRadius: 5,
   backgroundColor: '#8B9CB6',
 }
+
+const styles = theme => ({
+	root: {
+    marginTop: 20,
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    overflow: 'hidden',
+  },
+  gridList: {
+    width: '70%',
+  },
+});
 
 export function Handle({ // your handle component
   handle: { id, value, percent },
@@ -137,7 +170,7 @@ class ClipPage extends Component {
   }
 
   componentDidUpdate() {
-    if (this.state.clip == null || this.props.match.params.id != this.state.clip.uuid) {
+    if (this.state.clip == null || this.props.match.params.id !== this.state.clip.uuid) {
       this.refreshClip();
     }
   }
@@ -154,6 +187,9 @@ class ClipPage extends Component {
       duration: 0,
       isFinished: false,
       otherClips: [],
+      reaction: 0,
+      likeCount: 0,
+      genres: [],
     };
 
 		this.refreshClip = this.refreshClip.bind(this);
@@ -170,11 +206,15 @@ class ClipPage extends Component {
     this.copyToClipboard = this.copyToClipboard.bind(this);
     this.replay = this.replay.bind(this);
     this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
+    this.renderLikeCountText = this.renderLikeCountText.bind(this);
+		this.savePodcast = this.savePodcast.bind(this);
+    this.renderGenresView = this.renderGenresView.bind(this);
 		this.renderRightPanelContent = this.renderRightPanelContent.bind(this);
     this.renderRightPanel = this.renderRightPanel.bind(this);
     this.renderOtherClipsListItem = this.renderOtherClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
 		this.renderView = this.renderView.bind(this);
+    this.react = this.react.bind(this);
   }
 
 	refreshClip() {
@@ -186,29 +226,53 @@ class ClipPage extends Component {
         this.setState({
 					show404: false,
           clip: data.clip,
+          likeCount: data.clip.like_count,
         });
-				var storyId = data.clip.story_id;
-        BackendManager.makeQuery('clips/others', JSON.stringify({
+        if (this.props.genre.value.id > 0) {
+          BackendManager.makeQuery('clips/genre/trending/other', JSON.stringify({
+            clip_id: data.clip.id,
+            genre_id: this.props.genre.value.id
+          }))
+          .then(data => {
+            if (data.success) {
+  						this.setState({
+                otherClips: data.clips
+              })
+            }
+          });
+        } else {
+          BackendManager.makeQuery('clips/top/other', JSON.stringify({
+            clip_id: data.clip.id,
+          }))
+          .then(data => {
+            if (data.success) {
+  						this.setState({
+                otherClips: data.clips
+              })
+            }
+          });
+        }
+
+        BackendManager.makeQuery('clips/reaction', JSON.stringify({
           clip_id: data.clip.id,
-          user_id: data.clip.creator_id,
+          user_id: UserManager.id,
         }))
         .then(data => {
           if (data.success) {
-						if (data.clips.length > 0) {
-							this.setState({
-	              otherClips: data.clips,
-	            });
-						} else {
-							BackendManager.makeQuery('clips/all', JSON.stringify({
-					    }))
-					    .then(data => {
-					      if (data.success) {
-					        this.setState({
-					          otherClips: data.clips,
-					        });
-					      }
-					    });
-						}
+            this.setState({
+              reaction: data.reaction,
+            });
+          }
+        });
+
+        BackendManager.makeQuery('genres/clip', JSON.stringify({
+          clip_id: data.clip.id,
+        }))
+        .then(data => {
+          if (data.success) {
+            this.setState({
+              genres: data.genres,
+            });
           }
         });
       } else {
@@ -260,6 +324,7 @@ class ClipPage extends Component {
 				<Row>
 					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
 						<img
+							alt={"replay"}
 							style={{width: 30, height: 30, cursor: 'pointer'}}
 							src='../../../../../images/replay.png'
 							/>
@@ -276,6 +341,7 @@ class ClipPage extends Component {
 				<Row>
 					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.togglePlayPause()}>
 						<img
+							alt={"play"}
 							style={{width: 30, height: 30, cursor: 'pointer'}}
 							src={src}
 							/>
@@ -291,7 +357,7 @@ class ClipPage extends Component {
 			value: state.playedSeconds,
 		});
 
-    if (state.playedSeconds == this.state.duration) {
+    if (state.playedSeconds === this.state.duration) {
       this.setState({
         isPlaying: false,
         isFinished: true,
@@ -317,7 +383,80 @@ class ClipPage extends Component {
     this.player.seekTo(parseFloat(value));
   }
 
-  renderVideoPlayer() {
+  react() {
+    if (this.props.isLoggedIn) {
+      var reaction = 1;
+      var like = 1;
+      if (this.state.reaction == 1) {
+        reaction = 0;
+        like = -1;
+      }
+      BackendManager.makeQuery('clips/react', JSON.stringify({
+        like: like,
+        clip_id: this.state.clip.id,
+      }))
+      .then(data => {
+        if (data.success) {
+          BackendManager.makeQuery('clips/reaction/create', JSON.stringify({
+            clip_id: this.state.clip.id,
+            user_id: UserManager.id,
+            reaction: reaction,
+          }))
+          .then(data => {
+            if (data.success) {
+              this.setState({
+                reaction: reaction,
+                likeCount: this.state.likeCount + like
+              });
+            }
+          });
+        }
+      });
+    } else {
+      console.log('here');
+      this.props.openLoginModal();
+    }
+  }
+
+  renderLikeCountText() {
+    if (this.state.reaction == 0) {
+      return (
+        <Row>
+          <Typography style={likeCountTextGrey} onClick={() => this.react()}>
+            {UtilsManager.createNumberString(this.state.likeCount)}
+          </Typography>
+          <img src='../../../../../images/heart_grey.png' style={{marginRight: 20, marginLeft: 5, marginTop: 10, width: 35, height: 35, display: 'inline-block', cursor: 'pointer'}} onClick={() => this.react()} />
+          <button className='button-purple-small' style={{marginTop: 10}} onClick={() => this.copyToClipboard()}>{'Share'}</button>
+          <Col>
+            <button className='button-purple-small' style={{marginTop: 10, marginRight: 20}} onClick={() => this.props.history.push('/podcast/' + this.state.clip.podcast_id)}>{'Listen to full episode'}</button>
+          </Col>
+          {
+            document.queryCommandSupported('copy') &&
+            <input ref={this.copyRef} type='text' value={'https://riptide.fm/clips/' + this.props.match.params.id} style={{display: 'none'}} />
+          }
+        </Row>
+      );
+    } else {
+      return (
+        <Row>
+          <Typography style={likeCountTextRed} onClick={() => this.react()}>
+            {UtilsManager.createNumberString(this.state.likeCount)}
+          </Typography>
+          <img src='../../../../../images/heart_filled.png' style={{marginRight: 20, marginLeft: 5, marginTop: 10, width: 35, height: 35, display: 'inline-block', cursor: 'pointer'}} onClick={() => this.react()} />
+          <button className='button-purple-small' style={{marginTop: 10}} onClick={() => this.copyToClipboard()}>{'Share'}</button>
+          <Col>
+            <button className='button-purple-small' style={{marginTop: 10, marginRight: 20}} onClick={() => this.props.history.push('/podcast/' + this.state.clip.podcast_id)}>{'Listen to full episode'}</button>
+          </Col>
+          {
+            document.queryCommandSupported('copy') &&
+            <input ref={this.copyRef} type='text' value={'https://riptide.fm/clips/' + this.props.match.params.id} style={{width: 0, height: 0}} />
+          }
+        </Row>
+      );
+    }
+  }
+
+  renderVideoPlayer(classes) {
 		var width = '70%';
 		if (this.state.isMobile) {
 			width = '50%';
@@ -326,7 +465,7 @@ class ClipPage extends Component {
       <div>
         <div style={{marginTop: 20, marginLeft: 20, marginRight: 20, height: 160, backgroundColor: '#232831'}}>
 					<div style={{display: 'inline-block', height: 160, width: 160}}>
-						<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.thumbnail_url}/>
+						<img alt={"thumbnail"} style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.podcast_thumbnail}/>
 					</div>
 					<div style={{display: 'inline-block', marginLeft: 25, marginRight: 20, width: width}}>
 						<Typography style={textStyleBig}>
@@ -353,7 +492,10 @@ class ClipPage extends Component {
 						onDuration={this.handleDurationChange}
 						playing={this.state.isPlaying} />
 				</div>
-				<button className='button-purple-small' style={{float: 'right', display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.props.history.push('/podcast/' + this.state.clip.podcast_id)}>{'Listen to podcast'}</button>
+        <div style={{float: 'right'}}>
+          {this.renderLikeCountText()}
+        </div>
+        {this.renderGenresView(classes)}
       </div>
     );
   }
@@ -365,7 +507,7 @@ class ClipPage extends Component {
 	}
 
 	handleSlideEnd(state) {
-		if (state.length == 1) {
+		if (state.length === 1) {
 			this.setState({
 				value: state[0],
 				isPlaying: true,
@@ -428,16 +570,15 @@ class ClipPage extends Component {
 	}
 
   renderClipView(classes) {
-		var textFieldWidth = '100%';
-		if (this.state.isMobile) {
-			textFieldWidth = '95%';
-		}
     if (this.state.clip != null) {
       return (
         <div>
+          <Helmet>
+            <title>{this.state.clip.title}</title>
+          </Helmet>
           <Row>
             <Col md={8}>
-              {this.renderVideoPlayer()}
+              {this.renderVideoPlayer(classes)}
             </Col>
             <Col md={4}>
               {this.renderRightPanel()}
@@ -461,7 +602,8 @@ class ClipPage extends Component {
 					title={item.title}
 					podcast={item.story_title}
 					name={item.username}
-					thumbnail={item.thumbnail_url}
+					thumbnail={item.podcast_thumbnail}
+          likeCount={item.like_count}
 					duration={item.duration}
 					handleClipClick={this.handleClipClick}
 				/>
@@ -499,6 +641,63 @@ class ClipPage extends Component {
 		}
 	}
 
+	savePodcast() {
+		if (this.props.isLoggedIn) {
+			BackendManager.makeQuery('podcasts/playlist/check', JSON.stringify({
+				user_id: UserManager.id,
+				podcast_id: this.state.clip.podcast_id,
+			}))
+			.then(data => {
+				console.log(data);
+				if (data.success) {
+					if (data.inPlaylist) {
+						this.props.showToast('This episode is already in your playlist!', 'custom');
+					} else {
+						BackendManager.makeQuery('podcasts/playlist/add', JSON.stringify({
+							user_id: UserManager.id,
+							podcast_id: this.state.clip.podcast_id,
+							podcast_title: this.state.clip.podcast_title,
+							podcast_thumbnail: this.state.clip.podcast_thumbnail,
+							podcast_duration: this.state.clip.podcast_duration,
+							podcast_url: this.state.clip.podcast_url,
+							podcast_description: this.state.clip.podcast_description,
+						}))
+						.then(data => {
+							if (data.success) {
+								this.props.showToast('Added!', 'custom');
+							}
+						});
+					}
+				}
+			});
+		} else {
+			this.props.openLoginModal();
+		}
+	}
+
+  renderGenresView(classes) {
+    var cols = 5;
+    if (this.state.isMobile) {
+      cols = 3;
+    }
+    return (
+      <div style={{marginTop: 75, borderRadius: 20, padding: 20, backgroundColor: '#ebe9ef', marginLeft: 20, marginRight: 20}}>
+        <p style={{margin: 20, color: '#232831', width: '100%', textAlign: 'center', textSize: 20, fontWeight: 'bold'}}>{"Genres"}</p>
+        <div className={classes.root}>
+          <GridList cellHeight={50} className={classes.gridList} cols={cols}>
+            {this.state.genres.map(genre => (
+              <GridListTile key={genre.id} style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/g/' + encodeURIComponent(genre.name))}>
+                <button className='button-rounded-no-mar' style={{background: '#42BCBB'}}>
+                  {genre.name}
+                </button>
+              </GridListTile>
+            ))}
+          </GridList>
+        </div>
+      </div>
+    );
+  }
+
   renderRightPanel() {
 		var marginLeft = 0;
 		if (this.state.isMobile) {
@@ -509,13 +708,13 @@ class ClipPage extends Component {
 			<div>
 				<div style={{marginTop: 20, marginLeft: marginLeft, marginRight: 20}}>
 					<Paper elevation={1} style={{backgroundColor: '#6175E0'}}>
-						<div style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/story/' + this.state.clip.story_uuid)}>
+						<div style={{cursor: 'pointer'}} onClick={() => this.savePodcast()}>
 							<Row>
-								<Avatar src={this.state.clip.profile_picture} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
+								<Avatar src={this.state.clip.podcast_thumbnail} style={{marginBottom: 10, marginLeft: 30, marginTop: 10, width: 50, height: 50, display: 'inline-block'}} />
 								<Col>
 									<div style={centerVertical}>
 										<Typography style={topPanelText}>
-											{"Save podcast for listen later"}
+											{"Add episode to playlist"}
 										</Typography>
 									</div>
 								</Col>
@@ -558,4 +757,4 @@ class ClipPage extends Component {
   }
 }
 
-export default ClipPage;
+export default withStyles(styles)(ClipPage);

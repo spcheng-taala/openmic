@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
 import { withStyles } from '@material-ui/core/styles';
-import { Container, Row, Col } from 'react-grid-system';
 import TextField from '@material-ui/core/TextField';
 import BackendManager from '../../../singletons/BackendManager.js';
 import UserManager from '../../../singletons/UserManager.js';

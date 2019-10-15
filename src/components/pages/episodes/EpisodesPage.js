@@ -1,11 +1,8 @@
 import React, { Component } from 'react';
-import { Container, Row, Col } from 'react-grid-system';
+import { Container } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
 import { withStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
-import UserManager from '../../singletons/UserManager.js';
+import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import ClipItem from './components/ClipItem.js';
 import InfiniteScroll from 'react-infinite-scroller';
@@ -20,35 +17,8 @@ const styles = theme => ({
   }
 });
 
-const textFieldStyle = {
-  color: '#222225',
-  marginTop: 10,
-  marginLeft: 10,
-  marginRight: 10,
-}
-
 const cardStyle = {
   marginBottom: 30,
-}
-
-const textStyleBig = {
-  color: 'black',
-  fontFamily: 'Lato',
-  fontWeight: 800,
-  fontSize: 19,
-  margin: 5,
-  textAlign: 'center',
-}
-
-const textStyleSmall = {
-  color: '#B8B5BF',
-  fontFamily: 'Lato',
-  fontSize: 15,
-  marginTop: 5,
-  marginLeft: 10,
-  marginRight: 10,
-  textAlign: 'center',
-  paddingBottom: 10,
 }
 
 class EpisodesPage extends Component {
@@ -57,6 +27,8 @@ class EpisodesPage extends Component {
     .then(data => {
       console.log(data);
       this.setState({
+        podcastId: data.id,
+        podcastTitle: data.title,
         nextPubDate: data.next_episode_pub_date,
         episodes: data.episodes,
         episodesCount: data.total_episodes,
@@ -87,15 +59,27 @@ class EpisodesPage extends Component {
     super(props);
 
     this.state = {
+      podcastId: "",
+      podcastTitle: "",
       episodes: [],
       episodesCount: 0,
       nextPubDate: 0,
       isMobile: false,
     };
 
+    this.renderHelmet = this.renderHelmet.bind(this);
     this.renderFeed = this.renderFeed.bind(this);
     this.renderListItem = this.renderListItem.bind(this);
     this.loadMoreEpisodes = this.loadMoreEpisodes.bind(this);
+    this.handleEpisodeClick = this.handleEpisodeClick.bind(this);
+  }
+
+  renderHelmet() {
+    return (
+      <Helmet>
+        <title>{this.state.podcastTitle  + " - Riptide"}</title>
+      </Helmet>
+    );
   }
 
   renderListItem(item) {
@@ -103,12 +87,14 @@ class EpisodesPage extends Component {
       <div style={cardStyle}>
         <ClipItem
           isMobile={this.state.isMobile}
+          episode={item}
           id={item.id}
           url={item.audio}
           title={item.title}
           description={item.description}
           thumbnail={item.thumbnail}
-          duration={item.audio_length_sec}/>
+          duration={item.audio_length_sec}
+          handleEpisodeClick={this.handleEpisodeClick}/>
       </div>
     );
   }
@@ -128,6 +114,7 @@ class EpisodesPage extends Component {
   renderFeed() {
     return (
       <div>
+        {this.renderHelmet()}
         <InfiniteScroll
           pageStart={0}
           loadMore={this.loadMoreEpisodes}
@@ -144,8 +131,19 @@ class EpisodesPage extends Component {
     )
   }
 
+  handleEpisodeClick(episode) {
+    localStorage.setItem(episode.id, 'episode_id');
+    localStorage.setItem(episode.description, 'episode_description');
+    localStorage.setItem(episode.audio, 'episode_audio');
+    localStorage.setItem(episode.image, 'episode_image');
+    localStorage.setItem(episode.title, 'episode_title');
+    localStorage.setItem(this.state.podcastTitle, 'episode_podcast_title');
+    localStorage.setItem(this.state.podcastId, 'episode_podcast_id');
+    localStorage.setItem(episode.audio_length_sec, 'episode_duration');
+    window.open('/podcast/' + episode.id);
+  }
+
   render() {
-    const { classes } = this.props;
 		return (
       <div style={{backgroundColor: '#F4F3F6', paddingBottom: 50}}>
         <Container>

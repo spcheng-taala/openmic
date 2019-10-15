@@ -35,8 +35,6 @@ class SignUpModal extends Component {
     super(props);
 
     this.state = {
-      firstName: "",
-      lastName: "",
       email: "",
       password: "",
       username: "",
@@ -44,8 +42,6 @@ class SignUpModal extends Component {
     }
 
     this.signUpHandler = this.signUpHandler.bind(this);
-    this.handleFirstNameChange = this.handleFirstNameChange.bind(this);
-    this.handleLastNameChange = this.handleLastNameChange.bind(this);
     this.handleEmailChange = this.handleEmailChange.bind(this);
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
     this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -55,9 +51,7 @@ class SignUpModal extends Component {
   signUpHandler() {
     var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
     var profilePicture = "https://riptide-defaults.s3-us-west-2.amazonaws.com/default_profile_picture_" + profPicNumber + ".png";
-    BackendManager.makeQuery('users/create/email', JSON.stringify({
-      first_name: this.state.firstName,
-      last_name: this.state.lastName,
+    BackendManager.makeQuery('users/create', JSON.stringify({
       email: this.state.email,
       password: this.state.password,
       username: this.state.username,
@@ -66,8 +60,6 @@ class SignUpModal extends Component {
     .then(data => {
       if (data.success) {
         UserManager.id = data.id;
-        UserManager.firstName = data.first_name;
-        UserManager.lastName = data.last_name;
         UserManager.email = data.email;
         UserManager.username = data.username;
         UserManager.profilePicture = data.profile_picture;
@@ -76,33 +68,18 @@ class SignUpModal extends Component {
         var date = new Date();
         date.setSeconds(date.getSeconds() + data.expires_in);
         localStorage.setItem('id', data.id);
-        localStorage.setItem('first_name', data.first_name);
-        localStorage.setItem('last_name', data.last_name);
         localStorage.setItem('email', data.email);
         localStorage.setItem('username', data.username);
         localStorage.setItem('profile_picture', data.profile_picture);
         localStorage.setItem('token', data.token);
         localStorage.setItem('refresh_token', data.refresh_token);
         localStorage.setItem('expiration', date);
-        localStorage.setItem('bio', "Nothing here yet!");
-                
+
         this.props.closeModal();
         this.props.setProfilePicture(data.profile_picture);
         this.props.handleAuth();
         this.props.history.push('/edit');
       }
-    });
-  }
-
-  handleFirstNameChange(e) {
-    this.setState({
-      firstName: e.target.value
-    });
-  }
-
-  handleLastNameChange(e) {
-    this.setState({
-      lastName: e.target.value
     });
   }
 
@@ -133,7 +110,7 @@ class SignUpModal extends Component {
   }
 
   renderSignUpButton() {
-    if (this.state.validUsername && this.state.firstName != "" && this.state.lastName != "" && this.state.email != "" && this.state.password != "") {
+    if (this.state.validUsername && this.state.email !== "" && this.state.password !== "") {
       return (
         <button className='button-rounded' onClick={() => this.signUpHandler()}>Sign Up</button>
       )
@@ -146,31 +123,6 @@ class SignUpModal extends Component {
       <div>
         <h2 style={titleStyle}>{"Join Riptide today"}</h2>
         <div>
-          <TextField label="First Name"
-            floatingLabelText="First Name"
-            style={textFieldStyle}
-            fullWidth
-            value={this.state.firstName}
-            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-            InputLabelProps={{
-              FormLabelClasses: {
-                root: classes.textFieldLabelRoot
-              }
-            }}
-            onChange={this.handleFirstNameChange}/>
-          <TextField
-            label="Last Name"
-            floatingLabelText="Last Name"
-            style={textFieldStyle}
-            fullWidth
-            value={this.state.lastName}
-            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
-            InputLabelProps={{
-              FormLabelClasses: {
-                root: classes.textFieldLabelRoot
-              }
-            }}
-            onChange={this.handleLastNameChange}/>
           <TextField
             label="Email"
             floatingLabelText="Email"

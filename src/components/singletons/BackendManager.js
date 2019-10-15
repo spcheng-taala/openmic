@@ -1,15 +1,15 @@
 class BackendManager {
   constructor() {
-    // this.domain = "https://api.mypokadot.com/pp/";
-    this.domain = "http://localhost:8080/";
+    this.domain = "https://api.mypokadot.com/";
+    // this.domain = "http://localhost:8080/";
 
     this.searchDomain = "https://listen-api.listennotes.com/api/v2/search?q=";
     this.episodesDomain = "https://listen-api.listennotes.com/api/v2/podcasts/";
     this.episodeDomain = "https://listen-api.listennotes.com/api/v2/episodes/";
 
     // this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-files/";
-    this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
-    // this.fileUrl = "https://s3-us-west-2.amazonaws.com/riptide-clips/";
+    // this.fileUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
+    this.fileUrl = "https://s3-us-west-2.amazonaws.com/riptide-clips/";
     // this.gifUrl = "https://s3-us-west-2.amazonaws.com/openmic-test/";
     this.gifUrl = "https://s3-us-west-2.amazonaws.com/riptide-gifs/";
     this.refreshToken = "";

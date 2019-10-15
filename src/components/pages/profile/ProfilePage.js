@@ -1,15 +1,12 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
-import Paper from '@material-ui/core/Paper';
 import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
+import { Helmet } from 'react-helmet';
 import BrokenPageSection from '../../sections/BrokenPageSection.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
-import UtilsManager from '../../singletons/UtilsManager.js';
 import ClipItem from './components/ClipItem.js';
-
-const STAGE_CLIPS = 0;
 
 const labelActiveStyle = {
   cursor: 'pointer',
@@ -35,15 +32,6 @@ const usernameStyle = {
   textAlign: 'left',
   fontWeight: 'bold',
 	fontSize: 25,
-}
-
-const profileAvatar = {
-  width: 100,
-  height: 100,
-  display: 'block',
-  marginTop: 20,
-  marginLeft: 'auto',
-  marginRight: 'auto',
 }
 
 class ProfilePage extends Component {
@@ -155,6 +143,8 @@ class ProfilePage extends Component {
           podcast={item.podcast_title}
           name={item.username}
           active={item.active}
+          duration={item.duration}
+          likeCount={item.like_count}
           handleClick={this.handleItemClick} />
       </div>
     );
@@ -188,6 +178,9 @@ class ProfilePage extends Component {
     } else {
       return (
         <Container>
+          <Helmet>
+            <title>{this.props.match.params.id + " - Riptide"}</title>
+          </Helmet>
           {this.renderMyProfile()}
           <div style={{width: '100%', height: 1, backgroundColor: 'grey', marginTop: 20}}/>
           <div>

@@ -2,10 +2,8 @@ import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import IconButton from '@material-ui/core/IconButton';
 import InfiniteScroll from 'react-infinite-scroller';
+import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import queryString from 'query-string';
 
@@ -112,10 +110,13 @@ class PodcastGalleryPage extends Component {
     }
     return (
       <div>
+        <Helmet>
+          <title>{queryString.parse(this.props.location.search).q + " - Riptide"}</title>
+        </Helmet>
         <InfiniteScroll
           pageStart={0}
           loadMore={this.loadMorePodcasts}
-          hasMore={this.state.podcasts.length < this.state.count}
+          hasMore={false}
           loader={<div className="loader" key={0}>Loading ...</div>}
         >
           <div className={classes.root}>
@@ -128,6 +129,7 @@ class PodcastGalleryPage extends Component {
             </GridList>
           </div>
         </InfiniteScroll>
+        <img style={{height: 10, float: 'right', marginRight: 100, marginTop: 20}} src={'../../../../../images/listen_notes.png'} alt={'Listen Notes'} /> : <div/>
       </div>
     );
   }

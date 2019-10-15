@@ -107,7 +107,7 @@ class ClipItem extends React.Component {
     }
     return (
       <div>
-        <CardActionArea onClick={() => this.props.handleEpisodeClick(this.props.episode)}>
+        <CardActionArea onClick={() => this.props.handlePodcastClick(this.props.id, this.props.title, this.props.thumbnail, this.props.duration, this.props.url)}>
           <Paper elevation={1}>
             <div>
               <Row>

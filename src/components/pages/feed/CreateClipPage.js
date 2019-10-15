@@ -1,12 +1,22 @@
 import React, { Component } from 'react';
 import ReactPlayer from 'react-player';
+import { Container } from 'react-grid-system';
 import { Slider, Handles, Tracks } from 'react-compound-slider'
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
 import { Helmet } from 'react-helmet';
+import InfiniteScroll from 'react-infinite-scroller';
+import ClipItem from '../episodes/components/ClipItem.js';
 import UserManager from '../../singletons/UserManager.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
+
+const VIEW_SEARCH = 0;
+const VIEW_PODCASTS = 1;
+const VIEW_EPISODES = 2;
+const VIEW_CLIP = 3;
 
 const inputStyle = {
 	display: 'inline-block',
@@ -51,7 +61,17 @@ const styles = theme => ({
   },
   textFieldLabelRoot: {
     fontFamily: 'Lato',
-  }
+  },
+  root: {
+    marginTop: 20,
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    overflow: 'hidden',
+  },
+  gridList: {
+    width: '60%',
+  },
 });
 
 export function Handle({ // your handle component
@@ -100,7 +120,7 @@ function Track({ source, target, getTrackProps }) { // your own track component
   )
 }
 
-class TrimContentPage extends Component {
+class CreateClipPage extends Component {
 
   static defaultProps = {
     isDraggable: true,
@@ -113,31 +133,9 @@ class TrimContentPage extends Component {
   };
 
   componentDidMount() {
-		var podcastId = localStorage.getItem('podcast_id');
-		var podcastTitle = localStorage.getItem('podcast_title');
-		var thumbnail = localStorage.getItem('podcast_thumbnail');
-		var podcastDuration = localStorage.getItem('podcast_duration');
-		var podcastDescription = localStorage.getItem('podcast_description');
-    var url = localStorage.getItem('url');
-		if (podcastId && url && thumbnail && podcastTitle && podcastDuration && podcastDescription) {
-			this.setState({
-				podcastId: podcastId,
-				podcastTitle: podcastTitle,
-				thumbnail: thumbnail,
-				url: url,
-				podcastDuration: podcastDuration,
-				podcastDescription: podcastDescription,
-			});
-			localStorage.removeItem('podcast_id');
-			localStorage.removeItem('podcast_title');
-			localStorage.removeItem('podcast_thumbnail');
-			localStorage.removeItem('podcast_duration');
-			localStorage.removeItem('podcast_description');
-      localStorage.removeItem('url');
-		} else {
-			this.props.history.push('/');
-		}
-
+    this.setState({
+      currentView: VIEW_SEARCH,
+    });
 		window.addEventListener("resize", this.resize.bind(this));
     this.resize();
   }
@@ -158,11 +156,21 @@ class TrimContentPage extends Component {
     super(props);
     this.state = {
 			isMobile: false,
-			podcastId: "",
+      searchedPodcast: "",
+      currentView: VIEW_SEARCH,
+      podcasts: [],
+      episodes: [],
+      episodesCount: 0,
+      nextPubDate: 0,
+      podcastId: "",
 			podcastTitle: "",
+      episodeId: "",
+      episodeTitle: "",
+      episodeDescription: "",
+      episodeDuration: 0,
 			thumbnail: "",
-      url: "",
-			podcastDescription: "",
+      audio: "",
+      episode: null,
 			isPlaying: true,
 			seekStart: 0,
 			duration: 0,
@@ -171,6 +179,16 @@ class TrimContentPage extends Component {
 			title: "",
     };
 
+    this.renderSearchView = this.renderSearchView.bind(this);
+    this.searchPodcast = this.searchPodcast.bind(this);
+    this.handleSearchChange = this.handleSearchChange.bind(this);
+    this.handleSearchClick = this.handleSearchClick.bind(this);
+    this.handlePodcastClick = this.handlePodcastClick.bind(this);
+    this.handleEpisodeClick = this.handleEpisodeClick.bind(this);
+    this.loadMoreEpisodes = this.loadMoreEpisodes.bind(this);
+    this.renderPodcastsView = this.renderPodcastsView.bind(this);
+    this.renderEpisodesView = this.renderEpisodesView.bind(this);
+    this.renderEpisodeListItem = this.renderEpisodeListItem.bind(this);
 		this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
 		this.renderTrimmerView = this.renderTrimmerView.bind(this);
 		this.renderSlider = this.renderSlider.bind(this);
@@ -184,12 +202,163 @@ class TrimContentPage extends Component {
 		this.renderPlayPause = this.renderPlayPause.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
 		this.handleTrimClick = this.handleTrimClick.bind(this);
+    this.renderCurrentView = this.renderCurrentView.bind(this);
 		this.renderView = this.renderView.bind(this);
 		this.handleTitleChange = this.handleTitleChange.bind(this);
   }
 
 	ref = player => {
     this.player = player
+  }
+
+  renderSearchView(classes) {
+    return (
+      <div>
+        <Container>
+          <h1 style={{textAlign: 'center', color: '#3ABCBC'}}>{'Search for a Podcast'}</h1>
+          <TextField
+            fullWidth
+            rows="1"
+            value={this.state.searchedPodcast}
+            InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+            InputLabelProps={{
+              FormLabelClasses: {
+                root: classes.textFieldLabelRoot
+              }
+            }}
+            onChange={this.handleSearchChange}
+            margin="normal"
+            variant="outlined"
+            onKeyPress={event => this.searchPodcast(event)}
+          />
+          <button className="button-red" style={{margin: 20, float: 'right'}} onClick={() => this.handleSearchClick()}>{"Search"}</button>
+        </Container>
+
+      </div>
+    );
+  }
+
+  searchPodcast(event) {
+		if (event.key === 'Enter') {
+			this.handleSearchClick();
+		}
+	}
+
+  handleSearchChange(e) {
+    this.setState({
+      searchedPodcast: e.target.value
+    });
+  }
+
+  handleSearchClick() {
+    BackendManager.searchPodcast(this.state.searchedPodcast, 0)
+    .then(data => {
+      this.setState({
+        currentView: VIEW_PODCASTS,
+        podcasts: data.results,
+      });
+    });
+  }
+
+  renderPodcastsView(classes) {
+    var cols = 5;
+    if (this.state.isMobile) {
+      cols = 2;
+    }
+    return (
+      <InfiniteScroll
+        pageStart={0}
+        loadMore={null}
+        hasMore={false}
+        loader={<div className="loader" key={0}>Loading ...</div>}
+      >
+        <div className={classes.root}>
+          <GridList cellHeight={180} className={classes.gridList} cols={cols}>
+            {this.state.podcasts.map(podcast => (
+              <GridListTile key={podcast.id} style={{cursor: 'pointer'}} onClick={() => this.handlePodcastClick(podcast)}>
+                <img src={podcast.image} alt={podcast.title_original} />
+              </GridListTile>
+            ))}
+          </GridList>
+        </div>
+      </InfiniteScroll>
+    );
+  }
+
+  handlePodcastClick(podcast) {
+    BackendManager.getEpisodes(podcast.id)
+    .then(data => {
+      console.log(data);
+      this.setState({
+        podcastId: podcast.id,
+        podcastTitle: podcast.title,
+        nextPubDate: data.next_episode_pub_date,
+        episodes: data.episodes,
+        episodesCount: data.total_episodes,
+        currentView: VIEW_EPISODES,
+      });
+    });
+  }
+
+  renderEpisodesView() {
+    return (
+      <InfiniteScroll
+        pageStart={0}
+        loadMore={this.loadMoreEpisodes}
+        hasMore={this.state.episodes.length < this.state.episodesCount}
+        loader={<div className="loader" key={0}>Loading ...</div>}
+      >
+        <ul>
+          {this.state.episodes.map((item) => {
+            return (this.renderEpisodeListItem(item))
+          })}
+        </ul>
+      </InfiniteScroll>
+    );
+  }
+
+  renderEpisodeListItem(item) {
+    return (
+      <div style={{marginBottom: 30}}>
+        <ClipItem
+          isMobile={this.state.isMobile}
+          episode={item}
+          id={item.id}
+          url={item.audio}
+          title={item.title}
+          description={item.description}
+          thumbnail={item.thumbnail}
+          duration={item.audio_length_sec}
+          handleEpisodeClick={this.handleEpisodeClick}/>
+      </div>
+    );
+  }
+
+  loadMoreEpisodes() {
+    BackendManager.getEpisodes(this.state.podcastId, this.state.nextPubDate)
+    .then(data => {
+      var episodes = this.state.episodes;
+      episodes.push.apply(episodes, data.episodes);
+      this.setState({
+        nextPubDate: data.next_episode_pub_date,
+        episodes: episodes,
+      });
+    });
+  }
+
+  handleEpisodeClick(episode) {
+    const regex = /(<([^>]+)>)/ig;
+    var description = episode.description.replace(regex, '');
+    this.setState({
+      episodeId: episode.id,
+      episodeTitle: episode.title,
+      episodeDescription: description,
+      episodeDuration: episode.audio_length_sec,
+      url: episode.audio,
+      thumbnail: episode.image,
+      currentView: VIEW_CLIP,
+    });
+    window.scrollTo(0, 0);
   }
 
   renderVideoPlayer() {
@@ -482,12 +651,12 @@ class TrimContentPage extends Component {
 				url: url,
 				original_url: url,
 				title: this.state.title,
-				podcast_id: this.state.podcastId,
-				podcast_title: this.state.podcastTitle,
+				podcast_id: this.state.episodeId,
+				podcast_title: this.state.episodeTitle,
 				podcast_thumbnail: this.state.thumbnail,
 				podcast_url: this.state.url,
-				podcast_duration: this.state.podcastDuration,
-				podcast_description: this.state.podcastDescription,
+				podcast_duration: this.state.episodeDuration,
+				podcast_description: this.state.episodeDescription,
 				duration: duration,
 				user_id: UserManager.id,
 			}))
@@ -518,34 +687,61 @@ class TrimContentPage extends Component {
 		}
 	}
 
+  renderCurrentView(classes) {
+    if (this.state.currentView == VIEW_SEARCH) {
+      return (
+        <div>
+          {this.renderSearchView(classes)}
+        </div>
+      );
+    } else if (this.state.currentView == VIEW_PODCASTS) {
+      return (
+        <div>
+          {this.renderPodcastsView(classes)}
+        </div>
+      );
+    } else if (this.state.currentView == VIEW_EPISODES) {
+      return (
+        <div>
+          <Container>
+            {this.renderEpisodesView()}
+          </Container>
+        </div>
+      );
+    } else if (this.state.currentView == VIEW_CLIP) {
+      if (this.state.isMobile) {
+        return (
+          <div>
+            {this.renderVideoPlayer()}
+            <div style={{marginLeft: 20}}>
+              {this.renderTrimmerView(classes)}
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <div style={{float: 'left'}}>
+  	        	{this.renderVideoPlayer()}
+  					</div>
+  					<div style={{marginLeft: 250}}>
+  						{this.renderTrimmerView(classes)}
+  					</div>
+          </div>
+        );
+      }
+    }
+  }
+
 	renderView(classes) {
-		if (this.state.isMobile) {
-			return (
-				<div>
-					<Helmet>
-						<title>{"Studio - Riptide"}</title>
-					</Helmet>
-					{this.renderVideoPlayer()}
-					<div style={{marginLeft: 20}}>
-						{this.renderTrimmerView(classes)}
-					</div>
-				</div>
-			);
-		} else {
-			return (
-				<div>
-					<Helmet>
-						<title>{"Studio - Riptide"}</title>
-					</Helmet>
-					<div style={{float: 'left'}}>
-	        	{this.renderVideoPlayer()}
-					</div>
-					<div style={{marginLeft: 250}}>
-						{this.renderTrimmerView(classes)}
-					</div>
-				</div>
-			);
-		}
+		return (
+      <div>
+        <Helmet>
+          <title>{"Submit - Riptide"}</title>
+        </Helmet>
+        {this.renderCurrentView(classes)}
+      </div>
+    );
 	}
 
   render() {
@@ -558,4 +754,4 @@ class TrimContentPage extends Component {
   }
 }
 
-export default withStyles(styles)(TrimContentPage);
+export default withStyles(styles)(CreateClipPage);

@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
-import ReactTooltip from 'react-tooltip';
-import { Slider, Rail, Handles, Tracks } from 'react-compound-slider';
+import { Slider, Handles, Tracks } from 'react-compound-slider';
 import ReactPlayer from 'react-player';
 import { Row, Col } from 'react-grid-system';
 import Paper from '@material-ui/core/Paper';
-import Card from '@material-ui/core/Card';
 import Avatar from '@material-ui/core/Avatar';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
+import { Helmet } from 'react-helmet';
 import ClipItem from './components/ClipItem.js';
 import BackendManager from '../../singletons/BackendManager.js';
 import UserManager from '../../singletons/UserManager.js';
@@ -137,7 +136,7 @@ class PodcastPage extends Component {
   }
 
   componentDidUpdate() {
-    if (this.state.podcast == null || this.props.match.params.id != this.state.podcast.id) {
+    if (this.state.podcast == null || this.props.match.params.id !== this.state.podcast.id) {
       this.refreshPodcast();
     }
   }
@@ -175,36 +174,96 @@ class PodcastPage extends Component {
     this.renderOtherClipsListItem = this.renderOtherClipsListItem.bind(this);
     this.handleClipClick = this.handleClipClick.bind(this);
 		this.renderView = this.renderView.bind(this);
+    this.viewMoreEpisodes = this.viewMoreEpisodes.bind(this);
     this.openClip = this.openClip.bind(this);
     this.savePodcast = this.savePodcast.bind(this);
   }
 
 	refreshPodcast() {
-		BackendManager.getEpisode(this.props.match.params.id)
-    .then(data => {
+    var episodeId = localStorage.getItem('episode_id');
+    if (episodeId) {
+      var desc = localStorage.getItem('episode_description');
+      var audio = localStorage.getItem('episode_audio');
+      var image = localStorage.getItem('episode_image');
+      var title = localStorage.getItem('episode_title');
+      var podcastTitle = localStorage.getItem('episode_podcast_title');
+      var podcastId = localStorage.getItem('episode_podcast_id');
+      var duration = localStorage.getItem('episode_duration');
       const regex = /(<([^>]+)>)/ig;
-      if (data.id) {
-        var description = data.description.replace(regex, '');
-        var podcast = {
-          id: data.id,
-          audio: data.audio,
-          image: data.image,
-          title: data.title,
-          descrpition: description,
-          podcast: data.podcast.title,
-          podcastId: data.podcast.id,
-          duration: data.audio_length_sec,
-        };
-        this.setState({
-          show404: false,
-          podcast: podcast,
-        });
-      } else {
-        this.setState({
-          show404: true,
-        });
-      }
-    });
+      desc = desc.replace(regex, '');
+      var podcast = {
+        id: episodeId,
+        audio: audio,
+        image: image,
+        title: title,
+        description: desc,
+        podcast: podcastTitle,
+        podcastId: podcastId,
+        duration: duration,
+      };
+
+      this.setState({
+        podcast: podcast
+      });
+
+      localStorage.removeItem('episode_id');
+			localStorage.removeItem('episode_description');
+			localStorage.removeItem('episode_audio');
+			localStorage.removeItem('episode_image');
+			localStorage.removeItem('episode_title');
+      localStorage.removeItem('episode_podcast_title');
+      localStorage.removeItem('episode_podcast_id');
+      localStorage.removeItem('episode_duration');
+    } else {
+      BackendManager.getEpisode(this.props.match.params.id)
+      .then(data => {
+        const regex = /(<([^>]+)>)/ig;
+        if (data.id) {
+          console.log(data);
+          var description = data.description.replace(regex, '');
+          var podcast = {
+            id: data.id,
+            audio: data.audio,
+            image: data.image,
+            title: data.title,
+            description: description,
+            podcast: data.podcast.title,
+            podcastId: data.podcast.id,
+            duration: data.audio_length_sec,
+          };
+          this.setState({
+            show404: false,
+            podcast: podcast,
+          });
+        } else {
+          this.setState({
+            show404: true,
+          });
+        }
+      });
+    }
+    if (this.props.genre.value.id > 0) {
+      BackendManager.makeQuery('clips/genre/trending', JSON.stringify({
+        genre_id: this.props.genre.value.id
+      }))
+      .then(data => {
+        if (data.success) {
+          this.setState({
+            otherClips: data.clips
+          })
+        }
+      });
+    } else {
+      BackendManager.makeQuery('clips/top', JSON.stringify({
+      }))
+      .then(data => {
+        if (data.success) {
+          this.setState({
+            otherClips: data.clips
+          })
+        }
+      });
+    }
 	}
 
   resize() {
@@ -248,6 +307,7 @@ class PodcastPage extends Component {
 				<Row>
 					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.replay()}>
 						<img
+              alt={"replay"}
 							style={{width: 30, height: 30, cursor: 'pointer'}}
 							src='../../../../../images/replay.png'
 							/>
@@ -264,6 +324,7 @@ class PodcastPage extends Component {
 				<Row>
 					<div style={{marginTop: 5, width: 50, height: 50, cursor: 'pointer', zIndex: 20}} onClick={() => this.togglePlayPause()}>
 						<img
+              alt={"play"}
 							style={{width: 30, height: 30, cursor: 'pointer'}}
 							src={src}
 							/>
@@ -279,7 +340,7 @@ class PodcastPage extends Component {
 			value: state.playedSeconds,
 		});
 
-    if (state.playedSeconds == this.state.duration) {
+    if (state.playedSeconds === this.state.duration) {
       this.setState({
         isPlaying: false,
         isFinished: true,
@@ -314,14 +375,14 @@ class PodcastPage extends Component {
       <div>
         <div style={{marginTop: 20, marginLeft: 20, marginRight: 20, height: 160, backgroundColor: '#232831'}}>
 					<div style={{display: 'inline-block', height: 160, width: 160}}>
-						<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.podcast.image}/>
+						<img alt={"thumbnail"} style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.podcast.image}/>
 					</div>
 					<div style={{display: 'inline-block', marginLeft: 25, marginRight: 20, width: width}}>
 						<Typography style={textStyleBig}>
 							{this.state.podcast.title}
 						</Typography>
 						<Typography style={textStyleSmall}>
-							{"From: " + this.state.podcast.title}
+							{"From: " + this.state.podcast.podcast}
 						</Typography>
 						{this.renderSlider()}
 						<div style={{padding: 5}}>
@@ -341,21 +402,34 @@ class PodcastPage extends Component {
 						onDuration={this.handleDurationChange}
 						playing={this.state.isPlaying} />
 				</div>
-        <button className='button-purple-small' style={{float: 'right', display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.openClip()}>{'Create Clip'}</button>
+        <div style={{float: 'right'}}>
+          <button className='button-purple-small' style={{display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.viewMoreEpisodes()}>{'View More Episodes'}</button>
+          <button className='button-purple-small' style={{display: 'inline-block', marginRight: 20, marginTop: 10}} onClick={() => this.openClip()}>{'Create Clip'}</button>
+        </div>
       </div>
     );
   }
 
+  viewMoreEpisodes() {
+    this.props.history.push('/episodes?q=' + this.state.podcast.podcastId);
+  }
+
   openClip() {
-    if (this.state.podcast) {
-      this.setState({
-        isPlaying: false,
-      });
-      localStorage.setItem('url', this.state.podcast.audio);
-      localStorage.setItem('podcast_id', this.props.match.params.id);
-      localStorage.setItem('podcast_title', this.state.podcast.title);
-      localStorage.setItem('podcast_thumbnail', this.state.podcast.image);
-      window.open('/editor');
+    if (this.props.isLoggedIn) {
+      if (this.state.podcast) {
+        this.setState({
+          isPlaying: false,
+        });
+        localStorage.setItem('url', this.state.podcast.audio);
+        localStorage.setItem('podcast_id', this.props.match.params.id);
+        localStorage.setItem('podcast_title', this.state.podcast.title);
+        localStorage.setItem('podcast_thumbnail', this.state.podcast.image);
+        localStorage.setItem('podcast_duration', this.state.podcast.duration);
+        localStorage.setItem('podcast_description', this.state.podcast.description);
+        window.open('/editor');
+      }
+    } else {
+      this.props.openLoginModal();
     }
   }
 
@@ -366,7 +440,7 @@ class PodcastPage extends Component {
 	}
 
 	handleSlideEnd(state) {
-		if (state.length == 1) {
+		if (state.length === 1) {
 			this.setState({
 				value: state[0],
 				isPlaying: true,
@@ -429,13 +503,12 @@ class PodcastPage extends Component {
 	}
 
   renderClipView(classes) {
-		var textFieldWidth = '100%';
-		if (this.state.isMobile) {
-			textFieldWidth = '95%';
-		}
     if (this.state.podcast != null) {
       return (
         <div>
+          <Helmet>
+            <title>{this.state.podcast.title + " - Riptide"}</title>
+          </Helmet>
           <Row>
             <Col md={8}>
               {this.renderVideoPlayer()}
@@ -460,10 +533,10 @@ class PodcastPage extends Component {
 					id={item.uuid}
 					url={item.url}
 					title={item.title}
-					podcast={item.story_title}
 					name={item.username}
-					thumbnail={item.thumbnail_url}
+					thumbnail={item.podcast_thumbnail}
 					duration={item.duration}
+          likeCount={item.like_count}
 					handleClipClick={this.handleClipClick}
 				/>
         <Divider />
@@ -516,7 +589,7 @@ class PodcastPage extends Component {
                 <Col>
                   <div style={centerVertical}>
                     <Typography style={topPanelText}>
-                      {"Save Podcast For Later"}
+                      {"Add episode to playlist"}
                     </Typography>
                   </div>
                 </Col>
@@ -545,7 +618,7 @@ class PodcastPage extends Component {
         console.log(data);
         if (data.success) {
           if (data.inPlaylist) {
-            this.props.showToast('This podcast is already in your playlist!', 'custom');
+            this.props.showToast('This episode is already in your playlist!', 'custom');
           } else {
             BackendManager.makeQuery('podcasts/playlist/add', JSON.stringify({
               user_id: UserManager.id,
@@ -554,6 +627,7 @@ class PodcastPage extends Component {
               podcast_thumbnail: this.state.podcast.image,
               podcast_duration: this.state.podcast.duration,
               podcast_url: this.state.podcast.audio,
+              podcast_description: this.state.podcast.description,
             }))
             .then(data => {
               console.log(data);
@@ -564,6 +638,8 @@ class PodcastPage extends Component {
           }
         }
       });
+    } else {
+      this.props.openLoginModal();
     }
   }
 

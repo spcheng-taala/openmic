@@ -1,20 +1,18 @@
 import React, { Component } from 'react';
 import Modal from 'react-modal';
 import ReactPlayer from 'react-player';
-import axios from 'axios';
-import { Slider, Rail, Handles, Tracks } from 'react-compound-slider'
-import { Container, Row, Col } from 'react-grid-system';
+import { Slider, Handles, Tracks } from 'react-compound-slider'
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
 import InputBase from '@material-ui/core/InputBase';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
-import GridListTileBar from '@material-ui/core/GridListTileBar';
-import UserManager from '../../singletons/UserManager.js';
+import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
+import UserManager from '../../singletons/UserManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
-import InfiniteScroll from 'react-infinite-scroller';
+import CreateGenreModal from './components/CreateGenreModal.js';
 
 const customStyles = {
 	overlay: {
@@ -34,18 +32,10 @@ const customStyles = {
     right: 'auto',
     bottom: 'auto',
     marginRight: '-50%',
-		background: 'rgba(255, 255, 255, 1)',
+		background: '#18161B',
     transform: 'translate(-50%, -50%)'
   },
 };
-
-const root = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  overflow: 'hidden',
-  marginTop: 20,
-}
 
 const inputStyle = {
 	display: 'inline-block',
@@ -156,8 +146,8 @@ class ClipDetailsPage extends Component {
       uuid: this.props.match.params.id,
     }))
     .then(data => {
-      console.log(data);
       if (data.success) {
+				console.log(data);
         this.setState({
           clip: data.clip,
           title: data.clip.title,
@@ -167,7 +157,6 @@ class ClipDetailsPage extends Component {
 					clip_id: data.clip.id,
 				}))
 		    .then(data => {
-		      console.log(data);
 		      if (data.success) {
 		        this.setState({
 		          selectedGenres: data.genres,
@@ -195,6 +184,8 @@ class ClipDetailsPage extends Component {
 			clip: null,
 			isPlaying: true,
 			seekStart: 0,
+			start: 0,
+			end: 0,
 			duration: 0,
       title: "",
       active: 1,
@@ -202,6 +193,7 @@ class ClipDetailsPage extends Component {
 			allGenres: [],
 			displayedGenres: [],
 			searchedGenre: '',
+			createGenreModalIsOpen: false,
     };
 
 		this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
@@ -216,8 +208,17 @@ class ClipDetailsPage extends Component {
 		this.renderGenresView = this.renderGenresView.bind(this);
 		this.renderView = this.renderView.bind(this);
 		this.handleTitleChange = this.handleTitleChange.bind(this);
+		this.addGenre = this.addGenre.bind(this);
+		this.removeGenre = this.removeGenre.bind(this);
+		this.handleSlideStart = this.handleSlideStart.bind(this);
+		this.handleSlideEnd = this.handleSlideEnd.bind(this);
+		this.handleStartValueChange = this.handleStartValueChange.bind(this);
+		this.handleEndValueChange = this.handleEndValueChange.bind(this);
 		this.handleSearchGenreChange = this.handleSearchGenreChange.bind(this);
 		this.renderCreateNewGenre = this.renderCreateNewGenre.bind(this);
+		this.createGenre = this.createGenre.bind(this);
+		this.openCreateGenreModal = this.openCreateGenreModal.bind(this);
+		this.closeCreateGenreModal = this.closeCreateGenreModal.bind(this);
   }
 
 	ref = player => {
@@ -228,13 +229,13 @@ class ClipDetailsPage extends Component {
     if (this.state.clip) {
       return (
         <div style={{margin: 20}}>
-					<img style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.podcast_thumbnail}/>
+					<img alt={"thumbnail"} style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.podcast_thumbnail}/>
           <ReactPlayer
 						ref={this.ref}
 						width={0}
 						height={0}
 						progressInterval={10}
-						url={this.state.clip.url}
+						url={this.state.clip.original_url}
 						onDuration={this.handleDurationChange}
 						onProgress={this.handleVideoProgress}
 						playing={this.state.isPlaying}
@@ -248,9 +249,23 @@ class ClipDetailsPage extends Component {
 		this.setState({
 			duration: duration,
 		});
+
+		if (this.state.end == 0) {
+			this.setState({
+				end: duration
+			});
+		}
 	}
 
 	handleVideoProgress(state) {
+		if (state.playedSeconds >= this.state.end) {
+			if (this.state.start < 1) {
+				var percentage = this.state.start / this.state.duration;
+				this.player.seekTo(percentage);
+			} else {
+				this.player.seekTo(this.state.start);
+			}
+		}
 		this.setState({
 			seekStart: state.playedSeconds,
 		});
@@ -261,10 +276,30 @@ class ClipDetailsPage extends Component {
 			return (
 				<div style={{marginRight: 20, marginTop: 20, backgroundColor: '#30343E', borderRadius: 5}}>
 					<h3 style={{margin: 20, color: '#FFFFFF', paddingTop: 20}}>{"Clip Details"}</h3>
+					<p style={{marginLeft: 20, marginRight: 20, color: '#FFFFFF', fontSize: 14}}>{"You can fine-tune your clip here! You can also edit the title as well as tag Genres to this clip!"}</p>
+					<div style={{margin: 20, paddingBottom: 20}}>
+						<div style={{display: 'inline-block'}}>
+							<p style={{color: 'white'}}>{"Start"}</p>
+							<input style={inputStyle} readonly value={UtilsManager.createTimeString(this.state.start)}/>
+							<div>
+								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleStartValueChange(false)}>{"-0.5s"}</button>
+								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleStartValueChange(true)}>{"+0.5s"}</button>
+							</div>
+						</div>
+						<div style={{display: 'inline-block'}}>
+							<p style={{color: 'white'}}>{"End"}</p>
+							<input style={inputStyle} readonly value={UtilsManager.createTimeString(this.state.end)}/>
+							<div>
+								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleEndValueChange(false)}>{"-0.5s"}</button>
+								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleEndValueChange(true)}>{"+0.5s"}</button>
+							</div>
+						</div>
+					</div>
 					{this.renderPlayPause()}
 					{this.renderProgressStr()}
 					<div style={{marginLeft: 20, marginRight: 20}}>
-						{this.renderSlider()}
+						{this.renderSlider(false)}
+						{this.renderSlider(true)}
 					</div>
 					<div style={{marginLeft: 10, marginRight: 10, paddingBottom: 20}}>
 						<TextField
@@ -308,13 +343,13 @@ class ClipDetailsPage extends Component {
 		if (this.state.isPlaying) {
 			return (
 				<div style={{cursor: 'pointer', marginLeft: 20}} onClick={() => this.handlePlayPause()}>
-					<img style={playPauseButtonStyle} src='../../../../../images/pause_green.png'/>
+					<img alt={"pause"} style={playPauseButtonStyle} src='../../../../../images/pause_green.png'/>
 				</div>
 			);
 		} else {
 			return (
 				<div style={{cursor: 'pointer', marginLeft: 20}} onClick={() => this.handlePlayPause()}>
-					<img style={playPauseButtonStyle} src='../../../../../images/play_green.png'/>
+					<img alt={"play"} style={playPauseButtonStyle} src='../../../../../images/play_green.png'/>
 				</div>
 			);
 		}
@@ -335,23 +370,83 @@ class ClipDetailsPage extends Component {
 	}
 
 	handleSlideEnd(state) {
-		if (state.length == 1) {
+		if (state.length === 1) {
 			this.setState({
 				seekStart: state[0],
 				isPlaying: true,
 			});
+		}	else if (state.length === 2) {
+			this.setState({
+				seekStart: state[0],
+				start: state[0],
+				end: state[1],
+				isPlaying: true,
+			});
 		}
 		if (this.state.seekStart < 1) {
-			var percentage = this.state.seekStart / this.state.duration;
+			var percentage = state[0] / this.state.duration;
 			this.player.seekTo(percentage);
 		} else {
-			this.player.seekTo(this.state.seekStart);
+			this.player.seekTo(state[0]);
 		}
 	}
 
-	renderSlider() {
+	handleStartValueChange(isIncrease) {
+		var start = this.state.start;
+		if (isIncrease) {
+			start += 0.5;
+			if (start < this.state.end) {
+				this.setState({
+					seekStart: start,
+					start: start,
+				});
+			}
+		} else {
+			start -= 0.5;
+			if (start >= 0) {
+				this.setState({
+					seekStart: start,
+					start: start
+				});
+			}
+		}
+
+		if (start < 1) {
+			var percentage = start / this.state.duration;
+			this.player.seekTo(percentage);
+		} else {
+			this.player.seekTo(start);
+		}
+	}
+
+	handleEndValueChange(isIncrease) {
+		var end = this.state.end;
+		if (isIncrease) {
+			end += 0.5;
+			if (end <= this.state.duration) {
+				this.setState({
+					end: end
+				});
+			}
+		} else {
+			end -= 0.5;
+			if (end > this.state.start) {
+				this.setState({
+					end: end
+				});
+			}
+		}
+	}
+
+	renderSlider(isDouble) {
 		if (this.state.clip) {
 			var values = [];
+			if (isDouble) {
+				values.push(this.state.start);
+				values.push(this.state.end);
+			} else {
+				values.push(this.state.seekStart);
+			}
 			return (
 				<div>
 					<Slider
@@ -361,7 +456,7 @@ class ClipDetailsPage extends Component {
 						mode={1}
 						onSlideStart={this.handleSlideStart}
 						onSlideEnd={this.handleSlideEnd}
-						values={[this.state.seekStart]}
+						values={values}
 					>
 						<div style={railStyle} />
 						<Handles>
@@ -377,7 +472,7 @@ class ClipDetailsPage extends Component {
 								</div>
 							)}
 						</Handles>
-						<Tracks left={true} right={false}>
+						<Tracks left={!isDouble} right={false}>
 							{({ tracks, getTrackProps }) => (
 								<div className="slider-tracks">
 									{tracks.map(({ id, source, target }) => (
@@ -398,37 +493,70 @@ class ClipDetailsPage extends Component {
 	}
 
 	handleDoneClick() {
-    if (this.state.clip && this.state.snapshot) {
-      // var snapshot = this.state.snapshot;
-      // snapshot.lastModifiedDate = new Date();
-      // const timestamp = Date.now().toString();
-      // snapshot.name = this.state.clip.id + "_" + timestamp + ".png";
-      var snapshot = this.state.snapshot;
-      var jpegFile64 = snapshot.replace(/^data:image\/(png|jpeg);base64,/, "");
-      console.log(jpegFile64);
-      var jpegBlob = UtilsManager.base64ToBlob(jpegFile64, 'image/jpeg');
-      jpegBlob.name = "clip.jpg";
-      console.log(jpegBlob);
-      const formData = new FormData();
-      formData.append('file', jpegBlob, "clip.jpg");
-      axios.post(`https://api.mypokadot.com/pp/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }).then(data => {
-        var url = "https://s3-us-west-2.amazonaws.com/riptide-images/";
-        var imageUrl = url + data.data.title.split(' ').join('+');
-        BackendManager.makeQuery('clips/update/details', JSON.stringify({
-          thumbnail_url: imageUrl,
-          title: this.state.title,
-          clip_id: this.state.clip.id,
-        }))
-        .then(data => {
-          this.props.history.push('/clips/' + this.state.clip.uuid);
-        });
-      }).catch(error => {
-        // handle your error
-      });
+    if (this.state.clip) {
+			if (this.state.selectedGenres.length > 0) {
+				var url = this.state.clip.url;
+				var updateUrl = false;
+				var duration = this.state.duration;
+				if (this.state.start > 0 || this.state.end < this.state.duration) {
+					const timestamp = Date.now().toString();
+					var fileName = UserManager.id + "_" + timestamp + ".mp3";
+					url = BackendManager.fileUrl + fileName;
+					updateUrl = true;
+					duration = this.state.end - this.state.start;
+				}
+				BackendManager.makeQuery('clips/update', JSON.stringify({
+					title: this.state.title,
+					clip_id: this.state.clip.id,
+					url: url,
+					duration: duration,
+				}))
+				.then(data => {
+					if (data.success) {
+						var genres = [];
+						var selectedGenres = this.state.selectedGenres;
+						for (var i = 0; i < selectedGenres.length; i++) {
+							genres.push({
+								genre_id: selectedGenres[i].id,
+							});
+						}
+						BackendManager.makeQuery('genres/clip/create', JSON.stringify({
+							genres: genres,
+							clip_id: this.state.clip.id,
+						}))
+						.then(data => {
+							BackendManager.makeQuery('clips/reaction/create', JSON.stringify({
+								user_id: UserManager.id,
+								clip_id: this.state.clip.id,
+								reaction: 1,
+							}))
+							.then(data => {
+								if (updateUrl) {
+									BackendManager.makeQuery('trim/audio', JSON.stringify({
+										url: this.state.clip.original_url,
+										start_time: this.state.start,
+										duration: this.state.end - this.state.start,
+										file_name: fileName,
+										clip_id: this.state.clip.id,
+										email: UserManager.email,
+									}))
+									.then(data => {
+										localStorage.setItem('clip_uuid', this.state.clip.uuid);
+										localStorage.setItem('clip_id', this.state.clip.id);
+										localStorage.setItem('is_edit', 1);
+										localStorage.setItem('clip_url', url);
+										this.props.history.push('/publishing');
+									});
+								} else {
+									this.props.history.push('/clips/' + this.state.clip.uuid);
+								}
+							});
+						});
+					}
+				});
+			} else {
+				this.props.showToast("Please add at least one genre", 'custom');
+			}
     }
 	}
 
@@ -436,7 +564,7 @@ class ClipDetailsPage extends Component {
 		this.setState({
 			searchedGenre: e.target.value,
 		});
-		if (e.target.value == '') {
+		if (e.target.value === '') {
 			this.setState({
 				displayedGenres: this.state.allGenres,
 			});
@@ -450,6 +578,39 @@ class ClipDetailsPage extends Component {
 		}
 	}
 
+	addGenre(genre) {
+		var selectedGenres = this.state.selectedGenres;
+		var hasGenre = false;
+		for (var i = 0; i < selectedGenres.length; i++) {
+			if (selectedGenres[i].id === genre.id) {
+				hasGenre = true;
+			}
+		}
+
+		if (hasGenre) {
+			this.props.showToast('Already added!', 'custom');
+		} else {
+			selectedGenres.push(genre);
+			selectedGenres.sort((a, b) => (a.name > b.name) ? 1 : -1);
+			this.setState({
+				selectedGenres: selectedGenres
+			});
+		}
+	}
+
+	removeGenre(genre) {
+		var selectedGenres = this.state.selectedGenres;
+		for (var i = 0; i < selectedGenres.length; i++) {
+			if (selectedGenres[i].id === genre.id) {
+				selectedGenres.splice(i, 1);
+				break;
+			}
+		}
+		this.setState({
+			selectedGenres: selectedGenres
+		});
+	}
+
 	renderGenresView(classes) {
 		return (
 			<div>
@@ -457,7 +618,7 @@ class ClipDetailsPage extends Component {
 					<p style={{margin: 20, color: '#FFFFFF', width: '100%', textAlign: 'center'}}>{"Add Genres"}</p>
 					<GridList cellHeight={50} className={classes.gridList} cols={6}>
 						{this.state.selectedGenres.map(genre => (
-							<GridListTile key={genre.id} style={{cursor: 'pointer'}}>
+							<GridListTile key={genre.id} style={{cursor: 'pointer'}} onClick={() => this.removeGenre(genre)}>
 								<button className='button-rounded-no-mar' style={{background: '#42BCBB'}}>
 									{genre.name}
 								</button>
@@ -465,35 +626,36 @@ class ClipDetailsPage extends Component {
 						))}
 					</GridList>
 					<div style={{backgroundColor: 'white', width: '100%', margin: 20, height: 1}} />
-					<Paper style={{width: '100%', paddingTop: 5, paddingBottom: 5, paddingLeft: 10, paddingRight: 10, marginLeft: 50, marginRight: 50, marginBottom: 10}}>
+					<Paper style={{width: '100%', paddingTop: 5, paddingBottom: 5, paddingLeft: 10, paddingRight: 10, marginLeft: 50, marginRight: 50, marginBottom: 20}}>
 	          <InputBase
 	            className={classes.textFieldInputRoot}
 	            fullWidth
-	            placeholder="Search Podcasts"
+							value={this.state.searchedGenre}
+	            placeholder="Search Genres"
 	            onChange={this.handleSearchGenreChange}
 	          />
 	        </Paper>
 					<GridList cellHeight={50} className={classes.gridList} cols={6}>
 						{this.state.displayedGenres.map(genre => (
-							<GridListTile key={genre.id} style={{cursor: 'pointer'}}>
+							<GridListTile key={genre.id} style={{cursor: 'pointer'}} onClick={() => this.addGenre(genre)}>
 								<button className='button-rounded-no-mar' style={{background: '#42BCBB'}}>
 									{genre.name}
 								</button>
 							</GridListTile>
 						))}
 					</GridList>
-					{this.renderCreateNewGenre()}
 				</div>
+				{this.renderCreateNewGenre()}
 			</div>
 		);
 	}
 
 	renderCreateNewGenre() {
-		if (this.state.searchedGenre != '') {
+		if (this.state.searchedGenre !== '') {
 			return (
 				<div>
 					<p style={{margin: 20, color: '#FFFFFF', textSize: 12}}>{"Don't see the genre you want? Click Create New!"}</p>
-					<button className='button-rounded-purple-no-mar'>
+					<button className='button-rounded-no-mar' style={{marginLeft: 20, backgroundColor: '#6175E0'}} onClick={() => this.openCreateGenreModal()}>
 						{'Create New'}
 					</button>
 				</div>
@@ -501,9 +663,26 @@ class ClipDetailsPage extends Component {
 		}
 	}
 
+	createGenre(genre) {
+		var allGenres = this.state.allGenres;
+		var selectedGenres = this.state.selectedGenres;
+		allGenres.push(genre);
+		selectedGenres.push(genre);
+		this.setState({
+			selectedGenres: selectedGenres,
+			allGenres: allGenres,
+			displayedGenres: allGenres,
+			searchedGenre: '',
+			createGenreModalIsOpen: false,
+		});
+	}
+
 	renderView(classes) {
 		return (
 			<div>
+				<Helmet>
+					<title>{"Clip details - Riptide"}</title>
+				</Helmet>
 				<div style={{float: 'left'}}>
         	{this.renderVideoPlayer()}
 				</div>
@@ -514,10 +693,30 @@ class ClipDetailsPage extends Component {
 		);
 	}
 
+	openCreateGenreModal() {
+		this.setState({
+			createGenreModalIsOpen: true
+		});
+	}
+
+	closeCreateGenreModal() {
+		this.setState({
+			createGenreModalIsOpen: false
+		});
+	}
+
   render() {
     const { classes } = this.props;
 		return (
       <div>
+				<Modal
+					isOpen={this.state.createGenreModalIsOpen}
+					onRequestClose={this.closeCreateGenreModal}
+					style={customStyles}
+					contentLabel="Create Genre"
+				>
+					<CreateGenreModal showToast={this.props.showToast} createGenre={this.createGenre} />
+				</Modal>
 				{this.renderView(classes)}
       </div>
     )

@@ -9,7 +9,7 @@ const text2 = "You represent and warrant that you are at least 13 years of age. 
 const what2 = "You must be at least 13 to use Riptide. Further, you may not access or use the Services if your access or use of the Services is prohibited or conflicts with any applicable local, state, national or international laws and regulations. You must notify us immediately of any change in your eligibility to use the Services. We may, in our sole discretion, refuse to offer the Services to any person or entity and change these eligibility criteria at any time.";
 
 const text3 = "To use some aspects of the Services, you must register for an account (an 'Account'). Registration data and certain other information about you and your Account are governed by our Privacy Policy. You will not: (i) select or use as a username a name of another person with the intent to impersonate that person, (ii) use as a username a name subject to any rights of a person (including, without limitation, copyrights or trademarks) other than you without appropriate authorization or (iii) use, as a username, a name that is otherwise offensive, vulgar or obscene. You are solely responsible for the activity that occurs on your Account and for keeping your Account password secure. You may never use another person’s user account or registration information for the Services without permission. You must notify us immediately of any breach of security or unauthorized use of your Account. You should never publish, distribute or post login information for your " +
-"Account. We will not be liable for any loss or damage arising from your failure to comply with this Section." + "You will have the ability to delete your Account, either by following the instructions on the Services or by sending a request to help@riptide.fm.";
+"Account. We will not be liable for any loss or damage arising from your failure to comply with this Section." + " You will have the ability to delete your Account, either by following the instructions on the Services or by sending a request to help@riptide.fm.";
 const what3 = "When creating an account on Riptide, you should be considerate to other people who may hear or see your podcast. You're not allowed to impersonate anyone with the intent to deceive, or use branding that is offensive or inappropriate."
 
 const title4 = "Definition";
@@ -700,19 +700,19 @@ class TermsPage extends Component {
   }
 
   renderElement(element) {
-    if (element.type == "text") {
+    if (element.type === "text") {
       return (
         <div>
           <p style={textStyle}>{element.text}</p>
         </div>
       );
-    } else if (element.type == "title") {
+    } else if (element.type === "title") {
       return (
         <div>
           <h1 style={titleStyle}>{element.text}</h1>
         </div>
       )
-    } else if (element.type == "what") {
+    } else if (element.type === "what") {
       return (
         <div>
           <p style={whatDoesItMeanStyle}>{"What it means:"}</p>
@@ -722,8 +722,7 @@ class TermsPage extends Component {
     }
   }
 
-  render() {
-    const { classes } = this.props;
+  render() {    
 		return (
       <div style={root}>
         <p style={textStyle}>{"Date of Last Revision: Feb 08, 2019"}</p>

@@ -1,5 +1,18 @@
 class UtilsManager {
 
+  msToTime(duration) {
+    var milliseconds = parseInt((duration % 1000) / 100),
+      seconds = Math.floor((duration / 1000) % 60),
+      minutes = Math.floor((duration / (1000 * 60)) % 60),
+      hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+
+    hours = (hours < 10) ? "0" + hours : hours;
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+    return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+  }
+
   convertToCommaString(x) {
     if (x) {
       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -21,21 +34,27 @@ class UtilsManager {
     var secondsString = "" + s;
     if (s < 10) {
       secondsString = "0" + s;
+    } else if (s == 60) {
+      secondsString = "00";
+      m += 1;      
     }
 
     var minutesString = "" + m;
     if (m < 10) {
       minutesString = "0" + m;
+    } else if (m == 60) {
+      minutesString = "00";
+      h += 1;
     }
 
     var hourString = "" + h;
     if (h < 10) {
       hourString = "0" + h;
+    } else if (h == 60) {
+      hourString = "00";
     }
 
-    if (d < 60) {
-      return "00:" + secondsString;
-    } else if (d < 3600) {
+    if (d < 3600) {
       return minutesString + ":" + secondsString;
     } else {
       return hourString + ":" + minutesString + ":" + secondsString;
@@ -71,6 +90,26 @@ class UtilsManager {
     }
   }
 
+  createNumberString(num) {
+    var si = [
+      { value: 1, symbol: "" },
+      { value: 1E3, symbol: "k" },
+      { value: 1E6, symbol: "M" },
+      { value: 1E9, symbol: "G" },
+      { value: 1E12, symbol: "T" },
+      { value: 1E15, symbol: "P" },
+      { value: 1E18, symbol: "E" }
+    ];
+    var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+    var i;
+    for (i = si.length - 1; i > 0; i--) {
+      if (num >= si[i].value) {
+        break;
+      }
+    }
+    return (num / si[i].value).toFixed(1).replace(rx, "$1") + si[i].symbol;
+  }
+
   base64ToBlob(base64, mime) {
     mime = mime || '';
     var sliceSize = 1024;
@@ -91,35 +130,6 @@ class UtilsManager {
     }
 
     return new Blob(byteArrays, {type: mime});
-  }
-
-  buildHierarchy(arry, rootId) {
-    var roots = [], children = {};
-    // find the top level nodes and hash the children based on parent
-    for (var i = 0, len = arry.length; i < len; ++i) {
-      var item = arry[i],
-        p = item.parent_comment_id,
-        target = (p == rootId) ? roots : (children[p] || (children[p] = []));
-        target.push(item);
-    }
-
-    // function to recursively build the tree
-    var findChildren = function(parent) {
-      if (children[parent.id]) {
-        parent.children = children[parent.id];
-        for (var i = 0, len = parent.children.length; i < len; ++i) {
-          findChildren(parent.children[i]);
-        }
-      }
-    };
-
-    // enumerate through to handle the case where there are multiple roots
-    for (var i = 0, len = roots.length; i < len; ++i) {
-      findChildren(roots[i]);
-    }
-
-    console.log(roots);
-    return roots;
   }
 }
 

@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import ReactPlayer from 'react-player';
-import { Planet } from 'react-kawaii';
+import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 
 const animationRoot = {
   display: 'flex',
   flexWrap: 'wrap',
-  height: 250,
+  height: 500,
   justifyContent: 'space-around',
   overflow: 'hidden',
   marginTop: 20,
@@ -15,19 +15,22 @@ const animationRoot = {
 class PublishingPage extends Component {
 
   componentDidMount() {
+    var isEdit = localStorage.getItem('is_edit');
 		var id = localStorage.getItem('clip_id');
     var uuid = localStorage.getItem('clip_uuid');
     var url = localStorage.getItem('clip_url');
 		if (id && uuid && url) {
 			this.setState({
+        isEdit: isEdit,
 				id: id,
         uuid: uuid,
         url: url,
 			});
+      localStorage.removeItem('is_edit');
       localStorage.removeItem('clip_id');
       localStorage.removeItem('clip_uuid');
       localStorage.removeItem('clip_url');
-      setInterval(this.refresh, 30000);
+      setInterval(this.refresh, 10000);
 		} else {
       this.props.history.push('/');
     }
@@ -36,6 +39,7 @@ class PublishingPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isEdit: 0,
 			id: 0,
       uuid: "",
       url: "",
@@ -57,17 +61,24 @@ class PublishingPage extends Component {
 
   handleDurationChange(duration) {
     if (duration && duration > 0) {
-      this.props.history.push('/studio/' + this.state.uuid);
+      if (this.state.isEdit == 0) {
+        this.props.history.push('/studio/' + this.state.uuid);
+      } else {
+        this.props.history.push('/clips/' + this.state.uuid);
+      }
     }
   }
 
   render() {
 		return (
-      <div>
+      <div style={{backgroundColor: 'white'}}>
+        <Helmet>
+          <title>{"Publishing... - Riptide"}</title>
+        </Helmet>
         <div style={animationRoot}>
-          <Planet className='floating' size={200} mood="shocked" color="#FCCB7E" />
+          <img alt={"Lol"} style={{height: "100%"}} src='../../../../../images/spinning_head.gif'/>
         </div>
-        <p style={{color: 'grey', textAlign: 'center'}}>{"Creating your clip!"}</p>
+        <p style={{color: '#4F5CD8', textAlign: 'center', fontSize: 30, fontWeight: 'bold'}}>{"Creating your clip!"}</p>
         <ReactPlayer
           key={this.state.key}
           width={350}

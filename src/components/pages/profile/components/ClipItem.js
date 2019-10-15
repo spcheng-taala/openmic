@@ -1,10 +1,20 @@
 // ClipItem.js
 import React from 'react';
-import VideoThumbnail from '../../../sections/VideoThumbnail.js';
 import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import UtilsManager from '../../../singletons/UtilsManager.js';
+
+const centerVertical = {
+  margin: 0,
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  width: 25,
+  height: 25,
+  padding: 0,
+}
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -13,13 +23,6 @@ const textStyleBig = {
   fontWeight: 'bold',
   marginLeft: 20,
   paddingTop: 10,
-}
-
-const textStyleMed = {
-  color: '#2A2D34',
-  fontFamily: 'Lato',
-  fontSize: 17,
-  marginLeft: 20,
 }
 
 const textStyleSmall = {
@@ -39,14 +42,6 @@ const textStyleSmallRed = {
   marginBottom: 10,
 }
 
-const thumbnail = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  marginTop: 20,
-  marginLeft: 50,
-}
-
 const textStyleBigMobile = {
   color: '#2A2D34',
   fontFamily: 'Lato',
@@ -55,19 +50,15 @@ const textStyleBigMobile = {
   paddingTop: 10,
 }
 
-const textStyleMedMobile = {
-  color: '#2A2D34',
+const likeCountStyle = {
+  color: '#D14C85',
   fontFamily: 'Lato',
-  fontSize: 14,
+  fontSize: 17,
   marginLeft: 20,
-}
-
-const textStyleSmallMobile = {
-  color: '#868994',
-  fontFamily: 'Lato',
-  fontSize: 12,
-  marginLeft: 20,
-  marginBottom: 10,
+  marginRight: 5,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 class ClipItem extends React.Component {
@@ -97,35 +88,27 @@ class ClipItem extends React.Component {
   }
 
   renderThumbnail() {
-    var thumbnailWidth = 200;
+    var thumbnailWidth = 150;
     var thumbnailHeight= 150;
     if (this.props.isMobile) {
       thumbnailWidth = 100;
-      thumbnailHeight= 75;
+      thumbnailHeight= 100;
     }
     if (this.props.thumbnail) {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src={this.props.thumbnail}/>
+        <img alt={"thumbnail"} style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden', objectFit: 'cover'}} src={this.props.thumbnail}/>
       );
     } else {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
+        <img style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden', objectFit: 'cover'}} src='../../../../../../images/default_clip_picture_1.png' alt={'Clip'}/>
       )
     }
   }
 
   render() {
-    var thumbnailWidth = 200;
-    var thumbnailHeight= 113;
     var textBig = textStyleBig;
-    var textMed = textStyleMed;
-    var textSmall = textStyleSmall;
     if (this.props.isMobile) {
-      thumbnailWidth = 100;
-      thumbnailHeight= 56.5;
       textBig = textStyleBigMobile;
-      textMed = textStyleMedMobile;
-      textSmall = textStyleSmallMobile;
     }
     return (
       <div>
@@ -148,7 +131,18 @@ class ClipItem extends React.Component {
                   <Typography className="lineClamp" style={textStyleSmall}>
                     {"By: " + this.props.name}
                   </Typography>
-                  {this.props.active == 0 ? <Typography className="lineClamp" style={textStyleSmallRed}>
+                  <Row style={{marginLeft: 0, marginRight: 5}}>
+                    <Typography className="lineClamp" style={likeCountStyle}>
+                      {UtilsManager.createNumberString(this.props.likeCount)}
+                    </Typography>
+                    <Col style={{padding: 0}}>
+                      <img src='../../../../../../images/heart_filled.png' alt={'heart'} style={centerVertical} />
+                    </Col>
+                  </Row>
+                  <Typography className="lineClamp" style={textStyleSmall}>
+                    {UtilsManager.createMinString(this.props.duration)}
+                  </Typography>
+                  {this.props.active === 0 ? <Typography className="lineClamp" style={textStyleSmallRed}>
                     {"Not published yet. Click here to finish up."}
                   </Typography> : <div/>}
                 </Col>

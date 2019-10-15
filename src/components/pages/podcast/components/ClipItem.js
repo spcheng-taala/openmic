@@ -1,10 +1,19 @@
 // ClipItem.js
 import React from 'react';
-import VideoThumbnail from 'react-video-thumbnail';
 import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Typography from '@material-ui/core/Typography';
 import UtilsManager from '../../../singletons/UtilsManager.js';
+
+const centerVertical = {
+  margin: 0,
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  width: 15,
+  height: 15,
+  padding: 0,
+}
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -28,11 +37,14 @@ const textStyleSmall = {
   textOverflow: 'ellipsis',
 }
 
-const thumbnail = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  marginTop: 20,
+const likeCountStyleSmall = {
+  color: '#FF0081',
+  fontFamily: 'Lato',
+  fontSize: 13,
+  marginRight: 5,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 class ClipItem extends React.Component {
@@ -58,7 +70,7 @@ class ClipItem extends React.Component {
   renderThumbnail() {
     if (this.props.thumbnail) {
       return (
-        <img style={{width: 75, height: 50}} src={this.props.thumbnail}/>
+        <img alt={"thumbnail"} style={{width: 75, height: 75, objectFit: 'cover'}} src={this.props.thumbnail}/>
       );
     } else {
       return (
@@ -85,11 +97,19 @@ class ClipItem extends React.Component {
                   {this.props.title}
                 </Typography>
                 <Typography className="lineClamp" style={textStyleSmall}>
-                  {"clipped by " + this.props.name}
+                  {"Clipped by " + this.props.name}
                 </Typography>
                 <Typography className="lineClamp" style={textStyleSmall}>
                   {UtilsManager.createMinString(this.props.duration)}
                 </Typography>
+                <Row style={{marginLeft: 0, marginRight: 5}}>
+                  <Typography className="lineClamp" style={likeCountStyleSmall}>
+                    {UtilsManager.createNumberString(this.props.likeCount)}
+                  </Typography>
+                  <Col style={{padding: 0}}>
+                    <img src='../../../../../../images/heart_filled.png' alt={'heart'} style={centerVertical} />
+                  </Col>
+                </Row>
               </Col>
             </Row>
           </div>

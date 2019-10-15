@@ -7,6 +7,8 @@
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  background-color: #F4F3F6;
 }
 
 input[readonly].default-cursor {
@@ -186,12 +188,10 @@ h1, h2, h3, h4, p, span {
 }
 
 .button-rounded-green {
-  cursor: pointer;
   position: relative;
   margin: auto;
   display: block;
   padding: 10px 30px;
-  margin-bottom: 20px;
   background: #42BCBB; /* For browsers that do not support gradients */
   border-radius: 5px;
   color: white;
@@ -199,6 +199,22 @@ h1, h2, h3, h4, p, span {
   font-size: 20px;
   font-family: "Lato";
   border: none;
+  cursor: pointer;
+}
+
+.button-rounded-green-bordered {
+  cursor: pointer;
+  position: relative;
+  margin: auto;
+  display: block;
+  padding: 10px 30px;  
+  background-color: rgba(255, 255, 255, 0); /* For browsers that do not support gradients */
+  border-radius: 5px;
+  color: #42BCBB;
+  font-weight: 400;
+  font-size: 20px;
+  font-family: "Lato";
+  border: 2px solid #42BCBB;
 }
 
 .button-rounded-green-no-mar {
@@ -230,6 +246,22 @@ h1, h2, h3, h4, p, span {
   font-size: 14px;
   font-family: "Lato";
   border: none;
+}
+
+.button-rounded-no-mar-bordered {
+  cursor: pointer;
+  position: relative;
+  display: block;
+  height: 30px;
+  padding: 5px 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  font-weight: 400;
+  font-size: 14px;
+  font-family: "Lato";
+  color: white;
+  background-color: rgba(255, 255, 255, 0);
+  border: 2px solid #FFFFFF;
 }
 
 .button-rounded-purple-no-mar {
@@ -896,6 +928,7 @@ input[type="file"] {
   --sb-progress-height: 8px;
   --button-big-padding-x: 1.25rem;
   --button-big-padding-y: 1.25rem;
+  --height: 100%;
 }
 
 .left-panel {

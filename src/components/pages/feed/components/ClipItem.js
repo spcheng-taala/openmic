@@ -1,11 +1,20 @@
 // ClipItem.js
 import React from 'react';
-import VideoThumbnail from '../../../sections/VideoThumbnail.js';
 import { Row, Col } from 'react-grid-system';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import UtilsManager from '../../../singletons/UtilsManager.js';
+
+const centerVertical = {
+  margin: 0,
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  width: 25,
+  height: 25,
+  padding: 0,
+}
 
 const textStyleBig = {
   color: '#2A2D34',
@@ -28,6 +37,17 @@ const textStyleMed = {
   textOverflow: 'ellipsis',
 }
 
+const likeCountStyle = {
+  color: '#D14C85',
+  fontFamily: 'Lato',
+  fontSize: 17,
+  marginLeft: 20,
+  marginRight: 5,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}
+
 const textStyleSmall = {
   color: '#868994',
   fontFamily: 'Lato',
@@ -37,14 +57,6 @@ const textStyleSmall = {
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-}
-
-const thumbnail = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-around',
-  marginTop: 20,
-  marginLeft: 50,
 }
 
 const textStyleBigMobile = {
@@ -57,6 +69,13 @@ const textStyleBigMobile = {
 
 const textStyleMedMobile = {
   color: '#2A2D34',
+  fontFamily: 'Lato',
+  fontSize: 14,
+  marginLeft: 20,
+}
+
+const likeCountStyleMobile = {
+  color: '#D14C85',
   fontFamily: 'Lato',
   fontSize: 14,
   marginLeft: 20,
@@ -96,15 +115,15 @@ class ClipItem extends React.Component {
   }
 
   renderThumbnail() {
-    var thumbnailWidth = 200;
-    var thumbnailHeight= 113;
+    var thumbnailWidth = 150;
+    var thumbnailHeight= 150;
     if (this.props.isMobile) {
       thumbnailWidth = 100;
-      thumbnailHeight= 56.5;
+      thumbnailHeight= 100;
     }
     if (this.props.thumbnail) {
       return (
-        <img style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden'}} src={this.props.thumbnail}/>
+        <img alt={"thumbnail"} style={{width: thumbnailWidth, height: thumbnailHeight, overflow: 'hidden', objectFit: 'cover'}} src={this.props.thumbnail}/>
       );
     } else {
       return (
@@ -114,16 +133,14 @@ class ClipItem extends React.Component {
   }
 
   render() {
-    var thumbnailWidth = 200;
-    var thumbnailHeight= 150;
     var textBig = textStyleBig;
     var textMed = textStyleMed;
+    var textLikeCountStyle = likeCountStyle
     var textSmall = textStyleSmall;
     if (this.props.isMobile) {
-      thumbnailWidth = 100;
-      thumbnailHeight= 75;
       textBig = textStyleBigMobile;
       textMed = textStyleMedMobile;
+      textLikeCountStyle = likeCountStyleMobile
       textSmall = textStyleSmallMobile;
     }
     return (
@@ -142,13 +159,18 @@ class ClipItem extends React.Component {
                     {this.props.title}
                   </Typography>
                   <Typography className="lineClamp" style={textMed}>
-                    {"from: " + this.props.podcast}
+                    {"From: " + this.props.podcast}
                   </Typography>
-                  <Typography className="lineClamp" style={textMed}>
-                    {"Podcast: " + this.props.firstName}
-                  </Typography>
+                  <Row style={{marginLeft: 0, marginRight: 5}}>
+                    <Typography className="lineClamp" style={textLikeCountStyle}>
+                      {UtilsManager.createNumberString(this.props.likeCount)}
+                    </Typography>
+                    <Col style={{padding: 0}}>
+                      <img src='../../../../../../images/heart_filled.png' alt={'heart'} style={centerVertical} />
+                    </Col>
+                  </Row>
                   <Typography className="lineClamp" style={textSmall}>
-                    {"clipped by " + this.props.name}
+                    {"Clipped by " + this.props.name}
                   </Typography>
                   <Typography className="lineClamp" style={textSmall}>
                     {UtilsManager.createMinString(this.props.duration)}

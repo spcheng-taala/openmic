@@ -448,13 +448,13 @@ class PrivacyPolicyPage extends Component {
   }
 
   renderElement(element) {
-    if (element.type == "text") {
+    if (element.type === "text") {
       return (
         <div>
           <p style={textStyle}>{element.text}</p>
         </div>
       );
-    } else if (element.type == "title") {
+    } else if (element.type === "title") {
       return (
         <div>
           <h1 style={titleStyle}>{element.text}</h1>
@@ -463,8 +463,7 @@ class PrivacyPolicyPage extends Component {
     }
   }
 
-  render() {
-    const { classes } = this.props;
+  render() {    
 		return (
       <div style={root}>
         <p style={textStyle}>{"Date of Last Revision: Feb 08, 2019"}</p>

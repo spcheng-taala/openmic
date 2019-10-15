@@ -23,7 +23,7 @@ class SearchComponent extends Component {
   }
 
   searchPodcasts(event) {
-		if (event.key == 'Enter') {
+		if (event.key === 'Enter') {
 			this.props.history.push('/search?q=' + encodeURIComponent(this.state.podcast));
       var genre = {
         value: "Search Results",
@@ -42,7 +42,7 @@ class SearchComponent extends Component {
   render() {
     const { classes } = this.props;
 		return (
-      <div style={{width: '100%', marginRight: 20}}>
+      <div style={{width: 'auto', flexGrow: 1, marginRight: 20}}>
         <Paper style={{width: '100%', paddingTop: 5, paddingBottom: 5, paddingLeft: 10, paddingRight: 10}}>
           <InputBase
             className={classes.textFieldInputRoot}
