@@ -22,7 +22,7 @@ import ProfilePage from '../profile/ProfilePage.js';
 import EditProfilePage from '../profile/EditProfilePage.js';
 import TermsPage from '../about/TermsPage.js';
 import PrivacyPolicyPage from '../about/PrivacyPolicyPage.js';
-import HowItWorksPage from '../about/HowItWorksPage.js';
+import BestPodcastPage from '../about/BestPodcastPage.js';
 import ClipPage from '../clip/ClipPage.js';
 import TrimContentPage from '../podcast/TrimContentPage.js';
 import ClipDetailsPage from '../clip/ClipDetailsPage.js';
@@ -554,8 +554,28 @@ class MainPage extends React.Component {
 												followedGenres={this.state.followedGenres}
 												handleFollowGenreClick={this.handleFollowGenreClick}
                       />}
+                  />																	
+									<Route
+                    exact path='/good-podcasts'
+                    render={(props) =>
+                      <BestPodcastPage {...props}
+												type={Constants.TYPE_GOOD}
+                      />}
                   />
-									<Route path="/howitworks" component={HowItWorksPage}/>
+									<Route
+                    exact path='/popular-podcasts'
+                    render={(props) =>
+                      <BestPodcastPage {...props}
+												type={Constants.TYPE_POPULAR}
+                      />}
+                  />
+									<Route
+                    exact path='/best-podcasts-to-listen-to'
+                    render={(props) =>
+                      <BestPodcastPage {...props}
+												type={Constants.TYPE_BEST}
+                      />}
+                  />
 									<Route path="/terms" component={TermsPage}/>
 									<Route path="/privacy" component={PrivacyPolicyPage}/>
 									<Route
