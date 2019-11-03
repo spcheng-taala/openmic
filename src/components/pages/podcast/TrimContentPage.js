@@ -138,9 +138,13 @@ class TrimContentPage extends Component {
 			this.props.history.push('/');
 		}
 
-		window.addEventListener("resize", this.resize.bind(this));
+		window.addEventListener("resize", this.resize, false);
     this.resize();
   }
+
+	componentWillUnmount() {
+		window.removeEventListener('resize', this.resize, false);
+	}
 
 	resize() {
     if (window.innerWidth <= 760) {
@@ -167,10 +171,12 @@ class TrimContentPage extends Component {
 			seekStart: 0,
 			duration: 0,
 			start: 0,
-			end: 0,
+			end: 1,
 			title: "",
+			showTrimError: false,
     };
 
+		this.resize = this.resize.bind(this);
 		this.renderVideoPlayer = this.renderVideoPlayer.bind(this);
 		this.renderTrimmerView = this.renderTrimmerView.bind(this);
 		this.renderSlider = this.renderSlider.bind(this);
@@ -216,7 +222,7 @@ class TrimContentPage extends Component {
 		this.setState({
 			duration: duration,
 		});
-		if (this.state.end === 0) {
+		if (this.state.end === 1) {
 			this.setState({
 				end: duration
 			});
@@ -305,6 +311,7 @@ class TrimContentPage extends Component {
 							<div>
 								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleEndValueChange(false)}>{"-0.5s"}</button>
 								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleEndValueChange(true)}>{"+0.5s"}</button>
+								<button className="button-purple-small" style={{display: 'inline-block', marginLeft: 5}} onClick={() => this.setState({end: this.state.seekStart})}>{"Set end time to current time"}</button>
 							</div>
 						</div>
 					</div>
@@ -314,6 +321,7 @@ class TrimContentPage extends Component {
 						{this.renderSlider(false)}
 						{this.renderSlider(true)}
 					</div>
+					{this.state.showTrimError ? <p style={{marginLeft: 20, marginRight: 20, color: '#FFFFFF', fontSize: 14}}>{"Move the left and right dots to clip the podcast"}</p> : <div/>}
 					<div style={{marginLeft: 10, marginRight: 10, paddingBottom: 20}}>
 						<TextField
 							label="Title"
@@ -457,64 +465,71 @@ class TrimContentPage extends Component {
 	}
 
 	handleTrimClick() {
-		if (this.state.title != "") {
-			var start = this.state.start;
-			var end = this.state.end;
-			if (start - 60 > 0) {
-				start -= 60;
-			} else {
-				start = 0;
-			}
-
-			if (end + 60 > this.state.duration) {
-				end = this.state.duration;
-			} else {
-				end += 60;
-			}
-
-			var duration = end - start;
-
-			const timestamp = Date.now().toString();
-			var fileName = UserManager.id + "_" + timestamp + ".mp3";
-			var url = BackendManager.fileUrl + fileName;
-
-			BackendManager.makeQuery('clips/create', JSON.stringify({
-				url: url,
-				original_url: url,
-				title: this.state.title,
-				podcast_id: this.state.podcastId,
-				podcast_title: this.state.podcastTitle,
-				podcast_thumbnail: this.state.thumbnail,
-				podcast_url: this.state.url,
-				podcast_duration: this.state.podcastDuration,
-				podcast_description: this.state.podcastDescription,
-				duration: duration,
-				user_id: UserManager.id,
-			}))
-			.then(data => {
-				var uuid = data.uuid;
-				var clipId = data.id;
-				if (data.success) {
-					console.log(this.state.url);
-					BackendManager.makeQuery('trim/audio', JSON.stringify({
-						url: this.state.url,
-						start_time: start,
-						duration: duration,
-						file_name: fileName,
-						clip_id: clipId,
-						email: UserManager.email,
-					}))
-					.then(data => {
-						localStorage.setItem('clip_uuid', uuid);
-						localStorage.setItem('clip_id', clipId);
-						localStorage.setItem('is_edit', 0);
-						localStorage.setItem('clip_url', url);
-						this.props.history.push('/publishing');
-					});
-				}
+		if (this.state.start == 0 && this.state.end == this.state.duration) {
+			this.setState({
+				showTrimError: true,
 			});
-		}	else {
-			this.props.showToast("Make sure you enter a title!", 'custom');
+			this.props.showToast("Oops! Make sure you trim the podcast before continuing!", 'custom');
+		} else {
+			if (this.state.title != "") {
+				var start = this.state.start;
+				var end = this.state.end;
+				if (start - 60 > 0) {
+					start -= 60;
+				} else {
+					start = 0;
+				}
+
+				if (end + 60 > this.state.duration) {
+					end = this.state.duration;
+				} else {
+					end += 60;
+				}
+
+				var duration = end - start;
+
+				const timestamp = Date.now().toString();
+				var fileName = UserManager.id + "_" + timestamp + ".mp3";
+				var url = BackendManager.fileUrl + fileName;
+
+				BackendManager.makeQuery('clips/create', JSON.stringify({
+					url: url,
+					original_url: url,
+					title: this.state.title,
+					podcast_id: this.state.podcastId,
+					podcast_title: this.state.podcastTitle,
+					podcast_thumbnail: this.state.thumbnail,
+					podcast_url: this.state.url,
+					podcast_duration: this.state.podcastDuration,
+					podcast_description: this.state.podcastDescription,
+					duration: duration,
+					user_id: UserManager.id,
+				}))
+				.then(data => {
+					var uuid = data.uuid;
+					var clipId = data.id;
+					if (data.success) {
+						console.log(this.state.url);
+						BackendManager.makeQuery('trim/audio', JSON.stringify({
+							url: this.state.url,
+							start_time: start,
+							duration: duration,
+							file_name: fileName,
+							clip_id: clipId,
+							email: UserManager.email,
+						}))
+						.then(data => {
+							localStorage.setItem('clip_uuid', uuid);
+							localStorage.setItem('clip_id', clipId);
+							localStorage.setItem('is_edit', 0);
+							localStorage.setItem('clip_url', url);
+							this.props.history.push('/publishing');
+						});
+					}
+				});
+			}	else {
+				this.props.showToast("Make sure you enter a title!", 'custom');
+			}
 		}
 	}
 

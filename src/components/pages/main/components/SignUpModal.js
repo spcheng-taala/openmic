@@ -166,7 +166,7 @@ class SignUpModal extends Component {
           />
         </div>
         {this.renderSignUpButton()}
-        <p style={termsStyle}>By clicking Sign Up you have indicated that you have read and agreed to our <a href="localhost:3000/terms" onClick={() => window.open(UserManager.domain + 'terms', "_blank")}>Terms of Service</a> and <a href="https://riptide.fm/terms" onClick={() => window.open(UserManager.domain + 'privacy', "_blank")}>Privacy Policy</a></p>
+        <p style={termsStyle}>By clicking Sign Up you have indicated that you have read and agreed to our <a href="https://riptide.fm/terms" onClick={() => window.open(UserManager.domain + 'terms', "_blank")}>Terms of Service</a> and <a href="https://riptide.fm/terms" onClick={() => window.open(UserManager.domain + 'privacy', "_blank")}>Privacy Policy</a></p>
       </div>
     )
   }

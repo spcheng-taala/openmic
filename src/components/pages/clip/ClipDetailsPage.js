@@ -185,7 +185,7 @@ class ClipDetailsPage extends Component {
 			isPlaying: true,
 			seekStart: 0,
 			start: 0,
-			end: 0,
+			end: 1,
 			duration: 0,
       title: "",
       active: 1,
@@ -227,6 +227,7 @@ class ClipDetailsPage extends Component {
 
   renderVideoPlayer() {
     if (this.state.clip) {
+
       return (
         <div style={{margin: 20}}>
 					<img alt={"thumbnail"} style={{height: 160, width: 160, objectFit: 'cover'}} src={this.state.clip.podcast_thumbnail}/>
@@ -250,9 +251,18 @@ class ClipDetailsPage extends Component {
 			duration: duration,
 		});
 
-		if (this.state.end == 0) {
+		if (this.state.end == 1) {
+			var end = duration;
+			var start = 0;
+			if (duration > 60) {
+				start = 60;
+				end -= 60;
+			}
+			this.player.seekTo(start);
 			this.setState({
-				end: duration
+				seekStart: start,								
+				start: start,
+				end: end,
 			});
 		}
 	}

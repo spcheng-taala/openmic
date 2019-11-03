@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { withStyles } from '@material-ui/core/styles';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
 import InfiniteScroll from 'react-infinite-scroller';
@@ -7,27 +6,11 @@ import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import queryString from 'query-string';
 
-const styles = theme => ({
-  root: {
-    marginTop: 20,
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    overflow: 'hidden',
-  },
-  gridList: {
-    width: '60%',
-  },
-  icon: {
-    color: 'rgba(255, 255, 255, 0.54)',
-  },
-});
-
 class PodcastGalleryPage extends Component {
 
   componentDidMount() {
     window.scrollTo(0, 0);
-    window.addEventListener("resize", this.resize.bind(this));
+    window.addEventListener("resize", this.resize, false);
     this.resize();
     this.setState({
       q: queryString.parse(this.props.location.search).q
@@ -63,7 +46,6 @@ class PodcastGalleryPage extends Component {
     window.removeEventListener('resize', this.resize, false);
   }
 
-
   resize() {
     if (window.innerWidth <= 760) {
       this.setState({
@@ -86,6 +68,7 @@ class PodcastGalleryPage extends Component {
       count: 0,
     };
 
+    this.resize = this.resize.bind(this);
     this.loadMorePodcasts = this.loadMorePodcasts.bind(this);
   }
 
@@ -103,7 +86,6 @@ class PodcastGalleryPage extends Component {
   }
 
   render() {
-    const { classes } = this.props;
     var cols = 5;
     if (this.state.isMobile) {
       cols = 2;
@@ -119,8 +101,8 @@ class PodcastGalleryPage extends Component {
           hasMore={false}
           loader={<div className="loader" key={0}>Loading ...</div>}
         >
-          <div className={classes.root}>
-            <GridList cellHeight={180} className={classes.gridList} cols={cols}>
+          <div className='grid-root'>
+            <GridList cellHeight={180} className='grid-list-small' cols={cols}>
               {this.state.podcasts.map(podcast => (
                 <GridListTile key={podcast.id} style={{cursor: 'pointer'}} onClick={() => this.props.history.push('/episodes?q=' + podcast.id)}>
                   <img src={podcast.image} alt={podcast.title_original} />
@@ -135,4 +117,4 @@ class PodcastGalleryPage extends Component {
   }
 }
 
-export default withStyles(styles)(PodcastGalleryPage);
+export default PodcastGalleryPage;

@@ -13,6 +13,7 @@ const animationRoot = {
 }
 
 class PublishingPage extends Component {
+  intervalId = 0;
 
   componentDidMount() {
     var isEdit = localStorage.getItem('is_edit');
@@ -30,10 +31,14 @@ class PublishingPage extends Component {
       localStorage.removeItem('clip_id');
       localStorage.removeItem('clip_uuid');
       localStorage.removeItem('clip_url');
-      setInterval(this.refresh, 10000);
+      this.intervalId = setInterval(this.refresh, 10000);
 		} else {
       this.props.history.push('/');
     }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.intervalId);
   }
 
   constructor(props) {

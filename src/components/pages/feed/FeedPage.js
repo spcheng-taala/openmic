@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
 import InfiniteScroll from 'react-infinite-scroller';
-import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
@@ -10,15 +9,6 @@ import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import * as Constants from '../../singletons/Constants.js';
 import ClipItem from './components/ClipItem.js';
-
-const styles = theme => ({
-  textFieldInputRoot: {
-    fontFamily: 'Lato',
-  },
-  textFieldLabelRoot: {
-    fontFamily: 'Lato',
-  }
-});
 
 const clipTypeActive = {
   marginTop: 10,
@@ -74,7 +64,9 @@ const textStyleSmall = {
 }
 
 class FeedPage extends Component {
+  _isMounted = false;
   componentDidMount() {
+    this._isMounted = true;
     if (this.props.match.params.name) {
       BackendManager.makeQuery('genres/check', JSON.stringify({
         name: decodeURIComponent(this.props.match.params.name)
@@ -85,11 +77,13 @@ class FeedPage extends Component {
             value: data.genre,
             label: data.genre.name,
           };
-          this.setState({
-            genre: data.genre,
-          });
-          this.refreshClips(data.genre, this.state.clipType);
-          this.props.setGenre(genre);
+          if (this._isMounted) {
+            this.setState({
+              genre: data.genre,
+            });
+            this.refreshClips(data.genre, this.state.clipType);
+            this.props.setGenre(genre);
+          }
         }
       });
     } else {
@@ -103,11 +97,12 @@ class FeedPage extends Component {
       this.refreshClips({id: -1, name: 'All'}, this.state.clipType);
       this.props.setGenre(genre);
     }
-    window.addEventListener('resize', this.resize.bind(this));
+    window.addEventListener('resize', this.resize, false);
     this.resize();
   }
 
   componentWillUnmount() {
+    this._isMounted = false;
     window.removeEventListener('resize', this.resize, false);
   }
 
@@ -118,7 +113,7 @@ class FeedPage extends Component {
           name: decodeURIComponent(this.props.match.params.name)
         }))
         .then(data => {
-          if (data.success && data.exists) {
+          if (data.success && data.exists && this._isMounted) {
             var genre = {
               value: data.genre,
               label: data.genre.name,
@@ -170,6 +165,7 @@ class FeedPage extends Component {
       clips: [],
     };
 
+    this.resize = this.resize.bind(this);
     this.renderHelmet = this.renderHelmet.bind(this);
     this.refreshClips = this.refreshClips.bind(this);
     this.getMoreClips = this.getMoreClips.bind(this);
@@ -205,7 +201,7 @@ class FeedPage extends Component {
 				genre_id: genre.id
 			}))
 			.then(data => {
-				if (data.success) {
+				if (data.success && this._isMounted) {
 					this.setState({
 						clipCount: data.count,
 					});
@@ -217,11 +213,10 @@ class FeedPage extends Component {
           genre_id: genre.id
         }))
         .then(data => {
-          if (data.success) {
+          if (data.success && this._isMounted) {
             this.setState({
               clips: data.clips,
             });
-            console.log(data.clips);
           }
         });
       }	else {
@@ -229,7 +224,7 @@ class FeedPage extends Component {
           genre_id: genre.id
         }))
         .then(data => {
-          if (data.success) {
+          if (data.success && this._isMounted) {
             this.setState({
               clips: data.clips,
             });
@@ -240,7 +235,7 @@ class FeedPage extends Component {
       BackendManager.makeQuery('clips/top/count', JSON.stringify({
   		}))
   		.then(data => {
-  			if (data.success) {
+  			if (data.success && this._isMounted) {
   				this.setState({
   					clipCount: data.count,
   				});
@@ -251,7 +246,7 @@ class FeedPage extends Component {
         BackendManager.makeQuery('clips/top', JSON.stringify({
         }))
         .then(data => {
-          if (data.success) {
+          if (data.success && this._isMounted) {
             this.setState({
               clips: data.clips,
             });
@@ -261,7 +256,7 @@ class FeedPage extends Component {
         BackendManager.makeQuery('clips/new', JSON.stringify({
         }))
         .then(data => {
-          if (data.success) {
+          if (data.success && this._isMounted) {
             this.setState({
               clips: data.clips,
             });
@@ -281,7 +276,7 @@ class FeedPage extends Component {
     					score: this.state.clips[this.state.clips.length - 1].score,
     				}))
     				.then(data => {
-    					if (data.success) {
+    					if (data.success && this._isMounted) {
     						var clips = this.state.clips;
     						clips.push.apply(clips, data.clips);
     						this.setState({
@@ -295,7 +290,7 @@ class FeedPage extends Component {
     					clip_id: this.state.clips[this.state.clips.length - 1].id,
     				}))
     				.then(data => {
-    					if (data.success) {
+    					if (data.success && this._isMounted) {
     						var clips = this.state.clips;
     						clips.push.apply(clips, data.clips);
     						this.setState({
@@ -306,12 +301,11 @@ class FeedPage extends Component {
     			}
     		} else {
     			if (this.state.clipType == Constants.CLIP_TYPE_TRENDING) {
-            console.log('here');
     				BackendManager.makeQuery('clips/top/cont', JSON.stringify({
     					score: this.state.clips[this.state.clips.length - 1].score,
     				}))
     				.then(data => {
-    					if (data.success) {
+    					if (data.success && this._isMounted) {
     						var clips = this.state.clips;
     						clips.push.apply(clips, data.clips);
     						this.setState({
@@ -324,7 +318,7 @@ class FeedPage extends Component {
     					clip_id: this.state.clips[this.state.clips.length - 1].id,
     				}))
     				.then(data => {
-    					if (data.success) {
+    					if (data.success && this._isMounted) {
     						var clips = this.state.clips;
     						clips.push.apply(clips, data.clips);
     						this.setState({
@@ -506,4 +500,4 @@ class FeedPage extends Component {
   }
 }
 
-export default withRouter(withStyles(styles)(FeedPage));
+export default withRouter(FeedPage);

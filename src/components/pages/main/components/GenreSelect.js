@@ -55,6 +55,7 @@ class GenreSelect extends Component {
       this.props.history.push('/genres');
     } else {
       this.props.history.push('/g/' + encodeURIComponent(genre.value.name));
+      window.location.reload();
     }
 	}
 

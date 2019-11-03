@@ -3,7 +3,6 @@ import { Container, Row } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
 import { Slider, Handles, Tracks } from 'react-compound-slider';
 import ReactPlayer from 'react-player';
-import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { Helmet } from 'react-helmet';
 import UserManager from '../../singletons/UserManager.js';
@@ -11,15 +10,6 @@ import BackendManager from '../../singletons/BackendManager.js';
 import UtilsManager from '../../singletons/UtilsManager.js';
 import ClipItem from './components/ClipItem.js';
 import InfiniteScroll from 'react-infinite-scroller';
-
-const styles = theme => ({
-  textFieldInputRoot: {
-    fontFamily: 'Lato',
-  },
-  textFieldLabelRoot: {
-    fontFamily: 'Lato',
-  }
-});
 
 const cardStyle = {
   marginBottom: 30,
@@ -123,7 +113,7 @@ class PlaylistPage extends Component {
           });
         }
       });
-      window.addEventListener('resize', this.resize.bind(this));
+      window.addEventListener('resize', this.resize, false);
       this.resize();
 		} else {
       this.props.history.push('/');
@@ -131,7 +121,7 @@ class PlaylistPage extends Component {
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.resize.bind(this), false);
+    window.removeEventListener('resize', this.resize, false);
   }
 
   resize() {
@@ -159,6 +149,7 @@ class PlaylistPage extends Component {
       duration: 0,
     };
 
+    this.resize = this.resize.bind(this);
     this.renderPlaylist = this.renderPlaylist.bind(this);
     this.renderListItem = this.renderListItem.bind(this);
     this.loadMoreEpisodes = this.loadMoreEpisodes.bind(this);
@@ -434,4 +425,4 @@ class PlaylistPage extends Component {
   }
 }
 
-export default withRouter(withStyles(styles)(PlaylistPage));
+export default withRouter(PlaylistPage);

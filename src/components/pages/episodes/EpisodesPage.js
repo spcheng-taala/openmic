@@ -1,21 +1,11 @@
 import React, { Component } from 'react';
 import { Container } from 'react-grid-system';
 import { withRouter } from "react-router-dom";
-import { withStyles } from '@material-ui/core/styles';
 import { Helmet } from 'react-helmet';
 import BackendManager from '../../singletons/BackendManager.js';
 import ClipItem from './components/ClipItem.js';
 import InfiniteScroll from 'react-infinite-scroller';
 import queryString from 'query-string';
-
-const styles = theme => ({
-  textFieldInputRoot: {
-    fontFamily: 'Lato',
-  },
-  textFieldLabelRoot: {
-    fontFamily: 'Lato',
-  }
-});
 
 const cardStyle = {
   marginBottom: 30,
@@ -25,7 +15,6 @@ class EpisodesPage extends Component {
   componentDidMount() {
     BackendManager.getEpisodes(queryString.parse(this.props.location.search).q)
     .then(data => {
-      console.log(data);
       this.setState({
         podcastId: data.id,
         podcastTitle: data.title,
@@ -35,12 +24,12 @@ class EpisodesPage extends Component {
       });
     });
 
-    window.addEventListener('resize', this.resize.bind(this));
+    window.addEventListener('resize', this.resize, false);
     this.resize();
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.resize.bind(this), false);
+    window.removeEventListener('resize', this.resize, false);
   }
 
   resize() {
@@ -67,6 +56,7 @@ class EpisodesPage extends Component {
       isMobile: false,
     };
 
+    this.resize = this.resize.bind(this);
     this.renderHelmet = this.renderHelmet.bind(this);
     this.renderFeed = this.renderFeed.bind(this);
     this.renderListItem = this.renderListItem.bind(this);
@@ -84,7 +74,7 @@ class EpisodesPage extends Component {
 
   renderListItem(item) {
     return (
-      <div style={cardStyle}>
+      <div style={cardStyle} key={item.id}>
         <ClipItem
           isMobile={this.state.isMobile}
           episode={item}
@@ -154,4 +144,4 @@ class EpisodesPage extends Component {
   }
 }
 
-export default withRouter(withStyles(styles)(EpisodesPage));
+export default withRouter(EpisodesPage);

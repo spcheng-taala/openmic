@@ -207,7 +207,7 @@ h1, h2, h3, h4, p, span {
   position: relative;
   margin: auto;
   display: block;
-  padding: 10px 30px;  
+  padding: 10px 30px;
   background-color: rgba(255, 255, 255, 0); /* For browsers that do not support gradients */
   border-radius: 5px;
   color: #42BCBB;
@@ -1106,6 +1106,32 @@ div.left-panel:hover {
   margin-top: 0.2em;
   /* bg color = bg color under block */
   background: white;
+}
+
+.grid-root: {
+  margin-top: 20;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  overflow: hidden;
+}
+
+.grid-list: {
+  width: 70%;
+}
+
+.grid-list-small: {
+  width: 60%;
+}
+
+.textfield-input-root: {
+  font-family: "Lato";
+  background-color: white;
+  border-radius: 5;
+}
+
+.textfield-label-root: {
+  font-family: "Lato";
 }
 
 /* width */

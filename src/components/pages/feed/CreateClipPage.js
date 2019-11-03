@@ -62,14 +62,14 @@ const styles = theme => ({
   textFieldLabelRoot: {
     fontFamily: 'Lato',
   },
-  root: {
+	root: {
     marginTop: 20,
     display: 'flex',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
     overflow: 'hidden',
   },
-  gridList: {
+	gridList: {
     width: '60%',
   },
 });
@@ -136,9 +136,13 @@ class CreateClipPage extends Component {
     this.setState({
       currentView: VIEW_SEARCH,
     });
-		window.addEventListener("resize", this.resize.bind(this));
+		window.addEventListener("resize", this.resize, false);
     this.resize();
   }
+
+	componentWillUnmount() {
+		window.removeEventListener('resize', this.resize, false);
+	}
 
 	resize() {
     if (window.innerWidth <= 760) {
@@ -175,10 +179,13 @@ class CreateClipPage extends Component {
 			seekStart: 0,
 			duration: 0,
 			start: 0,
-			end: 0,
+			end: 1,
 			title: "",
+			username: "",
+			showTrimError: false,
     };
 
+		this.resize = this.resize.bind(this);
     this.renderSearchView = this.renderSearchView.bind(this);
     this.searchPodcast = this.searchPodcast.bind(this);
     this.handleSearchChange = this.handleSearchChange.bind(this);
@@ -205,6 +212,7 @@ class CreateClipPage extends Component {
     this.renderCurrentView = this.renderCurrentView.bind(this);
 		this.renderView = this.renderView.bind(this);
 		this.handleTitleChange = this.handleTitleChange.bind(this);
+		this.handleUsernameChange = this.handleUsernameChange.bind(this);
   }
 
 	ref = player => {
@@ -266,22 +274,15 @@ class CreateClipPage extends Component {
       cols = 2;
     }
     return (
-      <InfiniteScroll
-        pageStart={0}
-        loadMore={null}
-        hasMore={false}
-        loader={<div className="loader" key={0}>Loading ...</div>}
-      >
-        <div className={classes.root}>
-          <GridList cellHeight={180} className={classes.gridList} cols={cols}>
-            {this.state.podcasts.map(podcast => (
-              <GridListTile key={podcast.id} style={{cursor: 'pointer'}} onClick={() => this.handlePodcastClick(podcast)}>
-                <img src={podcast.image} alt={podcast.title_original} />
-              </GridListTile>
-            ))}
-          </GridList>
-        </div>
-      </InfiniteScroll>
+			<div className={classes.root}>
+				<GridList cellHeight={180} className={classes.gridList} cols={cols}>
+					{this.state.podcasts.map(podcast => (
+						<GridListTile key={podcast.id} style={{cursor: 'pointer'}} onClick={() => this.handlePodcastClick(podcast)}>
+							<img src={podcast.image} alt={podcast.title_original} />
+						</GridListTile>
+					))}
+				</GridList>
+			</div>
     );
   }
 
@@ -319,7 +320,7 @@ class CreateClipPage extends Component {
 
   renderEpisodeListItem(item) {
     return (
-      <div style={{marginBottom: 30}}>
+      <div style={{marginBottom: 30}} key={item.id}>
         <ClipItem
           isMobile={this.state.isMobile}
           episode={item}
@@ -385,7 +386,7 @@ class CreateClipPage extends Component {
 		this.setState({
 			duration: duration,
 		});
-		if (this.state.end === 0) {
+		if (this.state.end === 1) {
 			this.setState({
 				end: duration
 			});
@@ -470,10 +471,11 @@ class CreateClipPage extends Component {
 						</div>
 						<div style={{display: 'inline-block'}}>
 							<p style={{color: 'white'}}>{"End"}</p>
-							<input style={inputStyle} readonly value={UtilsManager.createTimeString(this.state.end)}/>
+							<input style={inputStyle} readOnly value={UtilsManager.createTimeString(this.state.end)}/>
 							<div>
 								<button className="button-purple-small" style={{display: 'inline-block', marginTop: 5, marginRight: 5}} onClick={() => this.handleEndValueChange(false)}>{"-0.5s"}</button>
 								<button className="button-purple-small" style={{display: 'inline-block'}} onClick={() => this.handleEndValueChange(true)}>{"+0.5s"}</button>
+								<button className="button-purple-small" style={{display: 'inline-block', marginLeft: 5}} onClick={() => this.setState({end: this.state.seekStart})}>{"Set end time to current time"}</button>
 							</div>
 						</div>
 					</div>
@@ -483,6 +485,7 @@ class CreateClipPage extends Component {
 						{this.renderSlider(false)}
 						{this.renderSlider(true)}
 					</div>
+					{this.state.showTrimError ? <p style={{marginLeft: 20, marginRight: 20, color: '#FFFFFF', fontSize: 14}}>{"Move the left and right dots to clip the podcast"}</p> : <div/>}
 					<div style={{marginLeft: 10, marginRight: 10, paddingBottom: 20}}>
 						<TextField
 							label="Title"
@@ -500,6 +503,23 @@ class CreateClipPage extends Component {
 							margin="normal"
 							variant="outlined"
 						/>
+
+						<TextField
+							label="Username"
+							multiline
+							fullWidth
+							rows="1"
+							value={this.state.username}
+							InputProps={{ classes: { root: classes.textFieldInputRoot } }}
+							InputLabelProps={{
+								FormLabelClasses: {
+									root: classes.textFieldLabelRoot
+								}
+							}}
+							onChange={this.handleUsernameChange}
+							margin="normal"
+							variant="outlined"
+						/>
 					</div>
 					<button className="button-red" style={{margin: 20, float: 'right'}} onClick={() => this.handleTrimClick()}>{"Done"}</button>
 				</div>
@@ -510,6 +530,12 @@ class CreateClipPage extends Component {
 	handleTitleChange(e) {
 		this.setState({
       title: e.target.value
+    });
+	}
+
+	handleUsernameChange(e) {
+		this.setState({
+      username: e.target.value
     });
 	}
 
@@ -626,65 +652,85 @@ class CreateClipPage extends Component {
 	}
 
 	handleTrimClick() {
-		if (this.state.title != "") {
-			var start = this.state.start;
-			var end = this.state.end;
-			if (start - 60 > 0) {
-				start -= 60;
-			} else {
-				start = 0;
-			}
-
-			if (end + 60 > this.state.duration) {
-				end = this.state.duration;
-			} else {
-				end += 60;
-			}
-
-			var duration = end - start;
-
-			const timestamp = Date.now().toString();
-			var fileName = UserManager.id + "_" + timestamp + ".mp3";
-			var url = BackendManager.fileUrl + fileName;
-
-			BackendManager.makeQuery('clips/create', JSON.stringify({
-				url: url,
-				original_url: url,
-				title: this.state.title,
-				podcast_id: this.state.episodeId,
-				podcast_title: this.state.episodeTitle,
-				podcast_thumbnail: this.state.thumbnail,
-				podcast_url: this.state.url,
-				podcast_duration: this.state.episodeDuration,
-				podcast_description: this.state.episodeDescription,
-				duration: duration,
-				user_id: UserManager.id,
-			}))
-			.then(data => {
-				var uuid = data.uuid;
-				var clipId = data.id;
-				if (data.success) {
-					console.log(this.state.url);
-					BackendManager.makeQuery('trim/audio', JSON.stringify({
-						url: this.state.url,
-						start_time: start,
-						duration: duration,
-						file_name: fileName,
-						clip_id: clipId,
-						email: UserManager.email,
-					}))
-					.then(data => {
-						localStorage.setItem('clip_uuid', uuid);
-						localStorage.setItem('clip_id', clipId);
-						localStorage.setItem('is_edit', 0);
-						localStorage.setItem('clip_url', url);
-						this.props.history.push('/publishing');
-					});
-				}
+		if (this.state.start == 0 && this.state.end == this.state.duration) {
+			this.setState({
+				showTrimError: true,
 			});
-		}	else {
-			this.props.showToast("Make sure you enter a title!", 'custom');
+			this.props.showToast("Oops! Make sure you trim the podcast before continuing!", 'custom');
+		} else {
+			if (this.state.title != "") {
+				var start = this.state.start;
+				var end = this.state.end;
+				if (start - 60 > 0) {
+					start -= 60;
+				} else {
+					start = 0;
+				}
+
+				if (end + 60 > this.state.duration) {
+					end = this.state.duration;
+				} else {
+					end += 60;
+				}
+
+				var duration = end - start;
+
+				const timestamp = Date.now().toString();
+				var fileName = UserManager.id + "_" + timestamp + ".mp3";
+				var url = BackendManager.fileUrl + fileName;
+
+				var profPicNumber = (Math.floor(Math.random() * 7)) + 1;
+		    var profilePicture = "https://riptide-defaults.s3-us-west-2.amazonaws.com/default_profile_picture_" + profPicNumber + ".png";
+
+				BackendManager.makeQuery('users/create', JSON.stringify({
+		      email: this.state.username + "@theopenmic.fm",
+		      password: this.state.username,
+		      username: this.state.username,
+		      profile_picture: profilePicture,
+		    }))
+		    .then(data => {
+		      if (data.success) {
+						BackendManager.makeQuery('clips/create', JSON.stringify({
+							url: url,
+							original_url: url,
+							title: this.state.title,
+							podcast_id: this.state.episodeId,
+							podcast_title: this.state.episodeTitle,
+							podcast_thumbnail: this.state.thumbnail,
+							podcast_url: this.state.url,
+							podcast_duration: this.state.episodeDuration,
+							podcast_description: this.state.episodeDescription,
+							duration: duration,
+							user_id: data.id,
+						}))
+						.then(data => {
+							var uuid = data.uuid;
+							var clipId = data.id;
+							if (data.success) {
+								BackendManager.makeQuery('trim/audio', JSON.stringify({
+									url: this.state.url,
+									start_time: start,
+									duration: duration,
+									file_name: fileName,
+									clip_id: clipId,
+									email: UserManager.email,
+								}))
+								.then(data => {
+									localStorage.setItem('clip_uuid', uuid);
+									localStorage.setItem('clip_id', clipId);
+									localStorage.setItem('is_edit', 0);
+									localStorage.setItem('clip_url', url);
+									this.props.history.push('/publishing');
+								});
+							}
+						});
+		      }
+		    });
+			}	else {
+				this.props.showToast("Make sure you enter a title!", 'custom');
+			}
 		}
+
 	}
 
   renderCurrentView(classes) {

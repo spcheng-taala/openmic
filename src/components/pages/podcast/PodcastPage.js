@@ -130,7 +130,7 @@ class PodcastPage extends Component {
 				UserManager.id = id;
 			}
 		}
-    window.addEventListener("resize", this.resize.bind(this));
+    window.addEventListener("resize", this.resize, false);
     this.resize();
     this.refreshPodcast();
   }
@@ -140,6 +140,10 @@ class PodcastPage extends Component {
       this.refreshPodcast();
     }
   }
+
+  componentWillUnmount() {
+		window.removeEventListener('resize', this.resize, false);
+	}
 
   constructor(props) {
     super(props);
@@ -155,6 +159,7 @@ class PodcastPage extends Component {
       otherClips: [],
     };
 
+    this.resize = this.resize.bind(this);
 		this.refreshPodcast = this.refreshPodcast.bind(this);
 		this.renderProgressStr = this.renderProgressStr.bind(this);
     this.renderPlayPause = this.renderPlayPause.bind(this);
@@ -219,7 +224,6 @@ class PodcastPage extends Component {
       .then(data => {
         const regex = /(<([^>]+)>)/ig;
         if (data.id) {
-          console.log(data);
           var description = data.description.replace(regex, '');
           var podcast = {
             id: data.id,
@@ -528,7 +532,7 @@ class PodcastPage extends Component {
 
   renderOtherClipsListItem(item) {
     return (
-      <div>
+      <div key={item.id}>
         <ClipItem
 					id={item.uuid}
 					url={item.url}
